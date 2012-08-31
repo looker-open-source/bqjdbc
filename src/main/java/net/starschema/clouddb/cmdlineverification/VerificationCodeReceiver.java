@@ -16,17 +16,17 @@ package net.starschema.clouddb.cmdlineverification;
 
 /**
  * Verification code receiver.
- *
+ * 
  * @author Yaniv Inbar
  */
 public interface VerificationCodeReceiver {
 
-  /** Returns the redirect URI. */
-  String getRedirectUri() throws Exception;
+    /** Returns the redirect URI. */
+    String getRedirectUri() throws Exception;
 
-  /** Waits for a verification code. */
-  String waitForCode();
+    /** Releases any resources and stops any processes started. */
+    void stop() throws Exception;
 
-  /** Releases any resources and stops any processes started. */
-  void stop() throws Exception;
+    /** Waits for a verification code. */
+    String waitForCode();
 }

@@ -26,19 +26,19 @@ import com.google.api.client.json.jackson.JacksonFactory;
  */
 public class CmdlineUtils {
 
-  /** Global instance of the HTTP transport. */
-  private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+    /** Global instance of the HTTP transport. */
+    private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
-  /** Global instance of the JSON factory. */
-  private static final JsonFactory JSON_FACTORY = new JacksonFactory();
+    /** Global instance of the JSON factory. */
+    private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
-  /** Returns the global instance of the HTTP transport. */
-  public static HttpTransport getHttpTransport() {
-    return HTTP_TRANSPORT;
-  }
+    /** Returns the global instance of the HTTP transport. */
+    public static HttpTransport getHttpTransport() {
+	return CmdlineUtils.HTTP_TRANSPORT;
+    }
 
-  /** Returns the global instance of the JSON factory. */
-  public static JsonFactory getJsonFactory() {
-    return JSON_FACTORY;
-  }
+    /** Returns the global instance of the JSON factory. */
+    public static JsonFactory getJsonFactory() {
+	return CmdlineUtils.JSON_FACTORY;
+    }
 }

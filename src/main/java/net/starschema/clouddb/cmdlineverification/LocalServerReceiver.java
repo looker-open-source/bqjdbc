@@ -14,11 +14,6 @@
 
 package net.starschema.clouddb.cmdlineverification;
 
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Request;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -26,113 +21,117 @@ import java.net.Socket;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.mortbay.jetty.Connector;
+import org.mortbay.jetty.Request;
+import org.mortbay.jetty.Server;
+import org.mortbay.jetty.handler.AbstractHandler;
+
 /**
- * Runs a Jetty server on a free port, waiting for OAuth to redirect to it with the verification
- * code.
+ * Runs a Jetty server on a free port, waiting for OAuth to redirect to it with
+ * the verification code.
  * <p>
  * Mostly copied from oacurl by phopkins@google.com.
  * </p>
- *
+ * 
  * @author Yaniv Inbar
  */
 public final class LocalServerReceiver implements VerificationCodeReceiver {
 
-  private static final String CALLBACK_PATH = "/Callback";
+    /**
+     * Jetty handler that takes the verifier token passed over from the OAuth
+     * provider and stashes it where {@link #waitForCode} will find it.
+     */
+    class CallbackHandler extends AbstractHandler {
 
-  /** Server or {@code null} before {@link #getRedirectUri()}. */
-  private Server server;
+	@Override
+	public void handle(String target, HttpServletRequest request,
+		HttpServletResponse response, int dispatch) throws IOException {
+	    if (!LocalServerReceiver.CALLBACK_PATH.equals(target))
+		return;
+	    this.writeLandingHtml(response);
+	    response.flushBuffer();
+	    ((Request) request).setHandled(true);
+	    String error = request.getParameter("error");
+	    if (error != null) {
+		System.out.println("Authorization failed. Error=" + error);
+		System.out.println("Quitting.");
+		System.exit(1);
+	    }
+	    LocalServerReceiver.this.code = request.getParameter("code");
+	    synchronized (LocalServerReceiver.this) {
+		LocalServerReceiver.this.notify();
+	    }
+	}
 
-  /** Verification code or {@code null} before received. */
-  volatile String code;
+	private void writeLandingHtml(HttpServletResponse response)
+		throws IOException {
+	    response.setStatus(HttpServletResponse.SC_OK);
+	    response.setContentType("text/html");
 
-  @Override
-  public String getRedirectUri() throws Exception {
-    int port = getUnusedPort();
-    server = new Server(port);
-    for (Connector c : server.getConnectors()) {
-      c.setHost("localhost");
+	    PrintWriter doc = response.getWriter();
+	    doc.println("<html>");
+	    doc.println("<head><title>OAuth 2.0 Authentication Token Recieved</title></head>");
+	    doc.println("<body>");
+	    doc.println("Received verification code. Closing...");
+	    doc.println("<script type='text/javascript'>");
+	    // We open "" in the same window to trigger JS ownership of it,
+	    // which lets
+	    // us then close it via JS, at least in Chrome.
+	    doc.println("window.setTimeout(function() {");
+	    doc.println("    window.open('', '_self', ''); window.close(); }, 1000);");
+	    doc.println("if (window.opener) { window.opener.checkToken(); }");
+	    doc.println("</script>");
+	    doc.println("</body>");
+	    doc.println("</HTML>");
+	    doc.flush();
+	}
     }
-    server.addHandler(new CallbackHandler());
-    server.start();
-    return "http://localhost:" + port + CALLBACK_PATH;
 
-  }
+    private static final String CALLBACK_PATH = "/Callback";
 
-  @Override
-  public synchronized String waitForCode() {
-    try {
-      this.wait();
-    } catch (InterruptedException exception) {
-      // should not happen
+    private static int getUnusedPort() throws IOException {
+	Socket s = new Socket();
+	s.bind(null);
+	try {
+	    return s.getLocalPort();
+	} finally {
+	    s.close();
+	}
     }
-    return code;
-  }
 
-  @Override
-  public void stop() throws Exception {
-    if (server != null) {
-      server.stop();
-      server = null;
-    }
-  }
+    /** Server or {@code null} before {@link #getRedirectUri()}. */
+    private Server server;
 
-  private static int getUnusedPort() throws IOException {
-    Socket s = new Socket();
-    s.bind(null);
-    try {
-      return s.getLocalPort();
-    } finally {
-      s.close();
-    }
-  }
-
-  /**
-   * Jetty handler that takes the verifier token passed over from the OAuth provider and stashes it
-   * where {@link #waitForCode} will find it.
-   */
-  class CallbackHandler extends AbstractHandler {
+    /** Verification code or {@code null} before received. */
+    volatile String code;
 
     @Override
-    public void handle(
-        String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
-        throws IOException {
-      if (!CALLBACK_PATH.equals(target)) {
-        return;
-      }
-      writeLandingHtml(response);
-      response.flushBuffer();
-      ((Request) request).setHandled(true);
-      String error = request.getParameter("error");
-      if (error != null) {
-        System.out.println("Authorization failed. Error=" + error);
-        System.out.println("Quitting.");
-        System.exit(1);
-      }
-      code = request.getParameter("code");
-      synchronized (LocalServerReceiver.this) {
-        LocalServerReceiver.this.notify();
-      }
+    public String getRedirectUri() throws Exception {
+	int port = LocalServerReceiver.getUnusedPort();
+	this.server = new Server(port);
+	for (Connector c : this.server.getConnectors())
+	    c.setHost("localhost");
+	this.server.addHandler(new CallbackHandler());
+	this.server.start();
+	return "http://localhost:" + port + LocalServerReceiver.CALLBACK_PATH;
+
     }
 
-    private void writeLandingHtml(HttpServletResponse response) throws IOException {
-      response.setStatus(HttpServletResponse.SC_OK);
-      response.setContentType("text/html");
-
-      PrintWriter doc = response.getWriter();
-      doc.println("<html>");
-      doc.println("<head><title>OAuth 2.0 Authentication Token Recieved</title></head>");
-      doc.println("<body>");
-      doc.println("Received verification code. Closing...");
-      doc.println("<script type='text/javascript'>");
-      // We open "" in the same window to trigger JS ownership of it, which lets
-      // us then close it via JS, at least in Chrome.
-      doc.println("window.setTimeout(function() {");
-      doc.println("    window.open('', '_self', ''); window.close(); }, 1000);");
-      doc.println("if (window.opener) { window.opener.checkToken(); }");
-      doc.println("</script>");
-      doc.println("</body>");
-      doc.println("</HTML>");
-      doc.flush();
+    @Override
+    public void stop() throws Exception {
+	if (this.server != null) {
+	    this.server.stop();
+	    this.server = null;
+	}
     }
-  }
+
+    @Override
+    public synchronized String waitForCode() {
+	try {
+	    this.wait();
+	} catch (InterruptedException exception) {
+	    // should not happen
+	}
+	return this.code;
+    }
 }

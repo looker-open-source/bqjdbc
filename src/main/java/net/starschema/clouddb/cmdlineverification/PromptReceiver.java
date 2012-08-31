@@ -14,33 +14,34 @@
 
 package net.starschema.clouddb.cmdlineverification;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleOAuthConstants;
-
 import java.util.Scanner;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleOAuthConstants;
+
 /**
- * Verification code receiver that prompts user to paste the code copied from the browser.
- *
+ * Verification code receiver that prompts user to paste the code copied from
+ * the browser.
+ * 
  * @author Yaniv Inbar
  */
 public class PromptReceiver implements VerificationCodeReceiver {
 
-  @Override
-  public String waitForCode() {
-    String code;
-    do {
-      System.out.print("Please enter code: ");
-      code = new Scanner(System.in).nextLine();
-    } while (code.isEmpty());
-    return code;
-  }
+    @Override
+    public String getRedirectUri() {
+	return GoogleOAuthConstants.OOB_REDIRECT_URI;
+    }
 
-  @Override
-  public String getRedirectUri() {
-    return GoogleOAuthConstants.OOB_REDIRECT_URI;
-  }
+    @Override
+    public void stop() {
+    }
 
-  @Override
-  public void stop() {
-  }
+    @Override
+    public String waitForCode() {
+	String code;
+	do {
+	    System.out.print("Please enter code: ");
+	    code = new Scanner(System.in).nextLine();
+	} while (code.isEmpty());
+	return code;
+    }
 }

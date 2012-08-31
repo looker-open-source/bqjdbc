@@ -15,14 +15,25 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *  <p>
-* BQDriver - This class implements the java.sql.Driver interface
-* 
-* The driver URL is jdbc:BQDriver:<Service account id>:<Path to private key>:<ProjectID>.
-* 
-* Any Java program can use this driver for JDBC purpose by specifying 
-* this URL format.
-* </p>
-*/
+ * BQDriver - This class implements the java.sql.Driver interface
+ * 
+ * The driver URL is 
+ * if Service account:
+ * jdbc:BQDriver:projectid(urlencoded)?ServiceAccount=true
+ * Properties File:
+ * username: account email (NOT URLENCODED)
+ * password: path to key file (NOT URLENCODED)
+ * 
+ * if Installed account:
+ * jdbc:BQDriver:projectid(urlencoded)
+ * Properties File:
+ * username: accountid (NOT URLENCODED)
+ * password: clientsecret (NOT URLENCODED)
+ * 
+ * Any Java program can use this driver for JDBC purpose by specifying 
+ * this URL format.
+ * </p>
+ */
 
 package net.starschema.clouddb.jdbc;
 
@@ -32,97 +43,113 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
 
-public class BQDriver implements java.sql.Driver
-{
-	
-	//Driver URL prefix.
-	private static final String URL_PREFIX = "jdbc:BQDriver:";
-	
-	private static final int MAJOR_VERSION = 1;
-	private static final int MINOR_VERSION = 0;
-	
-	static
-	{
-		try
-		{
-			//Register the JWDriver with DriverManager
-			BQDriver driverInst = new BQDriver();
-			DriverManager.registerDriver(driverInst);
-			
-			//System.setSecurityManager(new RMISecurityManager());
-		}
-		catch(Exception e)
-		{}
-	}
-	
-	/**
-	 * It returns the URL prefix for using JWDriver
-	 */
-	public static String getURLPrefix()
-	{
-		return URL_PREFIX;
-	}
-	
-	/**
-	 * This method create a remote connection and then
-	 * returns the JWConnection object holding a Remote Connection
-	 */
-	public Connection connect(String url,Properties loginProp)
-			throws SQLException
-	{	
-		BQConnection localConInstance = null;
-		
-		if(acceptsURL(url))
-		{			
-				//extract the remote server location coming with URL
-				String serverdata = url.substring(URL_PREFIX.length(),url.length());
-				
-				//Create the local JWConnection holding remote Connection
+import org.apache.log4j.Logger;
 
-				localConInstance = new BQConnection(serverdata);
+/**
+ * This Class implements the java.sql.Driver interface
+ * 
+ * @author Horváth Attila
+ */
+public class BQDriver implements java.sql.Driver {
 
-		}
-					
-		return (Connection)localConInstance;
-	}	
-	
-	/**
-	 * This method returns true if the given URL starts with the JWDriver url.
-	 * It is called by DriverManager.
-	 */
-	public boolean acceptsURL(String url)
-		   throws SQLException
-	{						
-		return url.startsWith(URL_PREFIX);
-	}	
+    /** Instance log4j.Logger */
+    static Logger logger;
+    /** Url_Prefix for using this driver */
+    private static final String URL_PREFIX = "jdbc:BQDriver:";
+    /** MAJOR Version of the driver */
+    private static final int MAJOR_VERSION = 1;
+    /** Minor Version of the driver */
+    private static final int MINOR_VERSION = 0;
 
-	public int getMajorVersion()
-	{
-		return MAJOR_VERSION;
+    /** Registers the driver with the drivermanager */
+    static {
+	logger = Logger.getLogger("BQDriver");
+	try {
+	    
+	    // Register the BQDriver with DriverManager
+	    BQDriver driverInst = new BQDriver();
+	    DriverManager.registerDriver(driverInst);
+	    logger.info("Registering the driver");
+	} catch (Exception e) {
 	}
-	
-	public static int getMajorVersionAsStatic()
-	{
-		return MAJOR_VERSION;
-	}
-		
-	public int getMinorVersion()
-	{
-		return MINOR_VERSION;
+    }
+
+    /**
+     * Gets Major Version of the Driver as static
+     * 
+     * @return Major Version of the Driver as static
+     */
+    public static int getMajorVersionAsStatic() {
+	return BQDriver.MAJOR_VERSION;
+    }
+
+    /**
+     * Gets Minor Version of the Driver as static
+     * 
+     * @return Minor Version of the Driver as static
+     */
+    public static int getMinorVersionAsStatic() {
+	return BQDriver.MINOR_VERSION;
+    }
+
+    /** It returns the URL prefix for using BQDriver */
+    public static String getURLPrefix() {
+	return BQDriver.URL_PREFIX;
+    }
+
+    /** {@inheritDoc} */
+    public boolean acceptsURL(String url) throws SQLException {
+	return url.startsWith(BQDriver.URL_PREFIX);
+    }
+
+    /**
+     * <p>
+     * <h1>Implementation Details:</h1><br>
+     * This method create a new BQconnection and then returns it
+     * </p>
+     */
+    public Connection connect(String url, Properties loginProp)
+	    throws SQLException {
+	BQConnection localConInstance = null;
+
+	if (this.acceptsURL(url)) {
+	    localConInstance = new BQConnection(url, loginProp);
+
 	}
 
-	public static int getMinorVersionAsStatic()
-	{
-		return MINOR_VERSION;
-	}
-	public java.sql.DriverPropertyInfo[] getPropertyInfo(String url,Properties loginProps)
-		throws SQLException
-	{
-		return new DriverPropertyInfo[0];
-	}
+	return localConInstance;
+    }
 
-	public boolean jdbcCompliant()
-	{
-		return false;
-	}
+    /** {@inheritDoc} */
+    public int getMajorVersion() {
+	return BQDriver.MAJOR_VERSION;
+    }
+
+    /** {@inheritDoc} */
+    public int getMinorVersion() {
+	return BQDriver.MINOR_VERSION;
+    }
+
+    /**
+     * <p>
+     * <h1>Implementation Details:</h1><br>
+     * Gets information about the possible properties for this driver.
+     * </p>
+     * 
+     * @return a default DriverPropertyInfo
+     */
+    public java.sql.DriverPropertyInfo[] getPropertyInfo(String url,
+	    Properties loginProps) throws SQLException {
+	return new DriverPropertyInfo[0];
+    }
+
+    /**
+     * <p>
+     * <h1>Implementation Details:</h1><br>
+     * Always returns false, since the driver is not jdbcCompliant
+     * </p>
+     */
+    public boolean jdbcCompliant() {
+	return false;
+    }
 }
