@@ -2,8 +2,8 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.starschema.clouddb.bqjdbc</groupId>
-	<artifactId>net.starschema.clouddb.bqjdbc</artifactId>
-	<version>0.0.7-snapshot</version>
+	<artifactId>bqjdbc</artifactId>
+	<version>0.0.8</version>
 	<name>Big Query over JDBC</name>
 	<description>A simple JDBC driver, to reach Google's BigQuery</description>
 	<repositories>

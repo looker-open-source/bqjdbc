@@ -19,15 +19,13 @@
  */
 package BQJDBC.QueryResultTest;
 
-import static org.junit.Assert.fail;
-
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
-import net.starschema.clouddb.jdbc.BQJDBCAPI;
-import net.starschema.clouddb.jdbc.BigQueryApi;
+import net.starschema.clouddb.jdbc.BQSupportMethods;
+import net.starschema.clouddb.jdbc.BQSupportFuncts;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -41,6 +39,31 @@ public class Timeouttest {
     Logger logger = Logger.getLogger(Timeouttest.class);
 
     /**
+     * Compares two String[][]
+     * 
+     * @param expected
+     * @param reality
+     * @return true if they are equal false if not
+     */
+    private boolean comparer(String[][] expected, String[][] reality) {
+	for (int i = 0; i < expected.length; i++)
+	    for (int j = 0; j < expected[i].length; j++)
+		if (expected[i][j].toString().equals(reality[i][j]) == false)
+		    return false;
+
+	return true;
+    }
+
+    @Test
+    public void isvalidtest() {
+	try {
+	    Assert.assertTrue(Timeouttest.con.isValid(0));
+	} catch (SQLException e) {
+
+	}
+    }
+
+    /**
      * Makes a new Bigquery Connection to Hardcoded URL and gives back the
      * Connection to static con member.
      */
@@ -48,30 +71,30 @@ public class Timeouttest {
     public void NewConnection() {
 
 	try {
-	    if (con == null || !con.isValid(0)) {
+	    if (Timeouttest.con == null || !Timeouttest.con.isValid(0)) {
 		BasicConfigurator.configure();
-		logger.info("Testing the JDBC driver");
+		this.logger.info("Testing the JDBC driver");
 		try {
 
 		    Class.forName("net.starschema.clouddb.jdbc.BQDriver");
-		    con = DriverManager
+		    Timeouttest.con = DriverManager
 			    .getConnection(
-				    BigQueryApi
-					    .ConstructUrlFromPropertiesFile(BigQueryApi
+				    BQSupportFuncts
+					    .ConstructUrlFromPropertiesFile(BQSupportFuncts
 						    .ReadFromPropFile("serviceaccount.properties")),
-				    BigQueryApi
+				    BQSupportFuncts
 					    .ReadFromPropFile("serviceaccount.properties"));
 		} catch (Exception e) {
-		    logger.fatal("Error in connection" + e.toString());
-		    fail("General Exception:" + e.toString());
+		    this.logger.fatal("Error in connection" + e.toString());
+		    Assert.fail("General Exception:" + e.toString());
 		}
-		logger.info(((BQConnection) con).getURLPART());
+		this.logger.info(((BQConnection) Timeouttest.con).getURLPART());
 	    }
 	} catch (SQLException e1) {
 	    e1.printStackTrace();
 	}
 	try {
-	    logger.info("thread will sleep for 1 minute");
+	    this.logger.info("thread will sleep for 1 minute");
 	    Thread.sleep(1000 * 1); // 1000milisec = 1 sec * 60 = 1 minute
 
 	} catch (InterruptedException e) {
@@ -80,12 +103,20 @@ public class Timeouttest {
 
     }
 
-    @Test
-    public void isvalidtest() {
-	try {
-	    Assert.assertTrue(con.isValid(0));
-	} catch (SQLException e) {
-
+    /**
+     * Prints a String[][] QueryResult to Log
+     * 
+     * @param input
+     */
+    private void printer(String[][] input) {
+	for (int s = 0; s < input[0].length; s++) {
+	    String Output = "";
+	    for (int i = 0; i < input.length; i++)
+		if (i == input.length - 1)
+		    Output += input[i][s];
+		else
+		    Output += input[i][s] + "\t";
+	    this.logger.debug(Output);
 	}
     }
 
@@ -98,27 +129,27 @@ public class Timeouttest {
 			"why", "whose", "whom" },
 		{ "42", "42", "42", "42", "42", "42", "42", "42", "42", "42" } };
 
-	logger.info("Test number: 01");
-	logger.info("Running query:" + sql);
+	this.logger.info("Test number: 01");
+	this.logger.info("Running query:" + sql);
 
 	java.sql.ResultSet Result = null;
 	try {
-	    Result = con.createStatement().executeQuery(sql);
+	    Result = Timeouttest.con.createStatement().executeQuery(sql);
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail("SQLException" + e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail("SQLException" + e.toString());
 	}
 	Assert.assertNotNull(Result);
 
-	logger.debug(description);
-	if (logger.getLevel() == Level.DEBUG)
-	    printer(expectation);
+	this.logger.debug(description);
+	if (this.logger.getLevel() == Level.DEBUG)
+	    this.printer(expectation);
 	try {
-	    Assert.assertTrue("Comparing failed in the String[][] array",
-		    comparer(expectation, BQJDBCAPI.GetQueryResult(Result)));
+	    Assert.assertTrue("Comparing failed in the String[][] array", this
+		    .comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail(e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail(e.toString());
 	}
     }
 
@@ -128,27 +159,27 @@ public class Timeouttest {
 	final String description = "The book names of shakespeare #GROUP_BY #ORDER_BY";
 	String[][] expectation = new String[][] { { "1kinghenryiv",
 		"1kinghenryvi", "2kinghenryiv", "2kinghenryvi", "3kinghenryvi" } };
-	logger.info("Test number: 02");
-	logger.info("Running query:" + sql);
+	this.logger.info("Test number: 02");
+	this.logger.info("Running query:" + sql);
 
 	java.sql.ResultSet Result = null;
 	try {
-	    Result = con.createStatement().executeQuery(sql);
+	    Result = Timeouttest.con.createStatement().executeQuery(sql);
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail("SQLException" + e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail("SQLException" + e.toString());
 	}
 	Assert.assertNotNull(Result);
 
-	logger.debug(description);
-	if (logger.getLevel() == Level.DEBUG)
-	    printer(expectation);
+	this.logger.debug(description);
+	if (this.logger.getLevel() == Level.DEBUG)
+	    this.printer(expectation);
 	try {
-	    Assert.assertTrue("Comparing failed in the String[][] array",
-		    comparer(expectation, BQJDBCAPI.GetQueryResult(Result)));
+	    Assert.assertTrue("Comparing failed in the String[][] array", this
+		    .comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail(e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail(e.toString());
 	}
     }
 
@@ -159,13 +190,13 @@ public class Timeouttest {
 		+ "AND web100_log_entry.log_time > 1262304000 AND web100_log_entry.log_time < 1262476800";
 	final String description = "A sample query from google, but we don't have Access for the query table #ERROR #accessDenied #403";
 
-	logger.info("Test number: 03");
-	logger.info("Running query:" + sql);
-	logger.debug(description);
+	this.logger.info("Test number: 03");
+	this.logger.info("Running query:" + sql);
+	this.logger.debug(description);
 	try {
-	    con.createStatement().executeQuery(sql);
+	    Timeouttest.con.createStatement().executeQuery(sql);
 	} catch (SQLException e) {
-	    logger.debug("SQLexception" + e.toString());
+	    this.logger.debug("SQLexception" + e.toString());
 	    // fail("SQLException" + e.toString());
 	    Assert.assertTrue(e
 		    .getCause()
@@ -182,27 +213,27 @@ public class Timeouttest {
 	String[][] expectation = new String[][] { { "winterstale", "various",
 		"twogentlemenofverona", "twelfthnight", "troilusandcressida" } };
 
-	logger.info("Test number: 04");
-	logger.info("Running query:" + sql);
+	this.logger.info("Test number: 04");
+	this.logger.info("Running query:" + sql);
 
 	java.sql.ResultSet Result = null;
 	try {
-	    Result = con.createStatement().executeQuery(sql);
+	    Result = Timeouttest.con.createStatement().executeQuery(sql);
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail("SQLException" + e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail("SQLException" + e.toString());
 	}
 	Assert.assertNotNull(Result);
 
-	logger.debug(description);
-	if (logger.getLevel() == Level.DEBUG)
-	    printer(expectation);
+	this.logger.debug(description);
+	if (this.logger.getLevel() == Level.DEBUG)
+	    this.printer(expectation);
 	try {
-	    Assert.assertTrue("Comparing failed in the String[][] array",
-		    comparer(expectation, BQJDBCAPI.GetQueryResult(Result)));
+	    Assert.assertTrue("Comparing failed in the String[][] array", this
+		    .comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail(e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail(e.toString());
 	}
     }
 
@@ -211,25 +242,25 @@ public class Timeouttest {
 	final String sql = "SELECT word FROM publicdata:samples.shakespeare WHERE word=\"huzzah\"";
 	final String description = "The word \"huzzah\" NOTE: It doesn't appear in any any book, so it returns with a null #WHERE";
 
-	logger.info("Test number: 05");
-	logger.info("Running query:" + sql);
+	this.logger.info("Test number: 05");
+	this.logger.info("Running query:" + sql);
 
 	java.sql.ResultSet Result = null;
 	try {
-	    Result = con.createStatement().executeQuery(sql);
-	    logger.debug(Result.getMetaData().getColumnCount());
+	    Result = Timeouttest.con.createStatement().executeQuery(sql);
+	    this.logger.debug(Result.getMetaData().getColumnCount());
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail("SQLException" + e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail("SQLException" + e.toString());
 	}
 	Assert.assertNotNull(Result);
 
-	logger.debug(description);
+	this.logger.debug(description);
 	try {
 	    Assert.assertFalse(Result.first());
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail(e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail(e.toString());
 	}
     }
 
@@ -241,27 +272,27 @@ public class Timeouttest {
 		{ "1612", "1611", "1610", "1609", "1608" },
 		{ "26265", "17593", "26181", "57073", "19846" } };
 
-	logger.info("Test number: 06");
-	logger.info("Running query:" + sql);
+	this.logger.info("Test number: 06");
+	this.logger.info("Running query:" + sql);
 
 	java.sql.ResultSet Result = null;
 	try {
-	    Result = con.createStatement().executeQuery(sql);
+	    Result = Timeouttest.con.createStatement().executeQuery(sql);
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail("SQLException" + e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail("SQLException" + e.toString());
 	}
 	Assert.assertNotNull(Result);
 
-	logger.debug(description);
-	if (logger.getLevel() == Level.DEBUG)
-	    printer(expectation);
+	this.logger.debug(description);
+	if (this.logger.getLevel() == Level.DEBUG)
+	    this.printer(expectation);
 	try {
-	    Assert.assertTrue("Comparing failed in the String[][] array",
-		    comparer(expectation, BQJDBCAPI.GetQueryResult(Result)));
+	    Assert.assertTrue("Comparing failed in the String[][] array", this
+		    .comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail(e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail(e.toString());
 	}
     }
 
@@ -274,27 +305,27 @@ public class Timeouttest {
 			"kingjohn", "tamingoftheshrew" },
 		{ "21052", "21633", "21911", "21983", "22358" } };
 
-	logger.info("Test number: 07");
-	logger.info("Running query:" + sql);
+	this.logger.info("Test number: 07");
+	this.logger.info("Running query:" + sql);
 
 	java.sql.ResultSet Result = null;
 	try {
-	    Result = con.createStatement().executeQuery(sql);
+	    Result = Timeouttest.con.createStatement().executeQuery(sql);
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail("SQLException" + e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail("SQLException" + e.toString());
 	}
 	Assert.assertNotNull(Result);
 
-	logger.debug(description);
-	if (logger.getLevel() == Level.DEBUG)
-	    printer(expectation);
+	this.logger.debug(description);
+	if (this.logger.getLevel() == Level.DEBUG)
+	    this.printer(expectation);
 	try {
-	    Assert.assertTrue("Comparing failed in the String[][] array",
-		    comparer(expectation, BQJDBCAPI.GetQueryResult(Result)));
+	    Assert.assertTrue("Comparing failed in the String[][] array", this
+		    .comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail(e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail(e.toString());
 	}
     }
 
@@ -308,27 +339,27 @@ public class Timeouttest {
 		{ "995", "942", "937", "894", "848" },
 		{ "the", "the", "the", "the", "the" } };
 
-	logger.info("Test number: 08");
-	logger.info("Running query:" + sql);
+	this.logger.info("Test number: 08");
+	this.logger.info("Running query:" + sql);
 
 	java.sql.ResultSet Result = null;
 	try {
-	    Result = con.createStatement().executeQuery(sql);
+	    Result = Timeouttest.con.createStatement().executeQuery(sql);
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail("SQLException" + e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail("SQLException" + e.toString());
 	}
 	Assert.assertNotNull(Result);
 
-	logger.debug(description);
-	if (logger.getLevel() == Level.DEBUG)
-	    printer(expectation);
+	this.logger.debug(description);
+	if (this.logger.getLevel() == Level.DEBUG)
+	    this.printer(expectation);
 	try {
-	    Assert.assertTrue("Comparing failed in the String[][] array",
-		    comparer(expectation, BQJDBCAPI.GetQueryResult(Result)));
+	    Assert.assertTrue("Comparing failed in the String[][] array", this
+		    .comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail(e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail(e.toString());
 	}
     }
 
@@ -340,63 +371,27 @@ public class Timeouttest {
 		{ "kinghenryviii", "tempest", "winterstale" },
 		{ "1612", "1611", "1610" } };
 
-	logger.info("Test number: 09");
-	logger.info("Running query:" + sql);
+	this.logger.info("Test number: 09");
+	this.logger.info("Running query:" + sql);
 
 	java.sql.ResultSet Result = null;
 	try {
-	    Result = con.createStatement().executeQuery(sql);
+	    Result = Timeouttest.con.createStatement().executeQuery(sql);
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail("SQLException" + e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail("SQLException" + e.toString());
 	}
 	Assert.assertNotNull(Result);
 
-	logger.debug(description);
-	if (logger.getLevel() == Level.DEBUG)
-	    printer(expectation);
+	this.logger.debug(description);
+	if (this.logger.getLevel() == Level.DEBUG)
+	    this.printer(expectation);
 	try {
-	    Assert.assertTrue("Comparing failed in the String[][] array",
-		    comparer(expectation, BQJDBCAPI.GetQueryResult(Result)));
+	    Assert.assertTrue("Comparing failed in the String[][] array", this
+		    .comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
 	} catch (SQLException e) {
-	    logger.fatal("SQLexception" + e.toString());
-	    fail(e.toString());
+	    this.logger.fatal("SQLexception" + e.toString());
+	    Assert.fail(e.toString());
 	}
-    }
-
-    /**
-     * Prints a String[][] QueryResult to Log
-     * 
-     * @param input
-     */
-    private void printer(String[][] input) {
-	for (int s = 0; s < input[0].length; s++) {
-	    String Output = "";
-	    for (int i = 0; i < input.length; i++) {
-		if (i == input.length - 1)
-		    Output += input[i][s];
-		else
-		    Output += input[i][s] + "\t";
-	    }
-	    logger.debug(Output);
-	}
-    }
-
-    /**
-     * Compares two String[][]
-     * 
-     * @param expected
-     * @param reality
-     * @return true if they are equal false if not
-     */
-    private boolean comparer(String[][] expected, String[][] reality) {
-	for (int i = 0; i < expected.length; i++) {
-	    for (int j = 0; j < expected[i].length; j++) {
-		if (expected[i][j].toString().equals(reality[i][j]) == false)
-		    return false;
-	    }
-	}
-
-	return true;
     }
 }

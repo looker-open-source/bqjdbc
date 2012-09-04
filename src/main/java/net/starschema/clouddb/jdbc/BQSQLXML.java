@@ -8,7 +8,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -57,11 +56,11 @@ class BQSQLXML implements java.sql.SQLXML {
 	    this.document = docBuilder.parse(new InputSource(new StringReader(
 		    xmlString)));
 	} catch (SAXException e) {
-	    throw new SQLException(e);
+	    throw new BQSQLException(e);
 	} catch (IOException e) {
-	    throw new SQLException(e);
+	    throw new BQSQLException(e);
 	} catch (ParserConfigurationException e) {
-	    throw new SQLException(e);
+	    throw new BQSQLException(e);
 	}
     }
 
@@ -72,20 +71,22 @@ class BQSQLXML implements java.sql.SQLXML {
      * boolean to false
      * </p>
      */
+    @Override
     public void free() throws SQLException {
 	this.document = null;
 	this.Readable = false;
     }
 
     /** {@inheritDoc} */
+    @Override
     public InputStream getBinaryStream() throws SQLException {
 	if (this.Readable == false)
-	    throw new SQLException("This SQLXML is not readable any more");
+	    throw new BQSQLException("This SQLXML is not readable any more");
 	this.Readable = false;
 	java.io.InputStream inptstrm;
 
 	if (this.document == null)
-	    throw new SQLException("This SQLXML is freed");
+	    throw new BQSQLException("This SQLXML is freed");
 	else {
 	    inptstrm = new java.io.ByteArrayInputStream(this.getS().getBytes());
 	    return inptstrm;
@@ -93,12 +94,13 @@ class BQSQLXML implements java.sql.SQLXML {
     }
 
     /** {@inheritDoc} */
+    @Override
     public Reader getCharacterStream() throws SQLException {
 	if (this.Readable == false)
-	    throw new SQLException("This SQLXML is not readable any more");
+	    throw new BQSQLException("This SQLXML is not readable any more");
 	this.Readable = false;
 	if (this.document == null)
-	    throw new SQLException("This SQLXML is freed");
+	    throw new BQSQLException("This SQLXML is freed");
 	else {
 	    Reader rdr = new StringReader(this.getS());
 	    return rdr;
@@ -115,7 +117,7 @@ class BQSQLXML implements java.sql.SQLXML {
      */
     private String getS() throws SQLException {
 	if (this.document == null)
-	    throw new SQLException("This SQLXML is freed");
+	    throw new BQSQLException("This SQLXML is freed");
 	else {
 	    // set up a transformer
 
@@ -124,14 +126,14 @@ class BQSQLXML implements java.sql.SQLXML {
 	    try {
 		trans = transfac.newTransformer();
 	    } catch (TransformerConfigurationException e) {
-		throw new SQLException(e);
+		throw new BQSQLException(e);
 	    }
 
 	    try {
 		trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 		trans.setOutputProperty(OutputKeys.INDENT, "yes");
 	    } catch (IllegalArgumentException e) {
-		throw new SQLException(e);
+		throw new BQSQLException(e);
 	    }
 
 	    // create string from xml tree
@@ -141,7 +143,7 @@ class BQSQLXML implements java.sql.SQLXML {
 	    try {
 		trans.transform(source, result);
 	    } catch (TransformerException e) {
-		throw new SQLException(e);
+		throw new BQSQLException(e);
 	    }
 	    String xmlString = sw.toString();
 	    return xmlString;
@@ -155,15 +157,16 @@ class BQSQLXML implements java.sql.SQLXML {
      * This is a minimal implementation!
      * </p>
      */
+    @Override
     public <T extends Source> T getSource(Class<T> sourceClass)
 	    throws SQLException {
 	if (this.Readable == false)
-	    throw new SQLException("This SQLXML is not readable any more");
+	    throw new BQSQLException("This SQLXML is not readable any more");
 	this.Readable = false;
 	if (this.document == null)
-	    throw new SQLException("This SQLXML is freed");
+	    throw new BQSQLException("This SQLXML is freed");
 	else if (sourceClass == null)
-	    throw new SQLException("No default implementation");
+	    throw new BQSQLException("No default implementation");
 	else if (sourceClass == javax.xml.transform.dom.DOMSource.class) {
 	    javax.xml.transform.dom.DOMSource src = new javax.xml.transform.dom.DOMSource(
 		    this.document);
@@ -179,7 +182,7 @@ class BQSQLXML implements java.sql.SQLXML {
 		eventReaderXML = inputFactory.createXMLEventReader(
 			"Instance_01", this.getCharacterStream());
 	    } catch (XMLStreamException e1) {
-		throw new SQLException(e1);
+		throw new BQSQLException(e1);
 	    }
 	    inputFactory.setProperty(
 		    "javax.xml.stream.isSupportingExternalEntities",
@@ -193,7 +196,7 @@ class BQSQLXML implements java.sql.SQLXML {
 	    try {
 		src = new javax.xml.transform.stax.StAXSource(eventReaderXML);
 	    } catch (XMLStreamException e) {
-		throw new SQLException(e);
+		throw new BQSQLException(e);
 	    }
 	    return sourceClass.cast(src);
 	} else if (sourceClass == javax.xml.transform.stream.StreamSource.class) {
@@ -201,7 +204,7 @@ class BQSQLXML implements java.sql.SQLXML {
 		    this.getBinaryStream());
 	    return sourceClass.cast(src);
 	} else
-	    throw new SQLException("No implementation for this class");
+	    throw new BQSQLException("No implementation for this class");
     }
 
     /**
@@ -210,9 +213,10 @@ class BQSQLXML implements java.sql.SQLXML {
      * Calls the private function getS if the SQLXML is in Readable state
      * </p>
      */
+    @Override
     public String getString() throws SQLException {
 	if (this.Readable == false)
-	    throw new SQLException("This SQLXML is not readable any more");
+	    throw new BQSQLException("This SQLXML is not readable any more");
 	this.Readable = false;
 	return this.getS();
     }
@@ -220,49 +224,53 @@ class BQSQLXML implements java.sql.SQLXML {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public OutputStream setBinaryStream() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "setBinaryStream()");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Writer setCharacterStream() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "setCharacterStream");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public <T extends Result> T setResult(Class<T> resultClass)
 	    throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "setResult(Class<T>)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void setString(String xmlString) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "setString(String)");
     }
 }

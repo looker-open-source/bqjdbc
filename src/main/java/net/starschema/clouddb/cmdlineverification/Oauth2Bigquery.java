@@ -33,9 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.auth.oauth2.MemoryCredentialStore;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets.Details;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpTransport;
@@ -47,10 +47,6 @@ import com.google.api.services.bigquery.BigqueryScopes;
 public class Oauth2Bigquery {
 
     private static String servicepath = null;
-
-    public static String getservicepath() {
-	return servicepath;
-    }
 
     /**
      * Browser to open in case {@link Desktop#isDesktopSupported()} is
@@ -65,10 +61,21 @@ public class Oauth2Bigquery {
      */
     private static GoogleClientSecrets clientSecrets = null;
 
+    /**
+     * Reference to the GoogleAuthorizationCodeFlow used in this installed
+     * application authorization sequence
+     */
     public static GoogleAuthorizationCodeFlow codeflow = null;
 
     /**
-     * Authorizes the installed application to access user's protected data.
+     * The default path to store the xml file where client credentials are
+     * stored
+     */
+    private static String PathForXmlStore = "C:\\myxmlstore.xml";
+
+    /**
+     * Authorizes the installed application to access user's protected data. if
+     * possible, gets the credential from xml file at PathForXmlStore
      * 
      * @param transport
      *            HTTP transport
@@ -83,6 +90,25 @@ public class Oauth2Bigquery {
 	    JsonFactory jsonFactory, VerificationCodeReceiver receiver,
 	    Iterable<String> scopes, String Clientid, String Clientsecret)
 	    throws Exception {
+
+	BQXMLCredentialStore Store = new BQXMLCredentialStore(
+		Oauth2Bigquery.PathForXmlStore);
+
+	GoogleClientSecrets.Details details = new Details();
+	details.setClientId(Clientid);
+	details.setClientSecret(Clientsecret);
+	details.setFactory(CmdlineUtils.getJsonFactory());
+	details.setAuthUri("https://accounts.google.com/o/oauth2/auth");
+	details.setTokenUri("https://accounts.google.com/o/oauth2/token");
+	GoogleClientSecrets secr = new GoogleClientSecrets()
+		.setInstalled(details);
+	GoogleCredential CredentialForReturn = new GoogleCredential.Builder()
+		.setJsonFactory(CmdlineUtils.getJsonFactory())
+		.setTransport(CmdlineUtils.getHttpTransport())
+		.setClientSecrets(secr).build();
+
+	if (Store.load(Clientid + ":" + Clientsecret, CredentialForReturn) == true)
+	    return CredentialForReturn;
 	try {
 	    String redirectUri = receiver.getRedirectUri();
 	    GoogleClientSecrets clientSecrets = Oauth2Bigquery
@@ -90,7 +116,7 @@ public class Oauth2Bigquery {
 	    Oauth2Bigquery.codeflow = new GoogleAuthorizationCodeFlow.Builder(
 		    transport, jsonFactory, clientSecrets, scopes)
 		    .setAccessType("offline").setApprovalPrompt("auto")
-		    .setCredentialStore(new MemoryCredentialStore()).build();
+		    .setCredentialStore(Store).build();
 	    Oauth2Bigquery.browse(Oauth2Bigquery.codeflow.newAuthorizationUrl()
 		    .setRedirectUri(redirectUri).build());
 	    // receive authorization code and exchange it for an access token
@@ -103,7 +129,7 @@ public class Oauth2Bigquery {
 	    // Also ads a RefreshListener, so the token will be always
 	    // automatically refreshed.
 	    return Oauth2Bigquery.codeflow.createAndStoreCredential(response,
-		    Clientid);
+		    Clientid + ":" + Clientsecret);
 	} finally {
 	    receiver.stop();
 	}
@@ -132,6 +158,7 @@ public class Oauth2Bigquery {
 	} catch (Exception e) {
 	    throw new SQLException(e);
 	}
+
 	Bigquery bigquery = new Builder(CmdlineUtils.getHttpTransport(),
 		CmdlineUtils.getJsonFactory(), credential).build();
 	Oauth2Bigquery.servicepath = bigquery.getServicePath();
@@ -212,6 +239,10 @@ public class Oauth2Bigquery {
      */
     public static GoogleClientSecrets getClientSecrets() {
 	return Oauth2Bigquery.clientSecrets;
+    }
+
+    public static String getservicepath() {
+	return Oauth2Bigquery.servicepath;
     }
 
     /**

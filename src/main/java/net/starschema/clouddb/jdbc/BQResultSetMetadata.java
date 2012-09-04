@@ -22,7 +22,6 @@ package net.starschema.clouddb.jdbc;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
@@ -54,28 +53,31 @@ class BQResultsetMetaData implements ResultSetMetaData {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public String getCatalogName(int column) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "getCatalogName(int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public String getColumnClassName(int column) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "getColumnClassName(int)");
     }
 
     /** {@inheritDoc} */
+    @Override
     public int getColumnCount() throws SQLException {
 	TableSchema schema = this.result.getSchema();
 	List<TableFieldSchema> schemafieldlist = null;
@@ -92,16 +94,19 @@ class BQResultsetMetaData implements ResultSetMetaData {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public int getColumnDisplaySize(int column) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "getColumnDisplaySize(int)");
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getColumnLabel(int column) throws SQLException {
 
 	if (this.getColumnCount() == 0)
@@ -110,19 +115,21 @@ class BQResultsetMetaData implements ResultSetMetaData {
 	    return this.result.getSchema().getFields().get(column - 1)
 		    .getName();
 	} catch (IndexOutOfBoundsException e) {
-	    throw new SQLException(e);
+	    throw new BQSQLException(e);
 	}
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getColumnName(int column) throws SQLException {
 	if (this.getColumnCount() == 0)
-	    throw new IndexOutOfBoundsException();
+	    throw new BQSQLException("getColumnName(int)",
+		    new IndexOutOfBoundsException());
 	try {
 	    return this.result.getSchema().getFields().get(column - 1)
 		    .getName();
 	} catch (IndexOutOfBoundsException e) {
-	    throw new SQLException(e);
+	    throw new BQSQLException("getColumnName(int)", e);
 	}
     }
 
@@ -134,6 +141,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * java.sql.Types.INTEGER<br>
      * java.sql.Types.VARCHAR
      * */
+    @Override
     public int getColumnType(int column) throws SQLException {
 	if (this.getColumnCount() == 0)
 	    return 0;
@@ -142,7 +150,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
 	    Columntype = this.result.getSchema().getFields().get(column - 1)
 		    .getType();
 	} catch (IndexOutOfBoundsException e) {
-	    throw new SQLException(e);
+	    throw new BQSQLException("getColumnType(int)", e);
 	}
 
 	if (Columntype.equals("FLOAT"))
@@ -158,20 +166,23 @@ class BQResultsetMetaData implements ResultSetMetaData {
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getColumnTypeName(int column) throws SQLException {
 	if (this.getColumnCount() == 0)
-	    throw new IndexOutOfBoundsException();
+	    throw new BQSQLException("getcolumnTypeName(int)",
+		    new IndexOutOfBoundsException());
 	String Columntype = "";
 	try {
 	    Columntype = this.result.getSchema().getFields().get(column - 1)
 		    .getType();
 	} catch (IndexOutOfBoundsException e) {
-	    throw new SQLException(e);
+	    throw new BQSQLException("getColumnTypeName(int)", e);
 	}
 	return Columntype;
     }
 
     /** {@inheritDoc} */
+    @Override
     public int getPrecision(int column) throws SQLException {
 	if (this.getColumnCount() == 0)
 	    return 0;
@@ -180,7 +191,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
 	    Columntype = this.result.getSchema().getFields().get(column - 1)
 		    .getType();
 	} catch (IndexOutOfBoundsException e) {
-	    throw new SQLException(e);
+	    throw new BQSQLException("getPrecision(int)", e);
 	}
 
 	if (Columntype.equals("FLOAT"))
@@ -199,49 +210,53 @@ class BQResultsetMetaData implements ResultSetMetaData {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public int getScale(int column) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "getScale(int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public String getSchemaName(int column) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "getSchemaName(int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public String getTableName(int column) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "getTableName(int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public boolean isAutoIncrement(int column) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "isAutoIncrement(int)");
     }
 
     /**
@@ -252,6 +267,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * 
      * @return false
      */
+    @Override
     public boolean isCaseSensitive(int column) throws SQLException {
 	// Google bigquery is case insensitive
 	return false;
@@ -260,13 +276,14 @@ class BQResultsetMetaData implements ResultSetMetaData {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public boolean isCurrency(int column) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "isCurrency(int)");
     }
 
     /**
@@ -277,6 +294,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * 
      * @return false
      */
+    @Override
     public boolean isDefinitelyWritable(int column) throws SQLException {
 	return false;
     }
@@ -289,6 +307,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * 
      * @return ResultSetMetaData.columnNullable
      */
+    @Override
     public int isNullable(int column) throws SQLException {
 	return ResultSetMetaData.columnNullable;
     }
@@ -301,6 +320,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * 
      * @return true
      */
+    @Override
     public boolean isReadOnly(int column) throws SQLException {
 	return true;
     }
@@ -308,25 +328,27 @@ class BQResultsetMetaData implements ResultSetMetaData {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Everything can be in Where.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @return true
      */
+    @Override
     public boolean isSearchable(int column) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	return true;
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Partly implemented.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @return false;
      */
+    @Override
     public boolean isSigned(int column) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	return false;
     }
 
     /**
@@ -337,6 +359,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * 
      * @return false
      */
+    @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
 	return false;
     }
@@ -349,6 +372,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * 
      * @return false
      */
+    @Override
     public boolean isWritable(int column) throws SQLException {
 	return false;
     }
@@ -362,7 +386,8 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * @throws SQLException
      *             always
      */
+    @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-	throw new SQLException("Not found");
+	throw new BQSQLException("Not found");
     }
 }

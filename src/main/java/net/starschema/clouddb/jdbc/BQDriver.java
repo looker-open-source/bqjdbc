@@ -63,13 +63,12 @@ public class BQDriver implements java.sql.Driver {
 
     /** Registers the driver with the drivermanager */
     static {
-	logger = Logger.getLogger("BQDriver");
+	BQDriver.logger = Logger.getLogger("BQDriver");
 	try {
-	    
-	    // Register the BQDriver with DriverManager
+	    BQDriver.logger.debug("Registering the driver");
 	    BQDriver driverInst = new BQDriver();
 	    DriverManager.registerDriver(driverInst);
-	    logger.info("Registering the driver");
+	    BQDriver.logger.info("Registered the driver");
 	} catch (Exception e) {
 	}
     }
@@ -98,6 +97,7 @@ public class BQDriver implements java.sql.Driver {
     }
 
     /** {@inheritDoc} */
+    @Override
     public boolean acceptsURL(String url) throws SQLException {
 	return url.startsWith(BQDriver.URL_PREFIX);
     }
@@ -108,24 +108,25 @@ public class BQDriver implements java.sql.Driver {
      * This method create a new BQconnection and then returns it
      * </p>
      */
+    @Override
     public Connection connect(String url, Properties loginProp)
 	    throws SQLException {
 	BQConnection localConInstance = null;
 
-	if (this.acceptsURL(url)) {
+	if (this.acceptsURL(url))
 	    localConInstance = new BQConnection(url, loginProp);
-
-	}
 
 	return localConInstance;
     }
 
     /** {@inheritDoc} */
+    @Override
     public int getMajorVersion() {
 	return BQDriver.MAJOR_VERSION;
     }
 
     /** {@inheritDoc} */
+    @Override
     public int getMinorVersion() {
 	return BQDriver.MINOR_VERSION;
     }
@@ -138,6 +139,7 @@ public class BQDriver implements java.sql.Driver {
      * 
      * @return a default DriverPropertyInfo
      */
+    @Override
     public java.sql.DriverPropertyInfo[] getPropertyInfo(String url,
 	    Properties loginProps) throws SQLException {
 	return new DriverPropertyInfo[0];
@@ -149,6 +151,7 @@ public class BQDriver implements java.sql.Driver {
      * Always returns false, since the driver is not jdbcCompliant
      * </p>
      */
+    @Override
     public boolean jdbcCompliant() {
 	return false;
     }

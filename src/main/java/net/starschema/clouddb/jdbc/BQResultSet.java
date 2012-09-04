@@ -69,12 +69,12 @@ public class BQResultSet extends ScrollableResultset<Object> implements
     @Override
     public int findColumn(String columnLabel) throws SQLException {
 	if (this.isClosed())
-	    throw new SQLException("This Resultset is Closed");
+	    throw new BQSQLException("This Resultset is Closed");
 	int columncount = this.getMetaData().getColumnCount();
 	for (int i = 1; i <= columncount; i++)
 	    if (this.getMetaData().getCatalogName(i).equals(columnLabel))
 		return i;
-	SQLException e = new SQLException("No Such column labeled: "
+	SQLException e = new BQSQLException("No Such column labeled: "
 		+ columnLabel);
 	throw e;
     }
@@ -83,7 +83,7 @@ public class BQResultSet extends ScrollableResultset<Object> implements
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
 	if (this.isClosed())
-	    throw new SQLException("This Resultset is Closed");
+	    throw new BQSQLException("This Resultset is Closed");
 	return new BQResultsetMetaData(this.Result);
     }
 
@@ -92,13 +92,13 @@ public class BQResultSet extends ScrollableResultset<Object> implements
     public Object getObject(int columnIndex) throws SQLException {
 	this.closestrm();
 	if (this.isClosed())
-	    throw new SQLException("This Resultset is Closed");
+	    throw new BQSQLException("This Resultset is Closed");
 	this.ThrowCursorNotValidExeption();
 	if (this.RowsofResult == null)
-	    throw new SQLException("There are no rows in this Resultset");
+	    throw new BQSQLException("There are no rows in this Resultset");
 	if (this.getMetaData().getColumnCount() < columnIndex
 		|| columnIndex < 1)
-	    throw new SQLException("ColumnIndex is not valid");
+	    throw new BQSQLException("ColumnIndex is not valid");
 	String Columntype = this.Result.getSchema().getFields()
 		.get(columnIndex - 1).getType();
 	String result = ((TableRow) this.RowsofResult[this.Cursor]).getF()
@@ -118,9 +118,9 @@ public class BQResultSet extends ScrollableResultset<Object> implements
 		else if (Columntype.equals("STRING"))
 		    return (result);
 		else
-		    throw new SQLException("Unsupported Type");
+		    throw new BQSQLException("Unsupported Type");
 	    } catch (NumberFormatException e) {
-		throw new SQLException(e);
+		throw new BQSQLException(e);
 	    }
 	}
     }
@@ -137,7 +137,7 @@ public class BQResultSet extends ScrollableResultset<Object> implements
 	this.closestrm();
 	this.ThrowCursorNotValidExeption();
 	if (this.isClosed())
-	    throw new SQLException("This Resultset is Closed");
+	    throw new BQSQLException("This Resultset is Closed");
 	String result = ((TableRow) this.RowsofResult[this.Cursor]).getF()
 		.get(columnIndex - 1).getV();
 	if (result == null)

@@ -19,6 +19,8 @@
 
 package net.starschema.clouddb.jdbc;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -31,9 +33,9 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.NClob;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
@@ -46,6 +48,7 @@ import java.util.Properties;
 
 import net.starschema.clouddb.cmdlineverification.Oauth2Bigquery;
 
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
@@ -91,11 +94,21 @@ public class BQConnection implements Connection {
      * @throws SQLException
      */
     public BQConnection(String url, Properties loginProp) throws SQLException {
-	PropertyConfigurator.configure("log4j.properties");
-	logger = Logger.getLogger("BQConnection");
-	URLPART = url;
+	try{
+	    //PropertyConfigurator.configure(getClass().getResourceAsStream("log4j.properties"));
+	    PropertyConfigurator.configure(new FileInputStream("C:/install/log4j.properties"));
+	}
+	catch (NullPointerException e){	    
+	    BasicConfigurator.configure();
+	    throw new BQSQLException("log4j.properties not found",e);
+	} catch (FileNotFoundException e) {
+	    BasicConfigurator.configure();
+	    throw new BQSQLException("log4j.properties not found",e);
+	}
+	this.logger = Logger.getLogger("BQConnection");
+	this.URLPART = url;
 	this.isclosed = false;
-	 
+
 	if (url.contains("&user=") && url.contains("&password=")) {
 	    int passwordindex = url.indexOf("&password=");
 	    int userindex = url.indexOf("&user=");
@@ -109,7 +122,7 @@ public class BQConnection implements Connection {
 			url.substring(passwordindex + "&password=".length()),
 			"UTF-8");
 	    } catch (UnsupportedEncodingException e2) {
-		throw new SQLException(e2);
+		throw new BQSQLException(e2);
 	    }
 
 	    String projectid;
@@ -117,33 +130,17 @@ public class BQConnection implements Connection {
 		projectid = URLDecoder.decode(
 			url.substring(url.lastIndexOf(":") + 1), "UTF-8");
 	    } catch (UnsupportedEncodingException e1) {
-		throw new SQLException(e1);
+		throw new BQSQLException(e1);
 	    }
 	    if (url.contains("?withServiceAccount=true")) {
 		this.projectid = projectid.substring(0, projectid.indexOf("?"));
-		/*try {*/
-		    throw new SQLException(id+"\n"+key+"\n"+this.projectid);
-		    /*this.logger.error("2");
-		    this.logger.error(id);
-		    this.logger.error(key);
-		    this.logger.error(this.projectid);
-		    this.bigquery = Oauth2Bigquery.authorizeviaservice(id, key);
-		} catch (GeneralSecurityException e) {
-		    throw new SQLException(e);
-		} catch (IOException e) {
-		    throw new SQLException(e);
-		}*/
-	    } else if (url.contains("?withServiceAccount=false")) {
-		this.projectid = projectid.substring(0, projectid.indexOf("?"));
-		this.logger.info("3");
-		this.logger.info(id);
-		this.logger.info(key);
-		this.logger.info(this.projectid);
+		throw new BQSQLException(id + "\n" + key + "\n"
+			+ this.projectid);
+	    } else if (url.contains("?withServiceAccount=false"))
 		this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
-	    } else {
-		throw new SQLException(
+	    else
+		throw new BQSQLException(
 			"The URL is not in the right format!, ?withServiceAccount must be set to true or false");
-	    }
 	} else {
 
 	    String id = loginProp.getProperty("user");
@@ -153,39 +150,25 @@ public class BQConnection implements Connection {
 		projectid = URLDecoder.decode(
 			url.substring(url.lastIndexOf(":") + 1), "UTF-8");
 	    } catch (UnsupportedEncodingException e1) {
-		throw new SQLException(e1);
+		throw new BQSQLException(e1);
 	    }
-
-	   
-	   
 
 	    if (url.contains("?withServiceAccount=true")) {
 		this.projectid = projectid.substring(0, projectid.indexOf("?"));
 		try {
-		    this.logger.info("1");
-		    this.logger.info(id);
-		    this.logger.info(key);
-		    this.logger.info(this.projectid);
 		    this.bigquery = Oauth2Bigquery.authorizeviaservice(id, key);
 		} catch (GeneralSecurityException e) {
-		    throw new SQLException(e);
+		    throw new BQSQLException(e);
 		} catch (IOException e) {
-		    throw new SQLException(e);
+		    throw new BQSQLException(e);
 		}
 	    } else {
-		if (url.contains("?withServiceAccount=false")) {
+		if (url.contains("?withServiceAccount=false"))
 		    this.projectid = projectid.substring(0,
 			    projectid.indexOf("?"));
-		    
-		} else {
+		else
 		    this.projectid = projectid;
-		}
-		this.logger.info("4");
-			this.logger.info(id);
-		    this.logger.info(key);
-		    this.logger.info(this.projectid);
-		this.bigquery = Oauth2Bigquery.authorizeviainstalled(id,
-			    key);
+		this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
 	    }
 	}
     }
@@ -196,9 +179,10 @@ public class BQConnection implements Connection {
      * Uses SQLWarningList.clear() to clear all warnings
      * </p>
      */
+    @Override
     public void clearWarnings() throws SQLException {
 	if (this.isclosed)
-	    throw new SQLException("Connection is closed.");
+	    throw new BQSQLException("Connection is closed.");
 	this.SQLWarningList.clear();
     }
 
@@ -209,6 +193,7 @@ public class BQConnection implements Connection {
      * already closed else no operation is performed
      * </p>
      */
+    @Override
     public void close() throws SQLException {
 	if (!this.isclosed) {
 	    this.bigquery = null;
@@ -227,74 +212,81 @@ public class BQConnection implements Connection {
      *             There is no Commit in Google BigQuery + Connection Status
      *             </p>
      */
+    @Override
     public void commit() throws SQLException {
 	if (this.isclosed)
-	    throw new SQLException(
+	    throw new BQSQLException(
 		    "There's no commit in Google BigQuery.\nConnection Status: Closed.");
 	else
-	    throw new SQLException(
+	    throw new BQSQLException(
 		    "There's no commit in Google BigQuery.\nConnection Status: Open.");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Array createArrayOf(String typeName, Object[] elements)
 	    throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "createArrayOf(String typeName, Object[] elements)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Blob createBlob() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "createBlob()");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Clob createClob() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "createClob()");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public NClob createNClob() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "createNClob()");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public SQLXML createSQLXML() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "createSQLXML()");
     }
 
     /**
@@ -307,62 +299,70 @@ public class BQConnection implements Connection {
      * @throws SQLException
      *             if the Connection is closed
      */
+    @Override
     public Statement createStatement() throws SQLException {
 	if (this.isclosed)
-	    throw new SQLException("Connection is closed.");
+	    throw new BQSQLException("Connection is closed.");
 	return new BQStatement(this.projectid, this);
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency)
 	    throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "createStatement(int, int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Statement createStatement(int resultSetType,
 	    int resultSetConcurrency, int resultSetHoldability)
 	    throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "createStaement(int,int,int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Struct createStruct(String typeName, Object[] attributes)
 	    throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "createStruct(string,object[])");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * There's no commit, so we return with a false.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @return false;
      */
+    @Override
     public boolean getAutoCommit() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	return false;
     }
 
     /**
@@ -380,6 +380,7 @@ public class BQConnection implements Connection {
      * 
      * @return projectid Contained in this Connection instance
      */
+    @Override
     public String getCatalog() throws SQLException {
 	return this.projectid;
     }
@@ -387,37 +388,40 @@ public class BQConnection implements Connection {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Properties getClientInfo() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "getClientInfo()");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public String getClientInfo(String name) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * There's no commit.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @return CLOSE_CURSORS_AT_COMMIT
      */
+    @Override
     public int getHoldability() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
 
     /**
@@ -430,6 +434,7 @@ public class BQConnection implements Connection {
      * @return a new BQDatabaseMetadata object constructed from this Connection
      *         instance
      */
+    @Override
     public DatabaseMetaData getMetaData() throws SQLException {
 	BQDatabaseMetadata metadata = new BQDatabaseMetadata(this);
 	return metadata;
@@ -445,25 +450,27 @@ public class BQConnection implements Connection {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Transactions are not supported.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @return TRANSACTION_NONE
      */
+    @Override
     public int getTransactionIsolation() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	return java.sql.Connection.TRANSACTION_NONE;
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "getTypeMap()");
     }
 
     /**
@@ -485,18 +492,18 @@ public class BQConnection implements Connection {
      * @return SQLWarning (The First item Contained in SQLWarningList) + all
      *         others chained to it
      */
+    @Override
     public SQLWarning getWarnings() throws SQLException {
 	if (this.isclosed)
-	    throw new SQLException("Connection is closed.");
+	    throw new BQSQLException("Connection is closed.");
 	if (this.SQLWarningList.isEmpty())
 	    return null;
 
 	SQLWarning forreturn = this.SQLWarningList.get(0);
 	this.SQLWarningList.remove(0);
-	if (!SQLWarningList.isEmpty())
-	    for (SQLWarning warning : SQLWarningList) {
+	if (!this.SQLWarningList.isEmpty())
+	    for (SQLWarning warning : this.SQLWarningList)
 		forreturn.setNextWarning(warning);
-	    }
 	return forreturn;
     }
 
@@ -506,6 +513,7 @@ public class BQConnection implements Connection {
      * returns the status of isclosed boolean
      * </p>
      */
+    @Override
     public boolean isClosed() throws SQLException {
 	return this.isclosed;
     }
@@ -513,13 +521,14 @@ public class BQConnection implements Connection {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * The driver is read only at this stage.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @return true
      */
+    @Override
     public boolean isReadOnly() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	return true;
     }
 
     /**
@@ -532,12 +541,13 @@ public class BQConnection implements Connection {
      * 
      * @throws SQLException
      */
+    @Override
     public boolean isValid(int timeout) throws SQLException {
 	if (this.isclosed)
 	    return false;
 	if (timeout < 0)
-	    throw new SQLException(
-		    "Timeout value can't be negative. ie. it must be 0 or above");
+	    throw new BQSQLException(
+		    "Timeout value can't be negative. ie. it must be 0 or above; timeout value is: "+String.valueOf(timeout));
 	try {
 	    this.bigquery.datasets().list(this.projectid).execute();
 	} catch (IOException e) {
@@ -554,6 +564,7 @@ public class BQConnection implements Connection {
      * 
      * @return false
      */
+    @Override
     public boolean isWrapperFor(Class<?> arg0) throws SQLException {
 	// TODO Implement
 	return false;
@@ -562,294 +573,330 @@ public class BQConnection implements Connection {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public String nativeSQL(String sql) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "nativeSQL(string)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "prepareCall(string)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public CallableStatement prepareCall(String sql, int resultSetType,
 	    int resultSetConcurrency) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "prepareCall(String,int,int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public CallableStatement prepareCall(String sql, int resultSetType,
 	    int resultSetConcurrency, int resultSetHoldability)
 	    throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "prepareCall(string,int,int,int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "prepareStatement(string)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
 	    throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "prepareStatement(string,int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType,
 	    int resultSetConcurrency) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "prepareStatement(string,int,int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType,
 	    int resultSetConcurrency, int resultSetHoldability)
 	    throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "prepareStatement(String,int,int,int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
 	    throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "prepareStatement(String,int[])");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public PreparedStatement prepareStatement(String sql, String[] columnNames)
 	    throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "prepareStatement(String,String[])");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "releaseSavepoint(Savepoint)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void rollback() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "rollback()");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void rollback(Savepoint savepoint) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "rollback(savepoint)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "setAutoCommit(bool)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void setCatalog(String catalog) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "setCatalog(catalog)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void setClientInfo(Properties properties)
 	    throws SQLClientInfoException {
 	SQLClientInfoException e = new SQLClientInfoException();
-	e.setNextException(new SQLFeatureNotSupportedException());
+	e.setNextException(new BQSQLException(
+		"Not implemented. setClientInfo(properties)"));
 	throw e;
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void setClientInfo(String name, String value)
 	    throws SQLClientInfoException {
 	SQLClientInfoException e = new SQLClientInfoException();
-	e.setNextException(new SQLFeatureNotSupportedException());
+	e.setNextException(new BQSQLException(
+		"Not implemented. setClientInfo(properties)"));
 	throw e;
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void setHoldability(int holdability) throws SQLException {
 	if (this.isclosed)
-	    throw new SQLException("Connection is closed.");
-	throw new SQLFeatureNotSupportedException();
+	    throw new BQSQLException("Connection is closed.");
+	throw new BQSQLException("Not implemented." + "setHoldability(int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "setReadOnly(bool)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Savepoint setSavepoint() throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "setSavepoint()");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public Savepoint setSavepoint(String name) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented." + "setSavepoint(String)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void setTransactionIsolation(int level) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "setTransactionIsolation(int)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Throws SQLFeatureNotSupportedException
+     * Not implemented yet.
      * </p>
      * 
-     * @throws SQLFeatureNotSupportedException
+     * @throws BQSQLException
      */
+    @Override
     public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+	throw new BQSQLException("Not implemented."
+		+ "setTypeMap(Map<String, Class<?>>");
     }
 
     /**
@@ -862,8 +909,9 @@ public class BQConnection implements Connection {
      * @throws SQLException
      *             Always
      */
+    @Override
     public <T> T unwrap(Class<T> arg0) throws SQLException {
-	throw new SQLException("Not found");
+	throw new BQSQLException("Not found");
     }
 
 }
