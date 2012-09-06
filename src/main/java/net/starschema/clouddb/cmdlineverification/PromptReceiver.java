@@ -28,7 +28,7 @@ public class PromptReceiver implements VerificationCodeReceiver {
 
     @Override
     public String getRedirectUri() {
-	return GoogleOAuthConstants.OOB_REDIRECT_URI;
+        return GoogleOAuthConstants.OOB_REDIRECT_URI;
     }
 
     @Override
@@ -37,11 +37,11 @@ public class PromptReceiver implements VerificationCodeReceiver {
 
     @Override
     public String waitForCode() {
-	String code;
-	do {
-	    System.out.print("Please enter code: ");
-	    code = new Scanner(System.in).nextLine();
-	} while (code.isEmpty());
-	return code;
+        String code;
+        do {
+            System.out.print("Please enter code: ");
+            code = new Scanner(System.in).nextLine();
+        } while (code.isEmpty());
+        return code;
     }
 }

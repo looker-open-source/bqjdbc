@@ -34,11 +34,11 @@ public class CmdlineUtils {
 
     /** Returns the global instance of the HTTP transport. */
     public static HttpTransport getHttpTransport() {
-	return CmdlineUtils.HTTP_TRANSPORT;
+        return CmdlineUtils.HTTP_TRANSPORT;
     }
 
     /** Returns the global instance of the JSON factory. */
     public static JsonFactory getJsonFactory() {
-	return CmdlineUtils.JSON_FACTORY;
+        return CmdlineUtils.JSON_FACTORY;
     }
 }

@@ -19,9 +19,8 @@
 
 package net.starschema.clouddb.jdbc;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.GeneralSecurityException;
@@ -62,6 +61,9 @@ import com.google.api.services.bigquery.Bigquery;
  * 
  */
 public class BQConnection implements Connection {
+    /** Variable to store auto commit mode */
+    private boolean autoCommitEnabled = false;
+
     /** Instance log4j.Logger */
     Logger logger;
     /**
@@ -94,83 +96,96 @@ public class BQConnection implements Connection {
      * @throws SQLException
      */
     public BQConnection(String url, Properties loginProp) throws SQLException {
-	try{
-	    //PropertyConfigurator.configure(getClass().getResourceAsStream("log4j.properties"));
-	    PropertyConfigurator.configure(new FileInputStream("C:/install/log4j.properties"));
-	}
-	catch (NullPointerException e){	    
-	    BasicConfigurator.configure();
-	    throw new BQSQLException("log4j.properties not found",e);
-	} catch (FileNotFoundException e) {
-	    BasicConfigurator.configure();
-	    throw new BQSQLException("log4j.properties not found",e);
-	}
-	this.logger = Logger.getLogger("BQConnection");
-	this.URLPART = url;
-	this.isclosed = false;
+        try {
+            // PropertyConfigurator.configure(getClass().getResourceAsStream("log4j.properties"));
 
-	if (url.contains("&user=") && url.contains("&password=")) {
-	    int passwordindex = url.indexOf("&password=");
-	    int userindex = url.indexOf("&user=");
+            InputStream inputStream = this.getClass().getClassLoader()
+                    .getResourceAsStream("log4j.properties");
+            Properties properties = new Properties();
+            properties.load(inputStream);
+            inputStream.close();
+            PropertyConfigurator.configure(properties);
+        } catch (NullPointerException e) {
+            BasicConfigurator.configure();
+            throw new BQSQLException("log4j.properties not found", e);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        this.logger = Logger.getLogger("BQConnection");
+        this.URLPART = url;
+        this.isclosed = false;
 
-	    String id;
-	    String key;
-	    try {
-		id = URLDecoder.decode(url.substring(
-			userindex + "&user=".length(), passwordindex), "UTF-8");
-		key = URLDecoder.decode(
-			url.substring(passwordindex + "&password=".length()),
-			"UTF-8");
-	    } catch (UnsupportedEncodingException e2) {
-		throw new BQSQLException(e2);
-	    }
+        if (url.contains("&user=") && url.contains("&password=")) {
+            int passwordindex = url.indexOf("&password=");
+            int userindex = url.indexOf("&user=");
 
-	    String projectid;
-	    try {
-		projectid = URLDecoder.decode(
-			url.substring(url.lastIndexOf(":") + 1), "UTF-8");
-	    } catch (UnsupportedEncodingException e1) {
-		throw new BQSQLException(e1);
-	    }
-	    if (url.contains("?withServiceAccount=true")) {
-		this.projectid = projectid.substring(0, projectid.indexOf("?"));
-		throw new BQSQLException(id + "\n" + key + "\n"
-			+ this.projectid);
-	    } else if (url.contains("?withServiceAccount=false"))
-		this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
-	    else
-		throw new BQSQLException(
-			"The URL is not in the right format!, ?withServiceAccount must be set to true or false");
-	} else {
+            String id;
+            String key;
+            try {
+                id = URLDecoder.decode(url.substring(
+                        userindex + "&user=".length(), passwordindex), "UTF-8");
+                key = URLDecoder.decode(
+                        url.substring(passwordindex + "&password=".length()),
+                        "UTF-8");
+            } catch (UnsupportedEncodingException e2) {
+                throw new BQSQLException(e2);
+            }
 
-	    String id = loginProp.getProperty("user");
-	    String key = loginProp.getProperty("password");
-	    String projectid;
-	    try {
-		projectid = URLDecoder.decode(
-			url.substring(url.lastIndexOf(":") + 1), "UTF-8");
-	    } catch (UnsupportedEncodingException e1) {
-		throw new BQSQLException(e1);
-	    }
+            String projectid;
+            try {
+                projectid = URLDecoder.decode(
+                        url.substring(url.lastIndexOf(":") + 1), "UTF-8");
+            } catch (UnsupportedEncodingException e1) {
+                throw new BQSQLException(e1);
+            }
+            if (url.contains("?withServiceAccount=true")) {
+                this.projectid = projectid.substring(0, projectid.indexOf("?"));
+                try {
+                    this.bigquery = Oauth2Bigquery.authorizeviaservice(id, key);
+                } catch (GeneralSecurityException e) {
+                    throw new BQSQLException(e);
+                } catch (IOException e) {
+                    throw new BQSQLException(e);
+                }
+            } else if (url.contains("?withServiceAccount=false")) {
+                this.projectid = projectid.substring(0, projectid.indexOf("?"));
+                this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
+            } else
+            {
+                this.projectid = projectid.substring(0, projectid.indexOf("&user"));
+                this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
+            }
+        } else {
 
-	    if (url.contains("?withServiceAccount=true")) {
-		this.projectid = projectid.substring(0, projectid.indexOf("?"));
-		try {
-		    this.bigquery = Oauth2Bigquery.authorizeviaservice(id, key);
-		} catch (GeneralSecurityException e) {
-		    throw new BQSQLException(e);
-		} catch (IOException e) {
-		    throw new BQSQLException(e);
-		}
-	    } else {
-		if (url.contains("?withServiceAccount=false"))
-		    this.projectid = projectid.substring(0,
-			    projectid.indexOf("?"));
-		else
-		    this.projectid = projectid;
-		this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
-	    }
-	}
+            String id = loginProp.getProperty("user");
+            String key = loginProp.getProperty("password");
+            String projectid;
+            try {
+                projectid = URLDecoder.decode(
+                        url.substring(url.lastIndexOf(":") + 1), "UTF-8");
+            } catch (UnsupportedEncodingException e1) {
+                throw new BQSQLException(e1);
+            }
+
+            if (url.contains("?withServiceAccount=true")) {
+                this.projectid = projectid.substring(0, projectid.indexOf("?"));
+                try {
+                    this.bigquery = Oauth2Bigquery.authorizeviaservice(id, key);
+                } catch (GeneralSecurityException e) {
+                    throw new BQSQLException(e);
+                } catch (IOException e) {
+                    throw new BQSQLException(e);
+                }
+            } else {
+                if (url.contains("?withServiceAccount=false"))
+                    this.projectid = projectid.substring(0,
+                            projectid.indexOf("?"));
+                else
+                    this.projectid = projectid;
+                this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
+            }
+        }
     }
 
     /**
@@ -181,9 +196,9 @@ public class BQConnection implements Connection {
      */
     @Override
     public void clearWarnings() throws SQLException {
-	if (this.isclosed)
-	    throw new BQSQLException("Connection is closed.");
-	this.SQLWarningList.clear();
+        if (this.isclosed)
+            throw new BQSQLException("Connection is closed.");
+        this.SQLWarningList.clear();
     }
 
     /**
@@ -195,10 +210,10 @@ public class BQConnection implements Connection {
      */
     @Override
     public void close() throws SQLException {
-	if (!this.isclosed) {
-	    this.bigquery = null;
-	    this.isclosed = true;
-	}
+        if (!this.isclosed) {
+            this.bigquery = null;
+            this.isclosed = true;
+        }
     }
 
     /**
@@ -214,12 +229,12 @@ public class BQConnection implements Connection {
      */
     @Override
     public void commit() throws SQLException {
-	if (this.isclosed)
-	    throw new BQSQLException(
-		    "There's no commit in Google BigQuery.\nConnection Status: Closed.");
-	else
-	    throw new BQSQLException(
-		    "There's no commit in Google BigQuery.\nConnection Status: Open.");
+        if (this.isclosed)
+            throw new BQSQLException(
+                    "There's no commit in Google BigQuery.\nConnection Status: Closed.");
+        else
+            throw new BQSQLException(
+                    "There's no commit in Google BigQuery.\nConnection Status: Open.");
     }
 
     /**
@@ -232,9 +247,9 @@ public class BQConnection implements Connection {
      */
     @Override
     public Array createArrayOf(String typeName, Object[] elements)
-	    throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "createArrayOf(String typeName, Object[] elements)");
+            throws SQLException {
+        throw new BQSQLException("Not implemented."
+                + "createArrayOf(String typeName, Object[] elements)");
     }
 
     /**
@@ -247,7 +262,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public Blob createBlob() throws SQLException {
-	throw new BQSQLException("Not implemented." + "createBlob()");
+        throw new BQSQLException("Not implemented." + "createBlob()");
     }
 
     /**
@@ -260,7 +275,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public Clob createClob() throws SQLException {
-	throw new BQSQLException("Not implemented." + "createClob()");
+        throw new BQSQLException("Not implemented." + "createClob()");
     }
 
     /**
@@ -273,7 +288,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public NClob createNClob() throws SQLException {
-	throw new BQSQLException("Not implemented." + "createNClob()");
+        throw new BQSQLException("Not implemented." + "createNClob()");
     }
 
     /**
@@ -286,7 +301,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public SQLXML createSQLXML() throws SQLException {
-	throw new BQSQLException("Not implemented." + "createSQLXML()");
+        throw new BQSQLException("Not implemented." + "createSQLXML()");
     }
 
     /**
@@ -301,9 +316,9 @@ public class BQConnection implements Connection {
      */
     @Override
     public Statement createStatement() throws SQLException {
-	if (this.isclosed)
-	    throw new BQSQLException("Connection is closed.");
-	return new BQStatement(this.projectid, this);
+        if (this.isclosed)
+            throw new BQSQLException("Connection is closed.");
+        return new BQStatement(this.projectid, this);
     }
 
     /**
@@ -316,9 +331,9 @@ public class BQConnection implements Connection {
      */
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency)
-	    throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "createStatement(int, int)");
+            throws SQLException {
+        if (this.isClosed()) throw new BQSQLException("The Connection is Closed");
+        return new BQStatement(this.projectid, this, resultSetType, resultSetConcurrency);
     }
 
     /**
@@ -331,10 +346,10 @@ public class BQConnection implements Connection {
      */
     @Override
     public Statement createStatement(int resultSetType,
-	    int resultSetConcurrency, int resultSetHoldability)
-	    throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "createStaement(int,int,int)");
+            int resultSetConcurrency, int resultSetHoldability)
+            throws SQLException {
+        throw new BQSQLException("Not implemented."
+                + "createStaement(int,int,int)");
     }
 
     /**
@@ -347,29 +362,29 @@ public class BQConnection implements Connection {
      */
     @Override
     public Struct createStruct(String typeName, Object[] attributes)
-	    throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "createStruct(string,object[])");
+            throws SQLException {
+        throw new BQSQLException("Not implemented."
+                + "createStruct(string,object[])");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * There's no commit, so we return with a false.
+     * Getter for autoCommitEnabled
      * </p>
      * 
-     * @return false;
+     * @return auto commit state;
      */
     @Override
     public boolean getAutoCommit() throws SQLException {
-	return false;
+        return autoCommitEnabled;
     }
 
     /**
      * Getter method for the authorized bigquery client
      */
     public Bigquery getBigquery() {
-	return this.bigquery;
+        return this.bigquery;
     }
 
     /**
@@ -382,7 +397,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public String getCatalog() throws SQLException {
-	return this.projectid;
+        return this.projectid;
     }
 
     /**
@@ -395,7 +410,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public Properties getClientInfo() throws SQLException {
-	throw new BQSQLException("Not implemented." + "getClientInfo()");
+        throw new BQSQLException("Not implemented." + "getClientInfo()");
     }
 
     /**
@@ -408,7 +423,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public String getClientInfo(String name) throws SQLException {
-	throw new BQSQLException("Not implemented." + "");
+        throw new BQSQLException("Not implemented." + "");
     }
 
     /**
@@ -421,7 +436,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public int getHoldability() throws SQLException {
-	return ResultSet.CLOSE_CURSORS_AT_COMMIT;
+        return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
 
     /**
@@ -436,15 +451,15 @@ public class BQConnection implements Connection {
      */
     @Override
     public DatabaseMetaData getMetaData() throws SQLException {
-	BQDatabaseMetadata metadata = new BQDatabaseMetadata(this);
-	return metadata;
+        BQDatabaseMetadata metadata = new BQDatabaseMetadata(this);
+        return metadata;
     }
 
     /**
      * Getter method for projectid
      */
     public String getprojectid() {
-	return this.projectid;
+        return this.projectid;
     }
 
     /**
@@ -457,7 +472,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public int getTransactionIsolation() throws SQLException {
-	return java.sql.Connection.TRANSACTION_NONE;
+        return java.sql.Connection.TRANSACTION_NONE;
     }
 
     /**
@@ -470,7 +485,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException {
-	throw new BQSQLException("Not implemented." + "getTypeMap()");
+        throw new BQSQLException("Not implemented." + "getTypeMap()");
     }
 
     /**
@@ -478,7 +493,7 @@ public class BQConnection implements Connection {
      * @return The URL which is in the JDBC drivers connection URL
      */
     public String getURLPART() {
-	return this.URLPART;
+        return this.URLPART;
     }
 
     /**
@@ -494,17 +509,17 @@ public class BQConnection implements Connection {
      */
     @Override
     public SQLWarning getWarnings() throws SQLException {
-	if (this.isclosed)
-	    throw new BQSQLException("Connection is closed.");
-	if (this.SQLWarningList.isEmpty())
-	    return null;
+        if (this.isclosed)
+            throw new BQSQLException("Connection is closed.");
+        if (this.SQLWarningList.isEmpty())
+            return null;
 
-	SQLWarning forreturn = this.SQLWarningList.get(0);
-	this.SQLWarningList.remove(0);
-	if (!this.SQLWarningList.isEmpty())
-	    for (SQLWarning warning : this.SQLWarningList)
-		forreturn.setNextWarning(warning);
-	return forreturn;
+        SQLWarning forreturn = this.SQLWarningList.get(0);
+        this.SQLWarningList.remove(0);
+        if (!this.SQLWarningList.isEmpty())
+            for (SQLWarning warning : this.SQLWarningList)
+                forreturn.setNextWarning(warning);
+        return forreturn;
     }
 
     /**
@@ -515,7 +530,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public boolean isClosed() throws SQLException {
-	return this.isclosed;
+        return this.isclosed;
     }
 
     /**
@@ -528,7 +543,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public boolean isReadOnly() throws SQLException {
-	return true;
+        return true;
     }
 
     /**
@@ -543,17 +558,18 @@ public class BQConnection implements Connection {
      */
     @Override
     public boolean isValid(int timeout) throws SQLException {
-	if (this.isclosed)
-	    return false;
-	if (timeout < 0)
-	    throw new BQSQLException(
-		    "Timeout value can't be negative. ie. it must be 0 or above; timeout value is: "+String.valueOf(timeout));
-	try {
-	    this.bigquery.datasets().list(this.projectid).execute();
-	} catch (IOException e) {
-	    return false;
-	}
-	return true;
+        if (this.isclosed)
+            return false;
+        if (timeout < 0)
+            throw new BQSQLException(
+                    "Timeout value can't be negative. ie. it must be 0 or above; timeout value is: "
+                            + String.valueOf(timeout));
+        try {
+            this.bigquery.datasets().list(this.projectid).execute();
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -566,21 +582,22 @@ public class BQConnection implements Connection {
      */
     @Override
     public boolean isWrapperFor(Class<?> arg0) throws SQLException {
-	// TODO Implement
-	return false;
+        // TODO Implement
+        return false;
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Not implemented yet.
+     * We returns the original sql statement
      * </p>
      * 
-     * @throws BQSQLException
+     * @return sql - the original statement
      */
     @Override
     public String nativeSQL(String sql) throws SQLException {
-	throw new BQSQLException("Not implemented." + "nativeSQL(string)");
+        return sql;
+        // TODO
     }
 
     /**
@@ -593,7 +610,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
-	throw new BQSQLException("Not implemented." + "prepareCall(string)");
+        throw new BQSQLException("Not implemented." + "prepareCall(string)");
     }
 
     /**
@@ -606,9 +623,9 @@ public class BQConnection implements Connection {
      */
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType,
-	    int resultSetConcurrency) throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "prepareCall(String,int,int)");
+            int resultSetConcurrency) throws SQLException {
+        throw new BQSQLException("Not implemented."
+                + "prepareCall(String,int,int)");
     }
 
     /**
@@ -621,10 +638,10 @@ public class BQConnection implements Connection {
      */
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType,
-	    int resultSetConcurrency, int resultSetHoldability)
-	    throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "prepareCall(string,int,int,int)");
+            int resultSetConcurrency, int resultSetHoldability)
+            throws SQLException {
+        throw new BQSQLException("Not implemented."
+                + "prepareCall(string,int,int,int)");
     }
 
     /**
@@ -637,8 +654,8 @@ public class BQConnection implements Connection {
      */
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "prepareStatement(string)");
+        throw new BQSQLException("Not implemented."
+                + "prepareStatement(string)");
     }
 
     /**
@@ -651,9 +668,9 @@ public class BQConnection implements Connection {
      */
     @Override
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
-	    throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "prepareStatement(string,int)");
+            throws SQLException {
+        throw new BQSQLException("Not implemented."
+                + "prepareStatement(string,int)");
     }
 
     /**
@@ -666,9 +683,9 @@ public class BQConnection implements Connection {
      */
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType,
-	    int resultSetConcurrency) throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "prepareStatement(string,int,int)");
+            int resultSetConcurrency) throws SQLException {
+        throw new BQSQLException("Not implemented."
+                + "prepareStatement(string,int,int)");
     }
 
     /**
@@ -681,10 +698,10 @@ public class BQConnection implements Connection {
      */
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType,
-	    int resultSetConcurrency, int resultSetHoldability)
-	    throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "prepareStatement(String,int,int,int)");
+            int resultSetConcurrency, int resultSetHoldability)
+            throws SQLException {
+        throw new BQSQLException("Not implemented."
+                + "prepareStatement(String,int,int,int)");
     }
 
     /**
@@ -697,9 +714,9 @@ public class BQConnection implements Connection {
      */
     @Override
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
-	    throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "prepareStatement(String,int[])");
+            throws SQLException {
+        throw new BQSQLException("Not implemented."
+                + "prepareStatement(String,int[])");
     }
 
     /**
@@ -712,9 +729,9 @@ public class BQConnection implements Connection {
      */
     @Override
     public PreparedStatement prepareStatement(String sql, String[] columnNames)
-	    throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "prepareStatement(String,String[])");
+            throws SQLException {
+        throw new BQSQLException("Not implemented."
+                + "prepareStatement(String,String[])");
     }
 
     /**
@@ -727,8 +744,8 @@ public class BQConnection implements Connection {
      */
     @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "releaseSavepoint(Savepoint)");
+        throw new BQSQLException("Not implemented."
+                + "releaseSavepoint(Savepoint)");
     }
 
     /**
@@ -741,7 +758,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public void rollback() throws SQLException {
-	throw new BQSQLException("Not implemented." + "rollback()");
+        throw new BQSQLException("Not implemented." + "rollback()");
     }
 
     /**
@@ -754,20 +771,20 @@ public class BQConnection implements Connection {
      */
     @Override
     public void rollback(Savepoint savepoint) throws SQLException {
-	throw new BQSQLException("Not implemented." + "rollback(savepoint)");
+        throw new BQSQLException("Not implemented." + "rollback(savepoint)");
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Not implemented yet.
+     * Setter for autoCommitEnabled
      * </p>
      * 
-     * @throws BQSQLException
+     * 
      */
     @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-	throw new BQSQLException("Not implemented." + "setAutoCommit(bool)");
+        autoCommitEnabled = autoCommit;
     }
 
     /**
@@ -780,7 +797,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public void setCatalog(String catalog) throws SQLException {
-	throw new BQSQLException("Not implemented." + "setCatalog(catalog)");
+        throw new BQSQLException("Not implemented." + "setCatalog(catalog)");
     }
 
     /**
@@ -793,11 +810,11 @@ public class BQConnection implements Connection {
      */
     @Override
     public void setClientInfo(Properties properties)
-	    throws SQLClientInfoException {
-	SQLClientInfoException e = new SQLClientInfoException();
-	e.setNextException(new BQSQLException(
-		"Not implemented. setClientInfo(properties)"));
-	throw e;
+            throws SQLClientInfoException {
+        SQLClientInfoException e = new SQLClientInfoException();
+        e.setNextException(new BQSQLException(
+                "Not implemented. setClientInfo(properties)"));
+        throw e;
     }
 
     /**
@@ -810,11 +827,11 @@ public class BQConnection implements Connection {
      */
     @Override
     public void setClientInfo(String name, String value)
-	    throws SQLClientInfoException {
-	SQLClientInfoException e = new SQLClientInfoException();
-	e.setNextException(new BQSQLException(
-		"Not implemented. setClientInfo(properties)"));
-	throw e;
+            throws SQLClientInfoException {
+        SQLClientInfoException e = new SQLClientInfoException();
+        e.setNextException(new BQSQLException(
+                "Not implemented. setClientInfo(properties)"));
+        throw e;
     }
 
     /**
@@ -827,9 +844,9 @@ public class BQConnection implements Connection {
      */
     @Override
     public void setHoldability(int holdability) throws SQLException {
-	if (this.isclosed)
-	    throw new BQSQLException("Connection is closed.");
-	throw new BQSQLException("Not implemented." + "setHoldability(int)");
+        if (this.isclosed)
+            throw new BQSQLException("Connection is closed.");
+        throw new BQSQLException("Not implemented." + "setHoldability(int)");
     }
 
     /**
@@ -842,7 +859,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-	throw new BQSQLException("Not implemented." + "setReadOnly(bool)");
+        throw new BQSQLException("Not implemented." + "setReadOnly(bool)");
     }
 
     /**
@@ -855,7 +872,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public Savepoint setSavepoint() throws SQLException {
-	throw new BQSQLException("Not implemented." + "setSavepoint()");
+        throw new BQSQLException("Not implemented." + "setSavepoint()");
     }
 
     /**
@@ -868,7 +885,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public Savepoint setSavepoint(String name) throws SQLException {
-	throw new BQSQLException("Not implemented." + "setSavepoint(String)");
+        throw new BQSQLException("Not implemented." + "setSavepoint(String)");
     }
 
     /**
@@ -881,8 +898,8 @@ public class BQConnection implements Connection {
      */
     @Override
     public void setTransactionIsolation(int level) throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "setTransactionIsolation(int)");
+        throw new BQSQLException("Not implemented."
+                + "setTransactionIsolation(int)");
     }
 
     /**
@@ -895,8 +912,8 @@ public class BQConnection implements Connection {
      */
     @Override
     public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "setTypeMap(Map<String, Class<?>>");
+        throw new BQSQLException("Not implemented."
+                + "setTypeMap(Map<String, Class<?>>");
     }
 
     /**
@@ -911,7 +928,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public <T> T unwrap(Class<T> arg0) throws SQLException {
-	throw new BQSQLException("Not found");
+        throw new BQSQLException("Not found");
     }
 
 }

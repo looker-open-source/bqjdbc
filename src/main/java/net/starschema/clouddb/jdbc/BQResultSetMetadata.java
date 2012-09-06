@@ -47,20 +47,20 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     public BQResultsetMetaData(GetQueryResultsResponse result) {
 
-	this.result = result;
+        this.result = result;
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Not implemented yet.
+     * Returns the BigQuery Projects ID
      * </p>
      * 
-     * @throws BQSQLException
+     * @return projectID
      */
     @Override
     public String getCatalogName(int column) throws SQLException {
-	throw new BQSQLException("Not implemented." + "getCatalogName(int)");
+        return result.getJobReference().getProjectId();
     }
 
     /**
@@ -73,64 +73,63 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public String getColumnClassName(int column) throws SQLException {
-	throw new BQSQLException("Not implemented." + "getColumnClassName(int)");
+        throw new BQSQLException("Not implemented." + "getColumnClassName(int)");
     }
 
     /** {@inheritDoc} */
     @Override
     public int getColumnCount() throws SQLException {
-	TableSchema schema = this.result.getSchema();
-	List<TableFieldSchema> schemafieldlist = null;
-	if (schema != null)
-	    schemafieldlist = schema.getFields();
-	else
-	    return 0;
-	if (schemafieldlist != null)
-	    return this.result.getSchema().getFields().size();
-	else
-	    return 0;
+        TableSchema schema = this.result.getSchema();
+        List<TableFieldSchema> schemafieldlist = null;
+        if (schema != null)
+            schemafieldlist = schema.getFields();
+        else
+            return 0;
+        if (schemafieldlist != null)
+            return this.result.getSchema().getFields().size();
+        else
+            return 0;
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Not implemented yet.
+     * returns 64*1024
      * </p>
      * 
-     * @throws BQSQLException
      */
     @Override
     public int getColumnDisplaySize(int column) throws SQLException {
-	throw new BQSQLException("Not implemented."
-		+ "getColumnDisplaySize(int)");
+        return 1024*64;
+        //TODO Check the maximum lenght of characters contained in this resulset for each column
     }
 
     /** {@inheritDoc} */
     @Override
     public String getColumnLabel(int column) throws SQLException {
 
-	if (this.getColumnCount() == 0)
-	    throw new IndexOutOfBoundsException();
-	try {
-	    return this.result.getSchema().getFields().get(column - 1)
-		    .getName();
-	} catch (IndexOutOfBoundsException e) {
-	    throw new BQSQLException(e);
-	}
+        if (this.getColumnCount() == 0)
+            throw new IndexOutOfBoundsException();
+        try {
+            return this.result.getSchema().getFields().get(column - 1)
+                    .getName();
+        } catch (IndexOutOfBoundsException e) {
+            throw new BQSQLException(e);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     public String getColumnName(int column) throws SQLException {
-	if (this.getColumnCount() == 0)
-	    throw new BQSQLException("getColumnName(int)",
-		    new IndexOutOfBoundsException());
-	try {
-	    return this.result.getSchema().getFields().get(column - 1)
-		    .getName();
-	} catch (IndexOutOfBoundsException e) {
-	    throw new BQSQLException("getColumnName(int)", e);
-	}
+        if (this.getColumnCount() == 0)
+            throw new BQSQLException("getColumnName(int)",
+                    new IndexOutOfBoundsException());
+        try {
+            return this.result.getSchema().getFields().get(column - 1)
+                    .getName();
+        } catch (IndexOutOfBoundsException e) {
+            throw new BQSQLException("getColumnName(int)", e);
+        }
     }
 
     /**
@@ -143,68 +142,68 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * */
     @Override
     public int getColumnType(int column) throws SQLException {
-	if (this.getColumnCount() == 0)
-	    return 0;
-	String Columntype = "";
-	try {
-	    Columntype = this.result.getSchema().getFields().get(column - 1)
-		    .getType();
-	} catch (IndexOutOfBoundsException e) {
-	    throw new BQSQLException("getColumnType(int)", e);
-	}
+        if (this.getColumnCount() == 0)
+            return 0;
+        String Columntype = "";
+        try {
+            Columntype = this.result.getSchema().getFields().get(column - 1)
+                    .getType();
+        } catch (IndexOutOfBoundsException e) {
+            throw new BQSQLException("getColumnType(int)", e);
+        }
 
-	if (Columntype.equals("FLOAT"))
-	    return java.sql.Types.FLOAT;
-	else if (Columntype.equals("BOOLEAN"))
-	    return java.sql.Types.BOOLEAN;
-	else if (Columntype.equals("INTEGER"))
-	    return java.sql.Types.INTEGER;
-	else if (Columntype.equals("STRING"))
-	    return java.sql.Types.VARCHAR;
-	else
-	    return 0;
+        if (Columntype.equals("FLOAT"))
+            return java.sql.Types.FLOAT;
+        else if (Columntype.equals("BOOLEAN"))
+            return java.sql.Types.BOOLEAN;
+        else if (Columntype.equals("INTEGER"))
+            return java.sql.Types.INTEGER;
+        else if (Columntype.equals("STRING"))
+            return java.sql.Types.VARCHAR;
+        else
+            return 0;
     }
 
     /** {@inheritDoc} */
     @Override
     public String getColumnTypeName(int column) throws SQLException {
-	if (this.getColumnCount() == 0)
-	    throw new BQSQLException("getcolumnTypeName(int)",
-		    new IndexOutOfBoundsException());
-	String Columntype = "";
-	try {
-	    Columntype = this.result.getSchema().getFields().get(column - 1)
-		    .getType();
-	} catch (IndexOutOfBoundsException e) {
-	    throw new BQSQLException("getColumnTypeName(int)", e);
-	}
-	return Columntype;
+        if (this.getColumnCount() == 0)
+            throw new BQSQLException("getcolumnTypeName(int)",
+                    new IndexOutOfBoundsException());
+        String Columntype = "";
+        try {
+            Columntype = this.result.getSchema().getFields().get(column - 1)
+                    .getType();
+        } catch (IndexOutOfBoundsException e) {
+            throw new BQSQLException("getColumnTypeName(int)", e);
+        }
+        return Columntype;
     }
 
     /** {@inheritDoc} */
     @Override
     public int getPrecision(int column) throws SQLException {
-	if (this.getColumnCount() == 0)
-	    return 0;
-	String Columntype = "";
-	try {
-	    Columntype = this.result.getSchema().getFields().get(column - 1)
-		    .getType();
-	} catch (IndexOutOfBoundsException e) {
-	    throw new BQSQLException("getPrecision(int)", e);
-	}
+        if (this.getColumnCount() == 0)
+            return 0;
+        String Columntype = "";
+        try {
+            Columntype = this.result.getSchema().getFields().get(column - 1)
+                    .getType();
+        } catch (IndexOutOfBoundsException e) {
+            throw new BQSQLException("getPrecision(int)", e);
+        }
 
-	if (Columntype.equals("FLOAT"))
-	    return Float.MAX_EXPONENT;
-	else if (Columntype.equals("BOOLEAN"))
-	    return 1; // A boolean is 1 bit length, but it asks for byte, so 1
-		      // byte.
-	else if (Columntype.equals("INTEGER"))
-	    return Integer.SIZE;
-	else if (Columntype.equals("STRING"))
-	    return 64 * 1024;
-	else
-	    return 0;
+        if (Columntype.equals("FLOAT"))
+            return Float.MAX_EXPONENT;
+        else if (Columntype.equals("BOOLEAN"))
+            return 1; // A boolean is 1 bit length, but it asks for byte, so 1
+        // byte.
+        else if (Columntype.equals("INTEGER"))
+            return Integer.SIZE;
+        else if (Columntype.equals("STRING"))
+            return 64 * 1024;
+        else
+            return 0;
     }
 
     /**
@@ -217,46 +216,62 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getScale(int column) throws SQLException {
-	throw new BQSQLException("Not implemented." + "getScale(int)");
+        if(getColumnType(column) == java.sql.Types.FLOAT){
+            int max = 0;
+            for(int i =0;i<result.getRows().size();i++)
+            {
+                String rowdata =
+                result.getRows().get(i).getF().get(column-1).getV();
+                if (rowdata.contains(".")){
+                    int pointback=rowdata.length()-rowdata.indexOf(".");
+                    if(pointback > max)pointback=max;
+                }
+            }
+            return max;
+        }
+        else
+            return 0;
     }
+    
+    
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Not implemented yet.
+     * No support in bigquery to get the schema for the column.
      * </p>
      * 
-     * @throws BQSQLException
+     * @return ""
      */
     @Override
     public String getSchemaName(int column) throws SQLException {
-	throw new BQSQLException("Not implemented." + "getSchemaName(int)");
+        return "";
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Not implemented yet.
+     * No option in BigQuery api to get the Table name from column.
      * </p>
      * 
-     * @throws BQSQLException
+     * @return ""
      */
     @Override
     public String getTableName(int column) throws SQLException {
-	throw new BQSQLException("Not implemented." + "getTableName(int)");
+        return "";
     }
 
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Not implemented yet.
+     * No ato increment option in bigquery.
      * </p>
      * 
-     * @throws BQSQLException
+     * @return false
      */
     @Override
     public boolean isAutoIncrement(int column) throws SQLException {
-	throw new BQSQLException("Not implemented." + "isAutoIncrement(int)");
+        return false;
     }
 
     /**
@@ -269,8 +284,8 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isCaseSensitive(int column) throws SQLException {
-	// Google bigquery is case insensitive
-	return false;
+        // Google bigquery is case insensitive
+        return false;
     }
 
     /**
@@ -283,7 +298,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isCurrency(int column) throws SQLException {
-	throw new BQSQLException("Not implemented." + "isCurrency(int)");
+        throw new BQSQLException("Not implemented." + "isCurrency(int)");
     }
 
     /**
@@ -296,7 +311,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isDefinitelyWritable(int column) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -309,7 +324,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public int isNullable(int column) throws SQLException {
-	return ResultSetMetaData.columnNullable;
+        return ResultSetMetaData.columnNullable;
     }
 
     /**
@@ -322,7 +337,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isReadOnly(int column) throws SQLException {
-	return true;
+        return true;
     }
 
     /**
@@ -335,7 +350,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isSearchable(int column) throws SQLException {
-	return true;
+        return true;
     }
 
     /**
@@ -348,7 +363,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isSigned(int column) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -361,7 +376,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -374,7 +389,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isWritable(int column) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -388,6 +403,6 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-	throw new BQSQLException("Not found");
+        throw new BQSQLException("Not found");
     }
 }

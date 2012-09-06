@@ -43,8 +43,8 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      *            The name of columns
      */
     public COLResultSetMetadata(String[][] data, String[] labels) {
-	this.labels = labels;
-	this.data = data;
+        this.labels = labels;
+        this.data = data;
     }
 
     /**
@@ -55,7 +55,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public String getCatalogName(int column) throws SQLException {
-	return this.data[0][0];
+        return this.data[0][0];
     }
 
     /**
@@ -66,7 +66,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public String getColumnClassName(int column) throws SQLException {
-	return java.lang.String.class.toString();
+        return java.lang.String.class.toString();
     }
 
     /**
@@ -77,7 +77,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public int getColumnCount() throws SQLException {
-	return this.labels.length;
+        return this.labels.length;
     }
 
     /**
@@ -88,7 +88,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public int getColumnDisplaySize(int column) throws SQLException {
-	return 64 * 1024;
+        return 64 * 1024;
     }
 
     /**
@@ -99,7 +99,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public String getColumnLabel(int column) throws SQLException {
-	return this.labels[column - 1];
+        return this.labels[column - 1];
     }
 
     /**
@@ -110,7 +110,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public String getColumnName(int column) throws SQLException {
-	return this.labels[column - 1];
+        return this.labels[column - 1];
     }
 
     /**
@@ -122,25 +122,25 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
     @Override
     public int getColumnType(int column) throws SQLException {
 
-	return java.sql.Types.VARCHAR;
-	/*
-	 * switch (column) { case 1: return java.sql.Types.VARCHAR; case 2:
-	 * return java.sql.Types.VARCHAR; case 3: return java.sql.Types.VARCHAR;
-	 * case 4: return java.sql.Types.VARCHAR; case 5: return
-	 * java.sql.Types.VARCHAR; case 6: return java.sql.Types.VARCHAR; case
-	 * 7: return java.sql.Types.INTEGER; case 8: return
-	 * java.sql.Types.INTEGER; case 9: return java.sql.Types.INTEGER; case
-	 * 10: return java.sql.Types.INTEGER; case 11: return
-	 * java.sql.Types.INTEGER; case 12: return java.sql.Types.VARCHAR; case
-	 * 13: return java.sql.Types.VARCHAR; case 14: return
-	 * java.sql.Types.INTEGER; case 15: return java.sql.Types.INTEGER; case
-	 * 16: return java.sql.Types.INTEGER; case 17: return
-	 * java.sql.Types.INTEGER; case 18: return java.sql.Types.VARCHAR; case
-	 * 19: return java.sql.Types.VARCHAR; case 20: return
-	 * java.sql.Types.VARCHAR; case 21: return java.sql.Types.VARCHAR; case
-	 * 22: return java.sql.Types.INTEGER; default: break; } return
-	 * java.sql.Types.VARCHAR;
-	 */
+        return java.sql.Types.VARCHAR;
+        /*
+         * switch (column) { case 1: return java.sql.Types.VARCHAR; case 2:
+         * return java.sql.Types.VARCHAR; case 3: return java.sql.Types.VARCHAR;
+         * case 4: return java.sql.Types.VARCHAR; case 5: return
+         * java.sql.Types.VARCHAR; case 6: return java.sql.Types.VARCHAR; case
+         * 7: return java.sql.Types.INTEGER; case 8: return
+         * java.sql.Types.INTEGER; case 9: return java.sql.Types.INTEGER; case
+         * 10: return java.sql.Types.INTEGER; case 11: return
+         * java.sql.Types.INTEGER; case 12: return java.sql.Types.VARCHAR; case
+         * 13: return java.sql.Types.VARCHAR; case 14: return
+         * java.sql.Types.INTEGER; case 15: return java.sql.Types.INTEGER; case
+         * 16: return java.sql.Types.INTEGER; case 17: return
+         * java.sql.Types.INTEGER; case 18: return java.sql.Types.VARCHAR; case
+         * 19: return java.sql.Types.VARCHAR; case 20: return
+         * java.sql.Types.VARCHAR; case 21: return java.sql.Types.VARCHAR; case
+         * 22: return java.sql.Types.INTEGER; default: break; } return
+         * java.sql.Types.VARCHAR;
+         */
     }
 
     /**
@@ -151,7 +151,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public String getColumnTypeName(int column) throws SQLException {
-	return this.data[0][5];
+        return this.data[0][5];
     }
 
     /**
@@ -162,7 +162,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public int getPrecision(int column) throws SQLException {
-	return 0;
+        return 0;
     }
 
     /**
@@ -173,7 +173,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public int getScale(int column) throws SQLException {
-	return 0;
+        return 0;
     }
 
     /**
@@ -184,7 +184,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public String getSchemaName(int column) throws SQLException {
-	return this.data[0][1];
+        return this.data[0][1];
     }
 
     /**
@@ -195,7 +195,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public String getTableName(int column) throws SQLException {
-	return this.data[0][2];
+        return this.data[0][2];
     }
 
     /**
@@ -206,7 +206,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public boolean isAutoIncrement(int column) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -217,7 +217,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public boolean isCaseSensitive(int column) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -228,7 +228,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public boolean isCurrency(int column) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -239,7 +239,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public boolean isDefinitelyWritable(int column) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -250,7 +250,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public int isNullable(int column) throws SQLException {
-	return 1;
+        return 1;
     }
 
     /**
@@ -261,7 +261,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public boolean isReadOnly(int column) throws SQLException {
-	return true;
+        return true;
     }
 
     /**
@@ -272,7 +272,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public boolean isSearchable(int column) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -283,7 +283,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public boolean isSigned(int column) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -294,7 +294,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public boolean isWrapperFor(Class<?> arg0) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -305,7 +305,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public boolean isWritable(int column) throws SQLException {
-	return false;
+        return false;
     }
 
     /**
@@ -319,7 +319,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
      */
     @Override
     public <T> T unwrap(Class<T> arg0) throws SQLException {
-	throw new BQSQLException("not found");
+        throw new BQSQLException("not found");
     }
 }
 
@@ -333,7 +333,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
  * 
  */
 public class DMDResultSet extends ScrollableResultset<Object> implements
-	java.sql.ResultSet {
+        java.sql.ResultSet {
     /** Variable containing column names */
     String[] Colnames = null;
 
@@ -346,17 +346,17 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
      *            names of columns
      */
     public DMDResultSet(Object[] objects, String[] colnames) {
-	this.RowsofResult = objects;
-	this.Colnames = colnames;
+        this.RowsofResult = objects;
+        this.Colnames = colnames;
     }
 
     /** {@inheritDoc} */
     @Override
     public int findColumn(String columnLabel) throws SQLException {
-	for (int i = 0; i < this.Colnames.length; i++)
-	    if (this.Colnames[i].equals(columnLabel))
-		return i + 1;
-	throw new BQSQLException("No such column");
+        for (int i = 0; i < this.Colnames.length; i++)
+            if (this.Colnames[i].equals(columnLabel))
+                return i + 1;
+        throw new BQSQLException("No such column");
     };
 
     /**
@@ -367,83 +367,84 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
      */
     @Override
     public java.sql.ResultSetMetaData getMetaData() throws SQLException {
-	return new COLResultSetMetadata((String[][]) this.RowsofResult,
-		this.Colnames);
+        return new COLResultSetMetadata((String[][]) this.RowsofResult,
+                this.Colnames);
+        // FIXME we got an SQLException here, sadly :(
     };
 
     /** {@inheritDoc} */
     @Override
     public Object getObject(int columnIndex) throws SQLException {
 
-	if (this.isClosed())
-	    throw new BQSQLException("This Resultset is Closed");
-	this.ThrowCursorNotValidExeption();
-	if (this.RowsofResult == null)
-	    throw new BQSQLException("No Valid Rows");
+        if (this.isClosed())
+            throw new BQSQLException("This Resultset is Closed");
+        this.ThrowCursorNotValidExeption();
+        if (this.RowsofResult == null)
+            throw new BQSQLException("No Valid Rows");
 
-	if (columnIndex < 1)
-	    throw new BQSQLException("ColumnIndex is not valid");
-	else
-	    try {
-		Object[][] Containter = Object[][].class
-			.cast(this.RowsofResult);
-		if (columnIndex > Containter[this.Cursor].length)
-		    throw new BQSQLException("ColumnIndex is not valid");
-		else {
-		    if (Containter[this.Cursor][columnIndex - 1] == null)
-			this.wasnull = true;
-		    else
-			this.wasnull = false;
-		    return Containter[this.Cursor][columnIndex - 1];
-		}
-	    } catch (ClassCastException e) {
-		if (columnIndex == 1) {
-		    if (this.RowsofResult[this.Cursor] == null)
-			this.wasnull = true;
-		    else
-			this.wasnull = false;
-		    return this.RowsofResult[this.Cursor];
-		} else
-		    throw new BQSQLException(e);
-	    }
+        if (columnIndex < 1)
+            throw new BQSQLException("ColumnIndex is not valid");
+        else
+            try {
+                Object[][] Containter = Object[][].class
+                        .cast(this.RowsofResult);
+                if (columnIndex > Containter[this.Cursor].length)
+                    throw new BQSQLException("ColumnIndex is not valid");
+                else {
+                    if (Containter[this.Cursor][columnIndex - 1] == null)
+                        this.wasnull = true;
+                    else
+                        this.wasnull = false;
+                    return Containter[this.Cursor][columnIndex - 1];
+                }
+            } catch (ClassCastException e) {
+                if (columnIndex == 1) {
+                    if (this.RowsofResult[this.Cursor] == null)
+                        this.wasnull = true;
+                    else
+                        this.wasnull = false;
+                    return this.RowsofResult[this.Cursor];
+                } else
+                    throw new BQSQLException(e);
+            }
     }
 
     /** {@inheritDoc} */
     @Override
     public String getString(int columnIndex) throws SQLException {
 
-	if (this.isClosed())
-	    throw new BQSQLException("This Resultset is Closed");
-	this.ThrowCursorNotValidExeption();
-	if (this.RowsofResult == null)
-	    throw new BQSQLException("No Valid Rows");
+        if (this.isClosed())
+            throw new BQSQLException("This Resultset is Closed");
+        this.ThrowCursorNotValidExeption();
+        if (this.RowsofResult == null)
+            throw new BQSQLException("No Valid Rows");
 
-	if (columnIndex < 1)
-	    throw new BQSQLException("ColumnIndex is not valid");
-	else
-	    try {
-		Object[][] Containter = Object[][].class
-			.cast(this.RowsofResult);
-		if (columnIndex > Containter[this.Cursor].length)
-		    throw new BQSQLException("ColumnIndex is not valid");
-		else if (Containter[this.Cursor][columnIndex - 1] == null) {
-		    this.wasnull = true;
-		    return null;
-		} else {
-		    this.wasnull = false;
-		    return Containter[this.Cursor][columnIndex - 1].toString();
-		}
-	    } catch (ClassCastException e) {
-		if (columnIndex == 1) {
-		    if (this.RowsofResult[this.Cursor] == null) {
-			this.wasnull = true;
-			return null;
-		    } else {
-			this.wasnull = false;
-			return this.RowsofResult[this.Cursor].toString();
-		    }
-		} else
-		    throw new BQSQLException("ColumnIndex is not valid");
-	    }
+        if (columnIndex < 1)
+            throw new BQSQLException("ColumnIndex is not valid");
+        else
+            try {
+                Object[][] Containter = Object[][].class
+                        .cast(this.RowsofResult);
+                if (columnIndex > Containter[this.Cursor].length)
+                    throw new BQSQLException("ColumnIndex is not valid");
+                else if (Containter[this.Cursor][columnIndex - 1] == null) {
+                    this.wasnull = true;
+                    return null;
+                } else {
+                    this.wasnull = false;
+                    return Containter[this.Cursor][columnIndex - 1].toString();
+                }
+            } catch (ClassCastException e) {
+                if (columnIndex == 1) {
+                    if (this.RowsofResult[this.Cursor] == null) {
+                        this.wasnull = true;
+                        return null;
+                    } else {
+                        this.wasnull = false;
+                        return this.RowsofResult[this.Cursor].toString();
+                    }
+                } else
+                    throw new BQSQLException("ColumnIndex is not valid");
+            }
     }
 }

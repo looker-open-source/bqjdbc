@@ -17,18 +17,31 @@
  *  <p>
  * BQDriver - This class implements the java.sql.Driver interface
  * 
- * The driver URL is 
- * if Service account:
+ * The driver URL is:
+ * 
+ * If Service account:
  * jdbc:BQDriver:projectid(urlencoded)?ServiceAccount=true
  * Properties File:
  * username: account email (NOT URLENCODED)
  * password: path to key file (NOT URLENCODED)
  * 
- * if Installed account:
+ * If Installed account:
+ * jdbc:BQDriver:projectid(urlencoded)?ServiceAccount=false
+ * or
  * jdbc:BQDriver:projectid(urlencoded)
  * Properties File:
  * username: accountid (NOT URLENCODED)
  * password: clientsecret (NOT URLENCODED)
+ * 
+ * You can also specify the login username and password in the url directly:
+ * 
+ * If Service account:
+ * jdbc:BQDriver:projectid(urlencoded)?ServiceAccount=true&user=accountemail(urlencoded)&password=keypath(urlencoded)
+ * 
+ * If Installed account:
+ * jdbc:BQDriver:projectid(urlencoded)?ServiceAccount=false&user=accountid(urlencoded)&password=clientsecret(urlencoded)
+ * or
+ * jdbc:BQDriver:projectid(urlencoded)&user=accountid(urlencoded)&password=clientsecret(urlencoded)
  * 
  * Any Java program can use this driver for JDBC purpose by specifying 
  * this URL format.
@@ -63,14 +76,14 @@ public class BQDriver implements java.sql.Driver {
 
     /** Registers the driver with the drivermanager */
     static {
-	BQDriver.logger = Logger.getLogger("BQDriver");
-	try {
-	    BQDriver.logger.debug("Registering the driver");
-	    BQDriver driverInst = new BQDriver();
-	    DriverManager.registerDriver(driverInst);
-	    BQDriver.logger.info("Registered the driver");
-	} catch (Exception e) {
-	}
+        BQDriver.logger = Logger.getLogger("BQDriver");
+        try {
+            BQDriver.logger.debug("Registering the driver");
+            BQDriver driverInst = new BQDriver();
+            DriverManager.registerDriver(driverInst);
+            BQDriver.logger.info("Registered the driver");
+        } catch (Exception e) {
+        }
     }
 
     /**
@@ -79,7 +92,7 @@ public class BQDriver implements java.sql.Driver {
      * @return Major Version of the Driver as static
      */
     public static int getMajorVersionAsStatic() {
-	return BQDriver.MAJOR_VERSION;
+        return BQDriver.MAJOR_VERSION;
     }
 
     /**
@@ -88,18 +101,18 @@ public class BQDriver implements java.sql.Driver {
      * @return Minor Version of the Driver as static
      */
     public static int getMinorVersionAsStatic() {
-	return BQDriver.MINOR_VERSION;
+        return BQDriver.MINOR_VERSION;
     }
 
     /** It returns the URL prefix for using BQDriver */
     public static String getURLPrefix() {
-	return BQDriver.URL_PREFIX;
+        return BQDriver.URL_PREFIX;
     }
 
     /** {@inheritDoc} */
     @Override
     public boolean acceptsURL(String url) throws SQLException {
-	return url.startsWith(BQDriver.URL_PREFIX);
+        return url.startsWith(BQDriver.URL_PREFIX);
     }
 
     /**
@@ -110,25 +123,25 @@ public class BQDriver implements java.sql.Driver {
      */
     @Override
     public Connection connect(String url, Properties loginProp)
-	    throws SQLException {
-	BQConnection localConInstance = null;
+            throws SQLException {
+        BQConnection localConInstance = null;
 
-	if (this.acceptsURL(url))
-	    localConInstance = new BQConnection(url, loginProp);
+        if (this.acceptsURL(url))
+            localConInstance = new BQConnection(url, loginProp);
 
-	return localConInstance;
+        return localConInstance;
     }
 
     /** {@inheritDoc} */
     @Override
     public int getMajorVersion() {
-	return BQDriver.MAJOR_VERSION;
+        return BQDriver.MAJOR_VERSION;
     }
 
     /** {@inheritDoc} */
     @Override
     public int getMinorVersion() {
-	return BQDriver.MINOR_VERSION;
+        return BQDriver.MINOR_VERSION;
     }
 
     /**
@@ -141,8 +154,8 @@ public class BQDriver implements java.sql.Driver {
      */
     @Override
     public java.sql.DriverPropertyInfo[] getPropertyInfo(String url,
-	    Properties loginProps) throws SQLException {
-	return new DriverPropertyInfo[0];
+            Properties loginProps) throws SQLException {
+        return new DriverPropertyInfo[0];
     }
 
     /**
@@ -153,6 +166,6 @@ public class BQDriver implements java.sql.Driver {
      */
     @Override
     public boolean jdbcCompliant() {
-	return false;
+        return false;
     }
 }

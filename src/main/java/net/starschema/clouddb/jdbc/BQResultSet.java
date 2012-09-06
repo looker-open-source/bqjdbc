@@ -19,6 +19,7 @@
  */
 package net.starschema.clouddb.jdbc;
 
+import java.math.BigInteger;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -33,7 +34,7 @@ import com.google.api.services.bigquery.model.TableRow;
  * @author Horváth Attila
  */
 public class BQResultSet extends ScrollableResultset<Object> implements
-	java.sql.ResultSet {
+        java.sql.ResultSet {
 
     /**
      * This Reference is for storing the GetQueryResultsResponse got from
@@ -49,101 +50,108 @@ public class BQResultSet extends ScrollableResultset<Object> implements
     /**
      * Constructor of BQResultset, that initializes all private variables
      * 
-     * @param BigQueryGetQueryResultResponse
+     * @param bigQueryGetQueryResultResponse
      *            BigQueryGetQueryResultResponse from Bigquery
      * @param bqStatement
      *            Reference of the Statement that creates this Resultset
      */
-    public BQResultSet(GetQueryResultsResponse BigQueryGetQueryResultResponse,
-	    BQStatement bqStatement) {
+    public BQResultSet(GetQueryResultsResponse bigQueryGetQueryResultResponse,
+            BQStatement bqStatement) {
 
-	this.Result = BigQueryGetQueryResultResponse;
-	if (this.Result.getRows() == null)
-	    this.RowsofResult = null;
-	else
-	    this.RowsofResult = this.Result.getRows().toArray();
-	this.Statementreference = bqStatement;
+        this.Result = bigQueryGetQueryResultResponse;
+        BigInteger maxrow;
+        try {
+            maxrow = BigInteger.valueOf((long) bqStatement.getMaxRows());
+            this.Result.setTotalRows(maxrow);
+        } catch (SQLException e) {} //Should not happen.
+        
+        if (this.Result.getRows() == null)
+            this.RowsofResult = null;
+        else
+            this.RowsofResult = this.Result.getRows().toArray();
+        this.Statementreference = bqStatement;
     }
 
+    
     /** {@inheritDoc} */
     @Override
     public int findColumn(String columnLabel) throws SQLException {
-	if (this.isClosed())
-	    throw new BQSQLException("This Resultset is Closed");
-	int columncount = this.getMetaData().getColumnCount();
-	for (int i = 1; i <= columncount; i++)
-	    if (this.getMetaData().getCatalogName(i).equals(columnLabel))
-		return i;
-	SQLException e = new BQSQLException("No Such column labeled: "
-		+ columnLabel);
-	throw e;
+        if (this.isClosed())
+            throw new BQSQLException("This Resultset is Closed");
+        int columncount = this.getMetaData().getColumnCount();
+        for (int i = 1; i <= columncount; i++)
+            if (this.getMetaData().getCatalogName(i).equals(columnLabel))
+                return i;
+        SQLException e = new BQSQLException("No Such column labeled: "
+                + columnLabel);
+        throw e;
     }
 
     /** {@inheritDoc} */
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-	if (this.isClosed())
-	    throw new BQSQLException("This Resultset is Closed");
-	return new BQResultsetMetaData(this.Result);
+        if (this.isClosed())
+            throw new BQSQLException("This Resultset is Closed");
+        return new BQResultsetMetaData(this.Result);
     }
 
     /** {@inheritDoc} */
     @Override
     public Object getObject(int columnIndex) throws SQLException {
-	this.closestrm();
-	if (this.isClosed())
-	    throw new BQSQLException("This Resultset is Closed");
-	this.ThrowCursorNotValidExeption();
-	if (this.RowsofResult == null)
-	    throw new BQSQLException("There are no rows in this Resultset");
-	if (this.getMetaData().getColumnCount() < columnIndex
-		|| columnIndex < 1)
-	    throw new BQSQLException("ColumnIndex is not valid");
-	String Columntype = this.Result.getSchema().getFields()
-		.get(columnIndex - 1).getType();
-	String result = ((TableRow) this.RowsofResult[this.Cursor]).getF()
-		.get(columnIndex - 1).getV();
-	if (result == null) {
-	    this.wasnull = true;
-	    return null;
-	} else {
-	    this.wasnull = false;
-	    try {
-		if (Columntype.equals("FLOAT"))
-		    return Float.parseFloat(result);
-		else if (Columntype.equals("BOOLEAN"))
-		    return Boolean.parseBoolean(result);
-		else if (Columntype.equals("INTEGER"))
-		    return Integer.parseInt(result);
-		else if (Columntype.equals("STRING"))
-		    return (result);
-		else
-		    throw new BQSQLException("Unsupported Type");
-	    } catch (NumberFormatException e) {
-		throw new BQSQLException(e);
-	    }
-	}
+        this.closestrm();
+        if (this.isClosed())
+            throw new BQSQLException("This Resultset is Closed");
+        this.ThrowCursorNotValidExeption();
+        if (this.RowsofResult == null)
+            throw new BQSQLException("There are no rows in this Resultset");
+        if (this.getMetaData().getColumnCount() < columnIndex
+                || columnIndex < 1)
+            throw new BQSQLException("ColumnIndex is not valid");
+        String Columntype = this.Result.getSchema().getFields()
+                .get(columnIndex - 1).getType();
+        String result = ((TableRow) this.RowsofResult[this.Cursor]).getF()
+                .get(columnIndex - 1).getV();
+        if (result == null) {
+            this.wasnull = true;
+            return null;
+        } else {
+            this.wasnull = false;
+            try {
+                if (Columntype.equals("FLOAT"))
+                    return Float.parseFloat(result);
+                else if (Columntype.equals("BOOLEAN"))
+                    return Boolean.parseBoolean(result);
+                else if (Columntype.equals("INTEGER"))
+                    return Integer.parseInt(result);
+                else if (Columntype.equals("STRING"))
+                    return (result);
+                else
+                    throw new BQSQLException("Unsupported Type");
+            } catch (NumberFormatException e) {
+                throw new BQSQLException(e);
+            }
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     public Statement getStatement() throws SQLException {
-	return this.Statementreference;
+        return this.Statementreference;
     }
 
     /** {@inheritDoc} */
     @Override
     public String getString(int columnIndex) throws SQLException {
-	this.closestrm();
-	this.ThrowCursorNotValidExeption();
-	if (this.isClosed())
-	    throw new BQSQLException("This Resultset is Closed");
-	String result = ((TableRow) this.RowsofResult[this.Cursor]).getF()
-		.get(columnIndex - 1).getV();
-	if (result == null)
-	    this.wasnull = true;
-	else
-	    this.wasnull = false;
-	return result;
+        this.closestrm();
+        this.ThrowCursorNotValidExeption();
+        if (this.isClosed())
+            throw new BQSQLException("This Resultset is Closed");
+        String result = ((TableRow) this.RowsofResult[this.Cursor]).getF()
+                .get(columnIndex - 1).getV();
+        if (result == null)
+            this.wasnull = true;
+        else
+            this.wasnull = false;
+        return result;
     }
 }
