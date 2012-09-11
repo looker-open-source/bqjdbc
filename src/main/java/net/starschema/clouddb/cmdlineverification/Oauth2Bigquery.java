@@ -27,10 +27,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.log4j.Logger;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
@@ -49,12 +53,14 @@ public class Oauth2Bigquery {
     private static String servicepath = null;
 
     /**
-     * Browser to open in case {@link Desktop#isDesktopSupported()} is
-     * {@code false} or {@code null} to prompt user to open the URL in their
-     * favorite browser.
+     * Log4j logger, for debugging.
      */
-    private static final String BROWSER = "google-chrome";
-
+    static Logger logger = Logger.getLogger(Oauth2Bigquery.class);
+    /**
+     * Browsers to try: 
+     */
+    static final String[] browsers = { "google-chrome", "firefox", "opera",
+        "epiphany", "konqueror", "conkeror", "midori", "kazehakase", "mozilla" };
     /**
      * Google client secrets or {@code null} before initialized in
      * {@link #authorize}.
@@ -107,8 +113,9 @@ public class Oauth2Bigquery {
                 .setTransport(CmdlineUtils.getHttpTransport())
                 .setClientSecrets(secr).build();
 
-        if (Store.load(clientid + ":" + clientsecret, CredentialForReturn) == true)
+        if (Store.load(clientid + ":" + clientsecret, CredentialForReturn) == true) {
             return CredentialForReturn;
+        }
         try {
             String redirectUri = receiver.getRedirectUri();
             GoogleClientSecrets clientSecrets = Oauth2Bigquery
@@ -151,6 +158,7 @@ public class Oauth2Bigquery {
         Scopes.add(BigqueryScopes.BIGQUERY);
         Credential credential = null;
         try {
+            logger.debug("Authorizing as installed app.");
             credential = Oauth2Bigquery.authorize(
                     CmdlineUtils.getHttpTransport(),
                     CmdlineUtils.getJsonFactory(), rcvr, Scopes, clientid,
@@ -158,7 +166,7 @@ public class Oauth2Bigquery {
         } catch (Exception e) {
             throw new SQLException(e);
         }
-
+        logger.debug("Creating a new bigquery client.");
         Bigquery bigquery = new Builder(CmdlineUtils.getHttpTransport(),
                 CmdlineUtils.getJsonFactory(), credential).build();
         Oauth2Bigquery.servicepath = bigquery.getServicePath();
@@ -177,6 +185,7 @@ public class Oauth2Bigquery {
      */
     public static Bigquery authorizeviaservice(String serviceaccountemail,
             String keypath) throws GeneralSecurityException, IOException {
+        logger.debug("Authorizing with service account.");
         GoogleCredential credential = new GoogleCredential.Builder()
                 .setTransport(CmdlineUtils.getHttpTransport())
                 .setJsonFactory(CmdlineUtils.getJsonFactory())
@@ -201,33 +210,61 @@ public class Oauth2Bigquery {
      */
     private static void browse(String url) {
         // first try the Java Desktop
+        logger.debug("First try the Java Desktop");
         if (Desktop.isDesktopSupported()) {
             Desktop desktop = Desktop.getDesktop();
             if (desktop.isSupported(Action.BROWSE))
                 try {
                     desktop.browse(URI.create(url));
+                    logger.debug("success");
                     return;
                 } catch (IOException e) {
+                    logger.debug(e);
                     // handled below
                 }
         }
-        // Next try rundll32 (only works on Windows)
+        logger.debug("Then try with url.connect");
         try {
-            Runtime.getRuntime().exec(
-                    "rundll32 url.dll,FileProtocolHandler " + url);
+            URL myURL = new URL(url);
+            URLConnection myURLConnection = myURL.openConnection();
+            myURLConnection.connect();
+            logger.debug("success");
             return;
-        } catch (IOException e) {
-            // handled below
         }
-        // Next try the requested browser (e.g. "google-chrome")
-        if (Oauth2Bigquery.BROWSER != null)
-            try {
-                Runtime.getRuntime().exec(
-                        new String[] { Oauth2Bigquery.BROWSER, url });
-                return;
-            } catch (IOException e) {
-                // handled below
-            }
+        catch (Exception e){
+            logger.debug(e);
+            //handled below
+        }
+        // Next try browsers
+        logger.debug("Try with browsers");
+        //Code from Bare Bones Browser Launcher
+        String osName = System.getProperty("os.name");
+        try {
+           if (osName.startsWith("Mac OS")) {
+               logger.debug("Mac OS com.apple.eio.FileManager should handle the URL");
+              Class.forName("com.apple.eio.FileManager").getDeclaredMethod(
+                 "openURL", new Class[] {String.class}).invoke(null,
+                 new Object[] {url});
+              return;
+              }
+           else if (osName.startsWith("Windows")){
+               logger.debug("Windows FileProtocolHandler should handle the URL");
+              Runtime.getRuntime().exec(
+                 "rundll32 url.dll,FileProtocolHandler " + url);
+               return;}
+           else { //assume Unix or Linux-
+               logger.debug("Unix or Linux, we'll open a browser");
+              String browser = null;
+              for (String b : browsers)
+                 if (browser == null && Runtime.getRuntime().exec(new String[]
+                       {"which", b}).getInputStream().read() != -1)
+                    Runtime.getRuntime().exec(new String[] {browser = b, url});
+           }
+        }
+        catch (Exception e) {
+           logger.debug(e);
+           //handled below
+           }
         // Finally just ask user to open in their browser using copy-paste
         System.out.println("Please open the following URL in your browser:");
         System.out.println("  " + url);

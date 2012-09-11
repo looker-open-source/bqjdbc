@@ -57,9 +57,12 @@ public class BQStatement implements java.sql.Statement {
     /** Variable that stores the closed state of the statement */
     private boolean closed = false;
 
-    /** Variable that stores the max row number which can be stored in the resultset */ 
-    private int resultMaxRowCount = Integer.MAX_VALUE-1;
-    
+    /**
+     * Variable that stores the max row number which can be stored in the
+     * resultset
+     */
+    private int resultMaxRowCount = Integer.MAX_VALUE - 1;
+
     /** Reference to store the ran Query run by Executequery or Execute */
     ResultSet resset = null;
 
@@ -79,28 +82,33 @@ public class BQStatement implements java.sql.Statement {
         this.resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
     }
 
-    /**These Variables contain information about the type of resultset this statement creates*/
+    /**
+     * These Variables contain information about the type of resultset this
+     * statement creates
+     */
     int resultSetType;
     int resultSetConcurrency;
-    
+
     /**
      * Constructor for BQStatement object just initializes local variables
+     * 
      * @param projectid2
      * @param bqConnection
      * @param resultSetType
      * @param resultSetConcurrency
-     * @throws BQSQLException 
+     * @throws BQSQLException
      */
     public BQStatement(String projectid, BQConnection bqConnection,
             int resultSetType, int resultSetConcurrency) throws BQSQLException {
         if (resultSetConcurrency == ResultSet.CONCUR_UPDATABLE)
-            throw new BQSQLException("The Resultset Concurrency can't be ResultSet.CONCUR_UPDATABLE");
-        
+            throw new BQSQLException(
+                    "The Resultset Concurrency can't be ResultSet.CONCUR_UPDATABLE");
+
         this.ProjectId = projectid;
         this.connection = bqConnection;
         this.resultSetType = resultSetType;
         this.resultSetConcurrency = resultSetConcurrency;
-        
+
     }
 
     /**
@@ -158,12 +166,14 @@ public class BQStatement implements java.sql.Statement {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Only sets closed boolean to false
+     * Only sets closed boolean to true
      * </p>
      */
     @Override
     public void close() throws SQLException {
-        this.closed = false;
+        this.closed = true;
+        if (this.resset != null)
+            this.resset.close();
     }
 
     /**
@@ -178,7 +188,7 @@ public class BQStatement implements java.sql.Statement {
         if (this.isClosed())
             throw new BQSQLException("This Statement is Closed");
         this.resset = this.executeQuery(arg0);
-
+        logger.info("Executing Query: " + arg0);
         if (this.resset != null)
             return true;
         else
@@ -248,6 +258,7 @@ public class BQStatement implements java.sql.Statement {
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
                     this.connection.getBigquery(), this.ProjectId, querySql);
+            logger.info("Executing Query: " + querySql);
         } catch (IOException e) {
             throw new BQSQLException(e);
         }
@@ -671,7 +682,7 @@ public class BQStatement implements java.sql.Statement {
      */
     @Override
     public void setMaxRows(int arg0) throws SQLException {
-        this.resultMaxRowCount = arg0==0?arg0:Integer.MAX_VALUE-1;
+        this.resultMaxRowCount = arg0 == 0 ? arg0 : Integer.MAX_VALUE - 1;
     }
 
     /**

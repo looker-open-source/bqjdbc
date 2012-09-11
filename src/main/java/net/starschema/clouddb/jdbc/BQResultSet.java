@@ -63,8 +63,9 @@ public class BQResultSet extends ScrollableResultset<Object> implements
         try {
             maxrow = BigInteger.valueOf((long) bqStatement.getMaxRows());
             this.Result.setTotalRows(maxrow);
-        } catch (SQLException e) {} //Should not happen.
-        
+        } catch (SQLException e) {
+        } // Should not happen.
+
         if (this.Result.getRows() == null)
             this.RowsofResult = null;
         else
@@ -72,7 +73,6 @@ public class BQResultSet extends ScrollableResultset<Object> implements
         this.Statementreference = bqStatement;
     }
 
-    
     /** {@inheritDoc} */
     @Override
     public int findColumn(String columnLabel) throws SQLException {

@@ -29,6 +29,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.starschema.clouddb.jdbc.DMDResultSet.DMDResultSetType;
+
+import org.apache.log4j.Logger;
+
 import com.google.api.services.bigquery.model.DatasetList;
 import com.google.api.services.bigquery.model.DatasetList.Datasets;
 import com.google.api.services.bigquery.model.ProjectList.Projects;
@@ -49,6 +53,11 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     BQConnection Connection;
 
     /**
+     * Reference for the Logger Class
+     */
+    Logger logger;
+
+    /**
      * We currently doesn't support multiple open resultsets.
      */
     static boolean multipleOpenResultsSupported = false;
@@ -60,6 +69,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
      */
     public BQDatabaseMetadata(BQConnection bqConnection) {
         this.Connection = bqConnection;
+        logger = Logger.getLogger(BQDatabaseMetadata.class);
     }
 
     /**
@@ -166,6 +176,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public ResultSet getAttributes(String catalog, String schemaPattern,
             String typeNamePattern, String attributeNamePattern)
             throws SQLException {
+        logger.debug("Function call getAttributes(String,String,String,String)");
         String[] Col = new String[21];
         Col[0] = "TYPE_CAT";
         // String => type catalog (may be null)
@@ -219,7 +230,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // short => source type of a distinct type or user-generated Ref
         // type,SQL type from java.sql.Types (null if DATA_TYPE isn't DISTINCT
         // or user-generated REF)
-        return new DMDResultSet(new Object[0][21], Col);
+        return new DMDResultSet(new Object[0][21], Col,
+                DMDResultSetType.getAttributes);
     }
 
     /**
@@ -233,6 +245,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getBestRowIdentifier(String catalog, String schema,
             String table, int scope, boolean nullable) throws SQLException {
+        logger.debug("Function call getBestRowIdentifier(String,String,String,int,boolean)");
         String[] Col = new String[8];
         Col[0] = "SCOPE";
         // short => actual scope of result
@@ -252,12 +265,14 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // is not applicable.
         Col[7] = "PSEUDO_COLUMN";
         // short => is this a pseudo column like an Oracle ROWID
-        return new DMDResultSet(new Object[0][8], Col);
+        return new DMDResultSet(new Object[0][8], Col,
+                DMDResultSetType.getBestRowIdentifier);
     }
 
     /** {@inheritDoc} */
     @Override
     public ResultSet getCatalogs() throws SQLException {
+        logger.debug("Function call getCatalogs()");
         try {
             List<Projects> Projects = this.Connection.getBigquery().projects()
                     .list().execute().getProjects();
@@ -268,10 +283,12 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 for (int i = 0; i < Projects.size(); i++)
                     Data[i] = Projects.get(i).getId();
 
-                return new DMDResultSet(Data, new String[] { "TABLE_CAT" });
+                return new DMDResultSet(Data, new String[] { "TABLE_CAT" },
+                        DMDResultSetType.getCatalogs);
             } else
                 return new DMDResultSet(new String[] { null },
-                        new String[] { "TABLE_CAT" });
+                        new String[] { "TABLE_CAT" },
+                        DMDResultSetType.getCatalogs);
         } catch (IOException e) {
             throw new BQSQLException(e);
         }
@@ -313,10 +330,12 @@ class BQDatabaseMetadata implements DatabaseMetaData {
      */
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
+        logger.debug("Function call getClientInfoProperties()");
         return new DMDResultSet(new Object[][] { { "iSQL", 64, "iSQL",
                 "http://isql.sourceforge.net/" } }
 
-        , new String[] { "NAME", "MAX_LEN", "DEFAULT_VALUE", "DESCRIPTION" });
+        , new String[] { "NAME", "MAX_LEN", "DEFAULT_VALUE", "DESCRIPTION" },
+                DMDResultSetType.getClientInfoProperties);
         // TODO add more clients!
     }
 
@@ -332,6 +351,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getColumnPrivileges(String catalog, String schema,
             String table, String columnNamePattern) throws SQLException {
+        logger.debug("Function call getColumnPrivileges(String,String,String,String)");
         String[] Col = new String[8];
         Col[0] = "TABLE_CAT"; // String => table catalog (may be null)
         Col[1] = "TABLE_SCHEM"; // String => table schema (may be null)
@@ -345,8 +365,27 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // grant to others;
         // "NO" if not; null if unknown
         return new DMDResultSet(new Object[][] { { null, null, table, "", null,
-                "", "", "NO" } }, Col);
+                "", "", "NO" } }, Col, DMDResultSetType.getColumnPrivileges);
         // TODO we might need this more implemented.
+    }
+
+    /**
+     * Checks if the input String matches the pattern string which may contain
+     * %, which means it can be any character
+     * 
+     * @param input
+     * @param pattern
+     * @return true if matches, false if not
+     */
+    private boolean matchpattern(String input, String pattern) {
+        if (pattern.contains("%")) {
+            return input.matches(pattern.replace("%", ".*"));
+        } else {
+            if (input.contains(pattern))
+                return true;
+            else
+                return false;
+        }
     }
 
     /** {@inheritDoc} */
@@ -354,6 +393,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public ResultSet getColumns(String catalog, String schemaPattern,
             String tableNamePattern, String columnNamePattern)
             throws SQLException {
+        logger.debug("Function call getColumns(" + catalog + ","
+                + schemaPattern + "," + tableNamePattern + ","
+                + columnNamePattern + ")");
         List<Table> Tables = null;
         try {
             Tables = BQSupportFuncts.GetTables(this.Connection, catalog,
@@ -379,7 +421,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                     int index = 1;
                     for (TableFieldSchema Column : tblfldschemas) {
                         if (columnNamePattern == null
-                                || Column.getName().contains(columnNamePattern)) {
+                                || matchpattern(Column.getName(),
+                                        columnNamePattern)) {
                             String[] Col = new String[23];
                             // TABLE_CAT String => table catalog (may be null)
                             Col[0] = ProjectId;
@@ -471,7 +514,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                         "SQL_DATETIME_SUB", "CHAR_OCTET_LENGTH",
                         "ORDINAL_POSITION", "IS_NULLABLE", "SCOPE_CATLOG",
                         "SCOPE_SCHEMA", "SCOPE_TABLE", "SOURCE_DATA_TYPE",
-                        "IS_AUTOINCREMENT", });
+                        "IS_AUTOINCREMENT", }, DMDResultSetType.getColumns);
             }
         } else
             return new DMDResultSet(new String[][] { { null, null } },
@@ -483,7 +526,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                             "CHAR_OCTET_LENGTH", "ORDINAL_POSITION",
                             "IS_NULLABLE", "SCOPE_CATLOG", "SCOPE_SCHEMA",
                             "SCOPE_TABLE", "SOURCE_DATA_TYPE",
-                            "IS_AUTOINCREMENT", });
+                            "IS_AUTOINCREMENT", }, DMDResultSetType.getColumns);
     }
 
     /** {@inheritDoc} */
@@ -504,6 +547,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public ResultSet getCrossReference(String parentCatalog,
             String parentSchema, String parentTable, String foreignCatalog,
             String foreignSchema, String foreignTable) throws SQLException {
+        logger.debug("Function call getCrossReference(String,String,String,String,String,String)");
         String[] Col = new String[14];
         Col[0] = "PKTABLE_CAT";
         // String => parent key table catalog (may be null)
@@ -538,7 +582,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         Col[13] = "DEFERRABILITY";
         // short => can the evaluation of foreign key constraints be deferred
         // until commit
-        return new DMDResultSet(new Object[0][14], Col);
+        return new DMDResultSet(new Object[0][14], Col,
+                DMDResultSetType.getCrossReference);
         // TODO
     }
 
@@ -640,6 +685,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getExportedKeys(String catalog, String schema, String table)
             throws SQLException {
+        logger.debug("Function call getExportedKeys(String,String,String)");
         String[] Col = new String[14];
         Col[0] = "PKTABLE_CAT";
         // String => parent key table catalog (may be null)
@@ -674,7 +720,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         Col[13] = "DEFERRABILITY";
         // short => can the evaluation of foreign key constraints be deferred
         // until commit
-        return new DMDResultSet(new Object[0][14], Col);
+        return new DMDResultSet(new Object[0][14], Col,
+                DMDResultSetType.getExportedKeys);
     }
 
     /**
@@ -700,6 +747,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public ResultSet getFunctionColumns(String catalog, String schemaPattern,
             String functionNamePattern, String columnNamePattern)
             throws SQLException {
+        logger.debug("Function call getFunctionColumns(String,String,String,String)");
         throw new BQSQLException("Not implemented."
                 + "getFunctionColumns(String,String,String,String)");
     }
@@ -715,6 +763,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getFunctions(String catalog, String schemaPattern,
             String functionNamePattern) throws SQLException {
+        logger.debug("Function call getFunctions(String,String,String)");
         throw new BQSQLException("Not implemented."
                 + "getFunctions(String,String,String)");
     }
@@ -741,6 +790,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getImportedKeys(String catalog, String schema, String table)
             throws SQLException {
+        logger.debug("Function call getImportedKeys(String,String,String)");
         String[] Col = new String[14];
         Col[0] = "PKTABLE_CAT";
         // String => primary key table catalog being imported (may be null)
@@ -775,7 +825,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         Col[13] = "DEFERRABILITY";
         // short => can the evaluation of foreign key constraints be deferred
         // until commit
-        return new DMDResultSet(new Object[0][14], Col);
+        return new DMDResultSet(new Object[0][14], Col,
+                DMDResultSetType.getImportedKeys);
     }
 
     /**
@@ -789,6 +840,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getIndexInfo(String catalog, String schema, String table,
             boolean unique, boolean approximate) throws SQLException {
+        logger.debug("Function call getIndexInfo(String,String,String,boolean,boolean)");
         String[] Col = new String[13];
         Col[0] = "TABLE_CAT";
         // String => table catalog (may be null)
@@ -825,7 +877,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // for the current index.
         Col[12] = "FILTER_CONDITION";
         // String => Filter condition, if any. (may be null)
-        return new DMDResultSet(new Object[0][13], Col);
+        return new DMDResultSet(new Object[0][13], Col,
+                DMDResultSetType.getIndexInfo);
         // TODO implement it more
     }
 
@@ -1138,6 +1191,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getPrimaryKeys(String catalog, String schema, String table)
             throws SQLException {
+        logger.debug("Function call getPrimaryKeys(String,String,String)");
         String[] Col = new String[6];
         Col[0] = "TABLE_CAT";
         // String => table catalog (may be null)
@@ -1153,7 +1207,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // second column within the primary key).
         Col[5] = "PK_NAME";
         // String => primary key name (may be null)
-        return new DMDResultSet(new Object[0][8], Col);
+        return new DMDResultSet(new Object[0][8], Col,
+                DMDResultSetType.getPrimaryKeys);
     }
 
     /**
@@ -1168,6 +1223,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public ResultSet getProcedureColumns(String catalog, String schemaPattern,
             String procedureNamePattern, String columnNamePattern)
             throws SQLException {
+        logger.debug("Function call getProcedureColumns(String,String,String,String)");
         String[] Col = new String[20];
         Col[0] = "PROCEDURE_CAT";
         // String => procedure catalog (may be null)
@@ -1224,7 +1280,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         Col[19] = "SPECIFIC_NAME";
         // String => the name which uniquely identifies this procedure within
         // its schema.
-        return new DMDResultSet(new Object[0][20], Col);
+        return new DMDResultSet(new Object[0][20], Col,
+                DMDResultSetType.getProcedureColumns);
     }
 
     /**
@@ -1240,6 +1297,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getProcedures(String catalog, String schemaPattern,
             String procedureNamePattern) throws SQLException {
+        logger.debug("Function call getProcedures(String,String,String)");
         String[] Col = new String[9];
         Col[0] = "PROCEDURE_CAT";
         // String => procedure catalog (may be null)
@@ -1257,7 +1315,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         Col[8] = "SPECIFIC_NAME";
         // String => The name which uniquely identifies this procedure within
         // its schema.
-        return new DMDResultSet(new Object[0][9], Col);
+        return new DMDResultSet(new Object[0][9], Col,
+                DMDResultSetType.getProcedures);
     }
 
     /**
@@ -1298,6 +1357,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     /** {@inheritDoc} */
     @Override
     public ResultSet getSchemas() throws SQLException {
+        logger.debug("Function call getSchemas()");
+
         String[][] data = null;
 
         List<Projects> Projects;
@@ -1330,12 +1391,20 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                     }
                 }
             }
-        if (data != null)
+        if (data != null) {
+            logger.debug("data was not null, data length = " + data.length);
+            for (int i = 0; i < data.length; i++) {
+                logger.debug("data" + i + "[0] = " + data[i][0].toString());
+                logger.debug("data" + i + "[1] = " + data[i][1].toString());
+            }
             return new DMDResultSet(data, new String[] { "TABLE_SCHEM",
-                    "TABLE_CATALOG" });
-        else
+                    "TABLE_CATALOG" }, DMDResultSetType.getSchemas);
+        } else {
+            logger.debug("data was null");
             return new DMDResultSet(new String[][] { { null, null } },
-                    new String[] { "TABLE_SCHEM", "TABLE_CATALOG" });
+                    new String[] { "TABLE_SCHEM", "TABLE_CATALOG" },
+                    DMDResultSetType.getSchemas);
+        }
     }
 
     /**
@@ -1355,6 +1424,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getSchemas(String catalog, String schemaPattern)
             throws SQLException {
+        logger.debug("Function call getSchemas(String,String)");
         String[][] data = null;
         List<Projects> Projects;
         String[] Col = new String[2];
@@ -1410,10 +1480,11 @@ class BQDatabaseMetadata implements DatabaseMetaData {
 
         if (data != null)
             return new DMDResultSet(data, new String[] { "TABLE_SCHEM",
-                    "TABLE_CATALOG" });
+                    "TABLE_CATALOG" }, DMDResultSetType.getSchemas);
         else
             return new DMDResultSet(new String[][] { { null, null } },
-                    new String[] { "TABLE_SCHEM", "TABLE_CATALOG" });
+                    new String[] { "TABLE_SCHEM", "TABLE_CATALOG" },
+                    DMDResultSetType.getSchemas);
     }
 
     /**
@@ -1542,6 +1613,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getSuperTables(String catalog, String schemaPattern,
             String tableNamePattern) throws SQLException {
+        logger.debug("Function call getSuperTables(String,String,String)");
         String[] Col = new String[4];
         Col[0] = "TABLE_CAT";
         // String => the type's catalog (may be null)
@@ -1551,7 +1623,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // String => type name
         Col[3] = "SUPERTABLE_NAME";
         // String => the direct super type's
-        return new DMDResultSet(new Object[0][4], Col);
+        return new DMDResultSet(new Object[0][4], Col,
+                DMDResultSetType.getSuperTables);
     }
 
     /**
@@ -1565,6 +1638,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getSuperTypes(String catalog, String schemaPattern,
             String typeNamePattern) throws SQLException {
+        logger.debug("Function call getSuperTypes(String,String,String)");
         String[] Col = new String[6];
         Col[0] = "TYPE_CAT";
         // String => the UDT's catalog (may be null)
@@ -1578,7 +1652,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // String => the direct super type's schema (may be null)
         Col[5] = "SUPERTYPE_NAME";
         // String => the direct super type's name
-        return new DMDResultSet(new Object[0][6], Col);
+        return new DMDResultSet(new Object[0][6], Col,
+                DMDResultSetType.getSuperTypes);
     }
 
     /**
@@ -1602,6 +1677,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getTablePrivileges(String catalog, String schemaPattern,
             String tableNamePattern) throws SQLException {
+        logger.debug("Function call getTablePrivileges(String,String,String)");
         String[] Col = new String[8];
         Col[0] = "TABLE_CAT"; // String => table catalog (may be null)
         Col[1] = "TABLE_SCHEM"; // String => table schema (may be null)
@@ -1614,7 +1690,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         Col[7] = "IS_GRANTABLE";// String => "YES" if grantee is permitted to
         // grant to others;
         // "NO" if not; null if unknown
-        return new DMDResultSet(new Object[0][8], Col);
+        return new DMDResultSet(new Object[0][8], Col,
+                DMDResultSetType.getTablePrivileges);
         // TODO we might need this more implemented.
     }
 
@@ -1622,6 +1699,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getTables(String catalog, String schemaPattern,
             String tableNamePattern, String[] types) throws SQLException {
+        logger.debug("Function call getTables(String,String,String,String[])");
         List<Table> tables = null;
         try {
             tables = BQSupportFuncts.GetTables(this.Connection, catalog,
@@ -1654,13 +1732,14 @@ class BQDatabaseMetadata implements DatabaseMetaData {
             return new DMDResultSet(data, new String[] { "TABLE_CAT",
                     "TABLE_SCHEM", "TABLE_NAME", "TABLE_TYPE", "REMARKS",
                     "TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME",
-                    "SELF_REFERENCING_COL_NAME", "REF_GENERATION" });
+                    "SELF_REFERENCING_COL_NAME", "REF_GENERATION" },
+                    DMDResultSetType.getTables);
         } else
             return new DMDResultSet(new String[][] { { null, null } },
                     new String[] { "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
                             "TABLE_TYPE", "REMARKS", "TYPE_CAT", "TYPE_SCHEM",
                             "TYPE_NAME", "SELF_REFERENCING_COL_NAME",
-                            "REF_GENERATION" });
+                            "REF_GENERATION" }, DMDResultSetType.getTables);
     }
 
     /**
@@ -1671,10 +1750,12 @@ class BQDatabaseMetadata implements DatabaseMetaData {
      */
     @Override
     public ResultSet getTableTypes() throws SQLException {
+        logger.debug("Function call getTableTypes()");
         List<String> Res = new ArrayList<String>();
         Res.add("TABLE");
 
-        return new DMDResultSet(Res.toArray(), new String[] { "TABLE_TYPE" });
+        return new DMDResultSet(Res.toArray(), new String[] { "TABLE_TYPE" },
+                DMDResultSetType.getTableTypes);
     }
 
     /**
@@ -1711,6 +1792,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
      */
     @Override
     public ResultSet getTypeInfo() throws SQLException {
+        logger.debug("Function call getTypeInfo()");
         String[] Col = new String[18];
         Col[0] = "TYPE_NAME"; // String => Type name
         Col[1] = "DATA_TYPE"; // int => SQL data type from java.sql.Types
@@ -1736,7 +1818,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         Col[15] = "SQL_DATA_TYPE"; // int => unused
         Col[16] = "SQL_DATETIME_SUB";// int => unused
         Col[17] = "NUM_PREC_RADIX"; // int => usually 2 or 10
-        return new DMDResultSet(new Object[0][18], Col);
+        return new DMDResultSet(new Object[0][18], Col,
+                DMDResultSetType.getTypeInfo);
         // TODO we might need this more implemented
     }
 
@@ -1751,6 +1834,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getUDTs(String catalog, String schemaPattern,
             String typeNamePattern, int[] types) throws SQLException {
+        logger.debug("Function call getUDTs(String,String,String,int[])");
         String[] Col = new String[7];
         Col[0] = "TYPE_CAT";
         // String => the type's catalog (may be null)
@@ -1767,7 +1851,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // String => explanatory comment on the type
         Col[6] = "BASE_TYPE";
         // short => type code of the source type of a DISTINCT type or ...
-        return new DMDResultSet(new Object[0][7], Col);
+        return new DMDResultSet(new Object[0][7], Col, DMDResultSetType.getUDTs);
     }
 
     /**
@@ -1802,6 +1886,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getVersionColumns(String catalog, String schema,
             String table) throws SQLException {
+        logger.debug("Function call getVersionColumns(String,String,String)");
         String[] Col = new String[8];
         Col[0] = "SCOPE";
         // short => is not used
@@ -1820,7 +1905,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // is not applicable.
         Col[7] = "PSEUDO_COLUMN";
         // short => whether this is pseudo column like an Oracle ROWID
-        return new DMDResultSet(new Object[0][8], Col);
+        return new DMDResultSet(new Object[0][8], Col,
+                DMDResultSetType.getVersionColumns);
         // TODO we might need it
     }
 

@@ -190,6 +190,7 @@ abstract class ScrollableResultset<T> implements java.sql.ResultSet {
     public void close() throws SQLException {
         // TODO free occupied resources
         this.Closed = true;
+        this.RowsofResult = null;
     }
 
     /**

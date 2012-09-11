@@ -48,6 +48,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.log4j.Logger;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -67,6 +68,7 @@ import com.google.api.client.auth.oauth2.CredentialStore;
  */
 public class BQXMLCredentialStore implements CredentialStore {
 
+    Logger logger = Logger.getLogger(BQXMLCredentialStore.class);
     /**
      * Decrypts AES encrypted byte array
      * 
@@ -203,7 +205,18 @@ public class BQXMLCredentialStore implements CredentialStore {
         Properties properties = new Properties();
         properties.load(inputStream);
         inputStream.close();
-        this.documentpath = properties.getProperty("xmlpath");
+        logger.debug(properties.getProperty("xmlpath"));
+        if(properties.getProperty("xmlpath").contains("${user.home}")){
+            this.documentpath = System.getProperty("user.home") + 
+                properties.getProperty("xmlpath").substring(
+                properties.getProperty("xmlpath").lastIndexOf("}")+1);
+        }
+        else this.documentpath = properties.getProperty("xmlpath");
+        logger.info("Document path for the credentials is: " + this.documentpath);
+        //checking the path, making the directories if they doesn't exists
+        File pathofdocumentpath = new File(new File(this.documentpath).getParent());
+        if(!pathofdocumentpath.exists())
+            pathofdocumentpath.mkdirs();
     }
 
     @Override
@@ -382,6 +395,7 @@ public class BQXMLCredentialStore implements CredentialStore {
     @Override
     public void store(String userId, Credential credential) throws IOException {
         Document doc = null;
+        logger.debug(this.documentpath);
         doc = this.loadorcreateDocument(this.documentpath);
 
         NodeList elements = doc.getElementsByTagName("Credential");

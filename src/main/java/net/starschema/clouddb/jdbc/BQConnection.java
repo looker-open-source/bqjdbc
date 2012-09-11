@@ -117,6 +117,7 @@ public class BQConnection implements Connection {
         this.isclosed = false;
 
         if (url.contains("&user=") && url.contains("&password=")) {
+            logger.debug("url contains &user and &password");
             int passwordindex = url.indexOf("&password=");
             int userindex = url.indexOf("&user=");
 
@@ -136,54 +137,75 @@ public class BQConnection implements Connection {
             try {
                 projectid = URLDecoder.decode(
                         url.substring(url.lastIndexOf(":") + 1), "UTF-8");
+                logger.debug("projectid + end of url: " + projectid);
             } catch (UnsupportedEncodingException e1) {
                 throw new BQSQLException(e1);
             }
             if (url.contains("?withServiceAccount=true")) {
+                logger.debug("url contains ?withServiceAccount=true");
                 this.projectid = projectid.substring(0, projectid.indexOf("?"));
+                logger.debug("Project id is: " + this.projectid);
                 try {
                     this.bigquery = Oauth2Bigquery.authorizeviaservice(id, key);
+                    logger.info("Authorized with service account");
                 } catch (GeneralSecurityException e) {
                     throw new BQSQLException(e);
                 } catch (IOException e) {
                     throw new BQSQLException(e);
                 }
             } else if (url.contains("?withServiceAccount=false")) {
+                logger.debug("url contains ?withServiceAccount=false");
                 this.projectid = projectid.substring(0, projectid.indexOf("?"));
+                logger.debug("Project id is: " + this.projectid);
                 this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
-            } else
-            {
-                this.projectid = projectid.substring(0, projectid.indexOf("&user"));
+                logger.info("Authorized with Oauth");
+            } else {
+                logger.debug("url doesn't contains ?withServiceAccount");
+                this.projectid = projectid.substring(0,
+                        projectid.indexOf("&user"));
+                logger.debug("Project id is: " + this.projectid);
                 this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
+                logger.info("Authorized with Oauth");
             }
         } else {
-
+            logger.debug("url doesn't contains &user and &password");
             String id = loginProp.getProperty("user");
             String key = loginProp.getProperty("password");
             String projectid;
             try {
                 projectid = URLDecoder.decode(
                         url.substring(url.lastIndexOf(":") + 1), "UTF-8");
+                logger.debug("Project id with end of url: " + projectid);
             } catch (UnsupportedEncodingException e1) {
                 throw new BQSQLException(e1);
             }
 
             if (url.contains("?withServiceAccount=true")) {
+                logger.debug("url contains ?withServiceAccount=true");
                 this.projectid = projectid.substring(0, projectid.indexOf("?"));
+                logger.debug("Project id is: " + this.projectid);
                 try {
                     this.bigquery = Oauth2Bigquery.authorizeviaservice(id, key);
+                    logger.info("Authorized with service account");
                 } catch (GeneralSecurityException e) {
                     throw new BQSQLException(e);
                 } catch (IOException e) {
                     throw new BQSQLException(e);
                 }
             } else {
-                if (url.contains("?withServiceAccount=false"))
+                if (url.contains("?withServiceAccount=false")) {
+                    logger.debug("url contains ?withServiceAccount=false");
                     this.projectid = projectid.substring(0,
                             projectid.indexOf("?"));
-                else
+                    logger.debug("Project id is: " + this.projectid);
+                } else {
+                    logger.debug("url doesn't contains ?withServiceAccount");
                     this.projectid = projectid;
+                    logger.debug("Project id is: " + this.projectid);
+                }
+                logger.debug("Authorizing with Oauth as installed");
                 this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
+                logger.info("Authorized with oauth");
             }
         }
     }
@@ -332,8 +354,10 @@ public class BQConnection implements Connection {
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency)
             throws SQLException {
-        if (this.isClosed()) throw new BQSQLException("The Connection is Closed");
-        return new BQStatement(this.projectid, this, resultSetType, resultSetConcurrency);
+        if (this.isClosed())
+            throw new BQSQLException("The Connection is Closed");
+        return new BQStatement(this.projectid, this, resultSetType,
+                resultSetConcurrency);
     }
 
     /**

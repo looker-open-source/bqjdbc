@@ -100,8 +100,9 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getColumnDisplaySize(int column) throws SQLException {
-        return 1024*64;
-        //TODO Check the maximum lenght of characters contained in this resulset for each column
+        return 1024 * 64;
+        // TODO Check the maximum lenght of characters contained in this
+        // resulset for each column
     }
 
     /** {@inheritDoc} */
@@ -216,24 +217,21 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getScale(int column) throws SQLException {
-        if(getColumnType(column) == java.sql.Types.FLOAT){
+        if (getColumnType(column) == java.sql.Types.FLOAT) {
             int max = 0;
-            for(int i =0;i<result.getRows().size();i++)
-            {
-                String rowdata =
-                result.getRows().get(i).getF().get(column-1).getV();
-                if (rowdata.contains(".")){
-                    int pointback=rowdata.length()-rowdata.indexOf(".");
-                    if(pointback > max)pointback=max;
+            for (int i = 0; i < result.getRows().size(); i++) {
+                String rowdata = result.getRows().get(i).getF().get(column - 1)
+                        .getV();
+                if (rowdata.contains(".")) {
+                    int pointback = rowdata.length() - rowdata.indexOf(".");
+                    if (pointback > max)
+                        pointback = max;
                 }
             }
             return max;
-        }
-        else
+        } else
             return 0;
     }
-    
-    
 
     /**
      * <p>
@@ -291,14 +289,14 @@ class BQResultsetMetaData implements ResultSetMetaData {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Not implemented yet.
+     * We store everything as string.
      * </p>
      * 
-     * @throws BQSQLException
+     * @return false
      */
     @Override
     public boolean isCurrency(int column) throws SQLException {
-        throw new BQSQLException("Not implemented." + "isCurrency(int)");
+        return false;
     }
 
     /**
