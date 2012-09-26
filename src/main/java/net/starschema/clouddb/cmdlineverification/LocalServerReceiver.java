@@ -1,14 +1,18 @@
 /*
  * Copyright (c) 2011 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except
  * in compliance with the License. You may obtain a copy of the License at
- *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express
+ * or implied. See the License for the specific language governing permissions
+ * and limitations under
  * the License.
  */
 
@@ -36,18 +40,19 @@ import org.mortbay.jetty.handler.AbstractHandler;
  * @author Yaniv Inbar
  */
 public final class LocalServerReceiver implements VerificationCodeReceiver {
-
+    
     /**
      * Jetty handler that takes the verifier token passed over from the OAuth
      * provider and stashes it where {@link #waitForCode} will find it.
      */
     class CallbackHandler extends AbstractHandler {
-
+        
         @Override
         public void handle(String target, HttpServletRequest request,
                 HttpServletResponse response, int dispatch) throws IOException {
-            if (!LocalServerReceiver.CALLBACK_PATH.equals(target))
+            if (!LocalServerReceiver.CALLBACK_PATH.equals(target)) {
                 return;
+            }
             this.writeLandingHtml(response);
             response.flushBuffer();
             ((Request) request).setHandled(true);
@@ -62,12 +67,12 @@ public final class LocalServerReceiver implements VerificationCodeReceiver {
                 LocalServerReceiver.this.notify();
             }
         }
-
+        
         private void writeLandingHtml(HttpServletResponse response)
                 throws IOException {
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType("text/html");
-
+            
             PrintWriter doc = response.getWriter();
             doc.println("<html>");
             doc.println("<head><title>OAuth 2.0 Authentication Token Recieved</title></head>");
@@ -86,37 +91,39 @@ public final class LocalServerReceiver implements VerificationCodeReceiver {
             doc.flush();
         }
     }
-
+    
     private static final String CALLBACK_PATH = "/Callback";
-
+    
     private static int getUnusedPort() throws IOException {
         Socket s = new Socket();
         s.bind(null);
         try {
             return s.getLocalPort();
-        } finally {
+        }
+        finally {
             s.close();
         }
     }
-
+    
     /** Server or {@code null} before {@link #getRedirectUri()}. */
     private Server server;
-
+    
     /** Verification code or {@code null} before received. */
     volatile String code;
-
+    
     @Override
     public String getRedirectUri() throws Exception {
         int port = LocalServerReceiver.getUnusedPort();
         this.server = new Server(port);
-        for (Connector c : this.server.getConnectors())
+        for (Connector c : this.server.getConnectors()) {
             c.setHost("localhost");
+        }
         this.server.addHandler(new CallbackHandler());
         this.server.start();
         return "http://localhost:" + port + LocalServerReceiver.CALLBACK_PATH;
-
+        
     }
-
+    
     @Override
     public void stop() throws Exception {
         if (this.server != null) {
@@ -124,12 +131,13 @@ public final class LocalServerReceiver implements VerificationCodeReceiver {
             this.server = null;
         }
     }
-
+    
     @Override
     public synchronized String waitForCode() {
         try {
             this.wait();
-        } catch (InterruptedException exception) {
+        }
+        catch (InterruptedException exception) {
             // should not happen
         }
         return this.code;
