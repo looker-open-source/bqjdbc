@@ -83,10 +83,10 @@ public class PreparedStatementTests {
             PreparedStatementTests.con = DriverManager
                     .getConnection(
                             BQSupportFuncts
-                                    .ConstructUrlFromPropertiesFile(BQSupportFuncts
-                                            .ReadFromPropFile("installedaccount.properties")),
+                                    .constructUrlFromPropertiesFile(BQSupportFuncts
+                                            .readFromPropFile("installedaccount1.properties")),
                             BQSupportFuncts
-                                    .ReadFromPropFile("installedaccount.properties"));
+                                    .readFromPropFile("installedaccount1.properties"));
         }
         catch (Exception e) {
             e.printStackTrace();

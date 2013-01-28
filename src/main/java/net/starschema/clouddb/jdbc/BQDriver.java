@@ -49,6 +49,8 @@
 package net.starschema.clouddb.jdbc;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
@@ -59,6 +61,8 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+// import net.starschema.clouddb.bqjdbc.logging.Logger;
+
 /**
  * This Class implements the java.sql.Driver interface
  * 
@@ -67,13 +71,14 @@ import org.apache.log4j.PropertyConfigurator;
 public class BQDriver implements java.sql.Driver {
     
     /** Instance log4j.Logger */
-    static Logger logg;
+    // static Logger logg = new Logger(BQDriver.class.getName());
+    static Logger logg = Logger.getLogger(BQDriver.class.getName());
     /** Url_Prefix for using this driver */
     private static final String URL_PREFIX = "jdbc:BQDriver:";
     /** MAJOR Version of the driver */
     private static final int MAJOR_VERSION = 1;
     /** Minor Version of the driver */
-    private static final int MINOR_VERSION = 0;
+    private static final int MINOR_VERSION = 1;
     
     /** Registers the driver with the drivermanager */
     static {
@@ -81,15 +86,20 @@ public class BQDriver implements java.sql.Driver {
             
             BQDriver driverInst = new BQDriver();
             DriverManager.registerDriver(driverInst);
+            
+            Properties properties = new Properties();
             try {
-                PropertyConfigurator.configure(System.getProperty("user.home")
-                        + File.separator + ".bqjdbc" + File.separator
-                        + "log4j.properties");
+                properties.load(new FileInputStream(System
+                        .getProperty("user.home")
+                        + File.separator
+                        + ".bqjdbc"
+                        + File.separator + "log4j.properties"));
+                PropertyConfigurator.configure(properties);
             }
-            catch (NullPointerException e) {
+            catch (IOException e) {
                 BasicConfigurator.configure();
-                // throw new BQSQLException("log4j.properties not found", e);
             }
+            
             logg = Logger.getLogger(driverInst.getClass());
             logg.debug("Registered the driver");
             
@@ -97,6 +107,7 @@ public class BQDriver implements java.sql.Driver {
         catch (Exception e) {
             e.printStackTrace();
         }
+        
     }
     
     /**

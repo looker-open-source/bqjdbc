@@ -49,6 +49,8 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+// import net.starschema.clouddb.bqjdbc.logging.Logger;
+
 /**
  * This class implements the java.sql.ResultSet interface's Cursor and is a
  * Superclass for BQResultset and DMDResultSet
@@ -60,7 +62,8 @@ import org.apache.log4j.Logger;
  */
 abstract class ScrollableResultset<T> implements java.sql.ResultSet {
     
-    Logger logger = Logger.getLogger(ScrollableResultset.class);
+    // Logger logger = new Logger(ScrollableResultset.class.getName());
+    Logger logger = Logger.getLogger(ScrollableResultset.class.getName());
     /** Reference for holding the current InputStream given back by get methods */
     protected InputStream Strm = null;
     
@@ -826,6 +829,7 @@ abstract class ScrollableResultset<T> implements java.sql.ResultSet {
      */
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
+        logger.debug("ResultSetMetaData getMetaData()" + "Not implemented");
         throw new BQSQLException("Not implemented." + "getMetaData()");
         // TODO Implement
     }

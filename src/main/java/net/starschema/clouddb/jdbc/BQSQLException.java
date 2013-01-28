@@ -23,6 +23,8 @@ import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 
+// import net.starschema.clouddb.bqjdbc.logging.Logger;
+
 /**
  * <p>
  * An exception that provides information on a database access error or other
@@ -49,7 +51,8 @@ import org.apache.log4j.Logger;
 public class BQSQLException extends SQLException {
     
     private static final long serialVersionUID = -3669725541475950504L;
-    Logger logger = Logger.getLogger(this.getClass());
+    // Logger logger = new Logger(BQSQLException.class.getName());
+    Logger logger = Logger.getLogger(BQSQLException.class.getName());
     
     /**
      * <p>

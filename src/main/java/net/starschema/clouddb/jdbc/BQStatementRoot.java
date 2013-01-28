@@ -33,6 +33,8 @@ import org.apache.log4j.Logger;
 
 import com.google.api.services.bigquery.model.Job;
 
+// import net.starschema.clouddb.bqjdbc.logging.Logger;
+
 /**
  * This class partially implements java.sql.Statement, and
  * java.sql.PreparedStatement
@@ -48,8 +50,8 @@ public abstract class BQStatementRoot {
     
     /** String containing the context of the Project */
     String ProjectId = null;
-    
-    Logger logger = Logger.getLogger(BQStatementRoot.class);
+    // Logger logger = new Logger(BQStatementRoot.class.getName());
+    Logger logger = Logger.getLogger(BQStatementRoot.class.getName());
     
     /** Variable that stores the closed state of the statement */
     boolean closed = false;
@@ -79,6 +81,11 @@ public abstract class BQStatementRoot {
      */
     int resultSetType;
     int resultSetConcurrency;
+    
+    /**
+     * to be used with setMaxFieldSize
+     */
+    private int maxFieldSize = 0;
     
     /**
      * <p>
@@ -227,6 +234,10 @@ public abstract class BQStatementRoot {
         }
         this.starttime = System.currentTimeMillis();
         Job referencedJob;
+        // ANTLR Parsing
+        BQQueryParser parser = new BQQueryParser(querySql, this.connection);
+        querySql = parser.parse();
+        
         try {
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
@@ -234,14 +245,14 @@ public abstract class BQStatementRoot {
             this.logger.info("Executing Query: " + querySql);
         }
         catch (IOException e) {
-            throw new BQSQLException(e);
+            throw new BQSQLException("Something went wrong with the query: " + querySql,e);
         }
         try {
             do {
                 if (BQSupportFuncts.getQueryState(referencedJob,
                         this.connection.getBigquery(), this.ProjectId).equals(
                         "DONE")) {
-                    return new BQResultSet(BQSupportFuncts.GetQueryResults(
+                    return new BQResultSet(BQSupportFuncts.getQueryResults(
                             this.connection.getBigquery(), this.ProjectId,
                             referencedJob), this);
                 }
@@ -257,8 +268,8 @@ public abstract class BQStatementRoot {
             while (System.currentTimeMillis() - this.starttime <= (long) this.querytimeout * 1000);
             // it runs for a minimum of 1 time
         }
-        catch (IOException e) {
-            throw new BQSQLException(e);
+        catch (IOException e) {            
+            throw new BQSQLException("Something went wrong with the query: " + querySql,e);
         }
         catch (InterruptedException e) {
             e.printStackTrace();
@@ -384,7 +395,7 @@ public abstract class BQStatementRoot {
      */
     
     public int getMaxFieldSize() throws SQLException {
-        throw new BQSQLException("Not implemented." + "getMaxFieldSize()");
+        return maxFieldSize;
     }
     
     /**
@@ -662,14 +673,17 @@ public abstract class BQStatementRoot {
     
     /**
      * <p>
-     * <h1>Implementation Details:</h1><br>
-     * Not implemented yet.
+     * Sets the limit for the maximum number of bytes in a ResultSet column storing 
+     * character or binary values to the given number of bytes. This limit applies only 
+     * to BINARY, VARBINARY, LONGVARBINARY, CHAR, VARCHAR, and LONGVARCHAR fields. 
+     * If the limit is exceeded, the excess data is silently discarded. For maximum 
+     * portability, use values greater than 256.
      * </p>
      * 
      * @throws BQSQLException
      */
     public void setMaxFieldSize(int arg0) throws SQLException {
-        throw new BQSQLException("Not implemented." + "setMaxFieldSize(int)");
+        this.maxFieldSize = arg0;
     }
     
     /**

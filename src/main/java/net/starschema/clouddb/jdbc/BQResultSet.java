@@ -31,10 +31,15 @@ import com.google.api.services.bigquery.model.TableRow;
  * This class implements the java.sql.ResultSet interface its superclass is
  * ScrollableResultset
  * 
- * @author Horváth Attila
+ * @author Attila Horváth
  */
 public class BQResultSet extends ScrollableResultset<Object> implements
         java.sql.ResultSet {
+    
+    /**
+     * to set the maxFieldSize
+     */
+    private int maxFieldSize = 0;
     
     /**
      * This Reference is for storing the GetQueryResultsResponse got from
@@ -56,7 +61,15 @@ public class BQResultSet extends ScrollableResultset<Object> implements
             this.Result.setTotalRows(maxrow);
         }
         catch (SQLException e) {
-        } // Should not happen.
+         // Should not happen.
+        }
+        
+        try {            
+            maxFieldSize = bqPreparedStatement.getMaxFieldSize();
+        }
+        catch (SQLException e) {
+         // Should not happen.
+        }
         
         if (this.Result.getRows() == null) {
             this.RowsofResult = null;
@@ -85,6 +98,13 @@ public class BQResultSet extends ScrollableResultset<Object> implements
         }
         catch (SQLException e) {
         } // Should not happen.
+        
+        try {            
+            maxFieldSize = bqStatementRoot.getMaxFieldSize(); 
+        }
+        catch (SQLException e) {
+         // Should not happen.
+        }
         
         if (this.Result.getRows() == null) {
             this.RowsofResult = null;
@@ -126,6 +146,8 @@ public class BQResultSet extends ScrollableResultset<Object> implements
     /** {@inheritDoc} */
     @Override
     public Object getObject(int columnIndex) throws SQLException {
+        // to make the logfiles smaller!
+        //logger.debug("Function call getObject columnIndex is: " + String.valueOf(columnIndex));
         this.closestrm();
         if (this.isClosed()) {
             throw new BQSQLException("This Resultset is Closed");
@@ -149,24 +171,31 @@ public class BQResultSet extends ScrollableResultset<Object> implements
         else {
             this.wasnull = false;
             try {
+                if (Columntype.equals("STRING")) {
+                  //removing the excess byte by the setmaxFiledSize
+                    if(maxFieldSize == 0 || maxFieldSize == Integer.MAX_VALUE){
+                        return result;
+                    }
+                    else {
+                        try{ //lets try to remove the excess bytes
+                            return result.substring(0, maxFieldSize);
+                        }
+                        catch (IndexOutOfBoundsException iout){
+                            //we don't need to remove any excess byte
+                            return result;
+                        }
+                    } 
+                }
                 if (Columntype.equals("FLOAT")) {
                     return Float.parseFloat(result);
                 }
-                else
-                    if (Columntype.equals("BOOLEAN")) {
-                        return Boolean.parseBoolean(result);
-                    }
-                    else
-                        if (Columntype.equals("INTEGER")) {
-                            return Integer.parseInt(result);
-                        }
-                        else
-                            if (Columntype.equals("STRING")) {
-                                return (result);
-                            }
-                            else {
-                                throw new BQSQLException("Unsupported Type");
-                            }
+                if (Columntype.equals("BOOLEAN")) {
+                    return Boolean.parseBoolean(result);
+                }
+                if (Columntype.equals("INTEGER")) {
+                    return Integer.parseInt(result);
+                }
+                throw new BQSQLException("Unsupported Type");
             }
             catch (NumberFormatException e) {
                 throw new BQSQLException(e);
@@ -183,6 +212,8 @@ public class BQResultSet extends ScrollableResultset<Object> implements
     /** {@inheritDoc} */
     @Override
     public String getString(int columnIndex) throws SQLException {
+        //to make the logfiles smaller!
+        //logger.debug("Function call getString columnIndex is: " + String.valueOf(columnIndex));
         this.closestrm();
         this.ThrowCursorNotValidExeption();
         if (this.isClosed()) {
@@ -196,6 +227,18 @@ public class BQResultSet extends ScrollableResultset<Object> implements
         else {
             this.wasnull = false;
         }
-        return result;
+        //removing the excess byte by the setmaxFiledSize
+        if(maxFieldSize == 0 || maxFieldSize == Integer.MAX_VALUE){
+            return result;
+        }
+        else {
+            try{ //lets try to remove the excess bytes
+                return result.substring(0, maxFieldSize);
+            }
+            catch (IndexOutOfBoundsException iout){
+                //we don't need to remove any excess byte
+                return result;
+            }
+        }        
     }
 }

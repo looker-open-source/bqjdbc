@@ -31,6 +31,8 @@ import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableSchema;
 
+// import net.starschema.clouddb.bqjdbc.logging.Logger;
+
 /**
  * This class implements the java.sql.ResultSetMetadata interface
  * 
@@ -46,8 +48,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
     ResultSet results = null;
     
     /** Logger instance */
-    
-    Logger logger = Logger.getLogger(BQResultsetMetaData.class);
+    Logger logger = Logger.getLogger(BQResultsetMetaData.class.getName());
     
     /**
      * Constructor that initializes variables
@@ -56,7 +57,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      *            the bigquery GetQueryResultsResponse object
      */
     public BQResultsetMetaData(GetQueryResultsResponse result) {
-        
+        //logger.debug("function call getResultSetMetaData()");
         this.result = result;
     }
     
@@ -70,6 +71,8 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public String getCatalogName(int column) throws SQLException {
+        logger.debug("function call getCatalogName() return is: " +
+                this.result.getJobReference().getProjectId());
         return this.result.getJobReference().getProjectId();
     }
     
@@ -83,7 +86,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public String getColumnClassName(int column) throws SQLException {
-        this.logger.debug("getcolumnclassname(" + column + ")");
+        this.logger.debug("Function call getcolumnclassname(" + column + ")");
         
         String Columntype = null;
         try {
@@ -317,6 +320,8 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public String getSchemaName(int column) throws SQLException {
+        logger.debug("Function call getSchemaName(" + column +
+                ") will return empty string ");
         return "";
     }
     
@@ -330,6 +335,8 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public String getTableName(int column) throws SQLException {
+        logger.debug("Function call getTableName(" + column +
+                ") will return empty string ");
         return "";
     }
     
@@ -356,6 +363,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isCaseSensitive(int column) throws SQLException {
+        //FIXME really?
         // Google bigquery is case insensitive
         return false;
     }

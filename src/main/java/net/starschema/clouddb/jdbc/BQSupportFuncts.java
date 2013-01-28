@@ -40,9 +40,12 @@ import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobConfiguration;
 import com.google.api.services.bigquery.model.JobConfigurationQuery;
 import com.google.api.services.bigquery.model.ProjectList.Projects;
+import com.google.api.services.bigquery.model.ProjectReference;
 import com.google.api.services.bigquery.model.Table;
 import com.google.api.services.bigquery.model.TableList.Tables;
 import com.google.api.services.bigquery.model.TableRow;
+
+// import net.starschema.clouddb.bqjdbc.logging.Logger;
 
 /**
  * This class contains static methods for interacting with BigQuery
@@ -52,7 +55,8 @@ import com.google.api.services.bigquery.model.TableRow;
  */
 public class BQSupportFuncts {
     /** log4j.Logger instance */
-    static Logger logger = Logger.getLogger(BQSupportFuncts.class);
+    // static Logger logger = new Logger(BQSupportFuncts.class.getName());
+    static Logger logger = Logger.getLogger(BQSupportFuncts.class.getName());
     
     /**
      * Constructs a valid BigQuery JDBC driver URL from the specified properties
@@ -65,15 +69,21 @@ public class BQSupportFuncts {
      * @return a valid BigQuery JDBC driver URL or null if it fails to load
      * @throws UnsupportedEncodingException
      */
-    public static String ConstructUrlFromPropertiesFile(Properties properties)
+    public static String constructUrlFromPropertiesFile(Properties properties)
             throws UnsupportedEncodingException {
         String ProjectId = properties.getProperty("projectid");
+        logger.debug("projectId is: " + ProjectId);
         String User = properties.getProperty("user");
         String Password = properties.getProperty("password");
+        String transformQuery = null;      
+            
+        transformQuery = properties.getProperty("transformquery");
+        
+        String forreturn = "";
         
         if (properties.getProperty("type").equals("installed")) {
             if (User != null && Password != null && ProjectId != null) {
-                return BQDriver.getURLPrefix()
+                forreturn = BQDriver.getURLPrefix()
                         + URLEncoder.encode(ProjectId, "UTF-8");
             }
             else {
@@ -83,7 +93,7 @@ public class BQSupportFuncts {
         else
             if (properties.getProperty("type").equals("service")) {
                 if (User != null && Password != null && ProjectId != null) {
-                    return BQDriver.getURLPrefix()
+                    forreturn = BQDriver.getURLPrefix()
                             + URLEncoder.encode(ProjectId, "UTF-8")
                             + "?withServiceAccount=true";
                 }
@@ -94,6 +104,11 @@ public class BQSupportFuncts {
             else {
                 return null;
             }
+        
+        if(transformQuery != null){
+            return forreturn + "?transformQuery="+transformQuery;
+        }
+        else return forreturn;
     }
     
     /**
@@ -114,6 +129,7 @@ public class BQSupportFuncts {
      */
     public static void displayQueryResults(Bigquery bigquery, String projectId,
             Job completedJob) throws IOException {
+        projectId = projectId.replace("__", ":").replace("_", ".");
         GetQueryResultsResponse queryResult = bigquery
                 .jobs()
                 .getQueryResults(projectId,
@@ -131,7 +147,7 @@ public class BQSupportFuncts {
     /**
      * Return a list of Projects which contains the String catalogname
      * 
-     * @param catalogname
+     * @param catalogName
      *            The String which the id of the result Projects must contain
      * @param Connection
      *            A valid BQConnection instance
@@ -142,17 +158,40 @@ public class BQSupportFuncts {
      *             (to be sorted from) fails
      *             </p>
      */
-    private static List<Projects> getcatalogs(String catalogname,
+    private static List<Projects> getCatalogs(String catalogName,
             BQConnection Connection) throws IOException {
-        List<Projects> Projects = Connection.getBigquery().projects().list()
-                .execute().getProjects();
+        logger.debug("Function call getCatalogs catalogName: " + 
+            (catalogName != null ? catalogName : "null") );
+        List<Projects> projects = Connection.getBigquery().projects().list()
+                .execute().getProjects();        
         
-        if (Projects != null && Projects.size() != 0) {
-            if (catalogname != null) {
+/*
+        Projects publicData = new Projects();
+        publicData.setFriendlyName("Public Data Samples");
+        publicData.setId("publicdata:samples");
+        publicData.setKind("bigquery#project");
+        ProjectReference publicDataReference = new ProjectReference();
+        publicDataReference.setProjectId("publicdata:samples");
+        publicData.setProjectReference(publicDataReference);
+  */      
+        //since we'll use . -> _ : -> __ conversion, it's easier to
+        // replace all the . : before we do any compare
+        if (projects != null && projects.size() != 0) {             //we got projects!
+            //TODO maybe we should add the publicdata:samples too?
+    //        projects.add(publicData);
+            
+            for (Projects projects2 : projects) {                
+                projects2.setId(projects2.getId().replace(".", "_").replace(":", "__"));
+                //updating the reference too
+                ProjectReference projRef = projects2.getProjectReference();
+                projRef.setProjectId(projRef.getProjectId().replace(".", "_").replace(":", "__"));
+                projects2.setProjectReference(projRef);
+            }
+            if (catalogName != null) {
                 List<Projects> ProjectsSearch = new ArrayList<Projects>();
-                for (Projects in : Projects) {
-                    if (in.getId().contains(catalogname)) {
-                        ProjectsSearch.add(in);
+                for (Projects project : projects) {
+                    if (project.getId().contains(catalogName)) {
+                        ProjectsSearch.add(project);
                     }
                 }
                 if (ProjectsSearch.size() == 0) {
@@ -163,7 +202,7 @@ public class BQSupportFuncts {
                 }
             }
             else {
-                return Projects;
+                return projects;
             }
         }
         else {
@@ -175,27 +214,28 @@ public class BQSupportFuncts {
      * Parses a (instance of dataset).getId() and gives back the id only for the
      * dataset
      * 
-     * @param getid
+     * @param getId
      *            (instance of dataset).getId()
      * @return the id only for the dataset
      */
-    public static String getdatasetidfrom_datasetgetid(String getid) {
-        String ret = getid.substring(getid.lastIndexOf(":") + 1);
-        return ret;
+    public static String getDatasetIdFromDatasetDotGetId(String getId) {
+        /*logger.debug("Function call getDatasetIdFromDatasetDotGetId" + getId +
+                "return is: " + getId.substring(getId.lastIndexOf(":") + 1));*/
+        return getId.substring(getId.lastIndexOf(":") + 1);
     }
     
     /**
      * Parses a (instance of table).getid() and gives back the id only for the
      * dataset
      * 
-     * @param getid
+     * @param getId
      *            (instance of table).getid()
      * @return the id only for the dataset
      */
-    public static String getdatasetidfrom_tablegetid(String getid) {
-        String ret = getid.substring(getid.lastIndexOf(":") + 1,
-                getid.lastIndexOf("."));
-        return ret;
+    public static String getDatasetIdFromTableDotGetId(String getId) {
+        /*logger.debug("Function call getDatasetIdFromTableDotGetId" + getId +
+                "return is: " + getId.substring(getId.lastIndexOf(":") + 1, getId.lastIndexOf(".")));*/
+        return getId.substring(getId.lastIndexOf(":") + 1, getId.lastIndexOf("."));
     }
     
     /**
@@ -216,8 +256,12 @@ public class BQSupportFuncts {
      *             fails
      *             </p>
      */
-    private static List<Datasets> getdatasets(String datasetname,
+    private static List<Datasets> getDatasets(String datasetname,
             String projectId, BQConnection connection) throws IOException {
+        logger.debug("function call getDatasets, " + 
+            "datasetName: " + (datasetname != null ? datasetname : "null") +
+            ", projectId: " + (projectId != null ? projectId : "null"));
+        projectId = projectId.replace("__", ":").replace("_", ".");
         List<Datasets> datasetcontainer = connection.getBigquery().datasets()
                 .list(projectId).execute().getDatasets();
         
@@ -225,7 +269,8 @@ public class BQSupportFuncts {
             if (datasetname != null) {
                 List<Datasets> datasetsSearch = new ArrayList<Datasets>();
                 for (Datasets in : datasetcontainer) {
-                    if (matchpattern(in.getId(), datasetname)) {
+                    if (matchPattern(getDatasetIdFromDatasetDotGetId(in.getId()),
+                            datasetname)) {
                         datasetsSearch.add(in);
                     }
                 }
@@ -249,12 +294,19 @@ public class BQSupportFuncts {
      * Parses a (instance of dataset)/(instance of table).getid() and gives back
      * the id only for the Project
      * 
-     * @param getid
+     * @param getId
      *            (instance of dataset)/(instance of table).getid()
      * @returnthe the id only for the Project
      */
-    public static String getprojectidfrom_anygetid(String getid) {
-        String ret = getid.substring(0, getid.indexOf(":"));
+    public static String getProjectIdFromAnyGetId(String getId) {
+        int pos = getId.indexOf(":");        // The first appearance of ":"
+		if (getId.indexOf(":", pos + 1) != -1) {
+         // If there's a second ":" we'll use it 
+         // (there must be a second ":" !!)
+            pos = getId.indexOf(":", pos + 1);  
+        }
+        String ret = getId.substring(0, pos); // Cutting out the project id
+        //logger.debug("getprojectidfrom_anygetid , input is: " + getId + ", return is: " + ret);
         return ret;
     }
     
@@ -275,10 +327,9 @@ public class BQSupportFuncts {
      *             ProjectId and Job id fails
      *             </p>
      */
-    public static GetQueryResultsResponse GetQueryResults(Bigquery bigquery,
+    public static GetQueryResultsResponse getQueryResults(Bigquery bigquery,
             String projectId, Job completedJob) throws IOException {
-        GetQueryResultsResponse queryResult = bigquery
-                .jobs()
+        GetQueryResultsResponse queryResult = bigquery.jobs()
                 .getQueryResults(projectId,
                         completedJob.getJobReference().getJobId()).execute();
         return queryResult;
@@ -302,6 +353,7 @@ public class BQSupportFuncts {
      */
     public static String getQueryState(Job myjob, Bigquery bigquery,
             String projectId) throws IOException {
+        projectId = projectId.replace("__", ":").replace("_", ".");
         Job pollJob = bigquery.jobs()
                 .get(projectId, myjob.getJobReference().getJobId()).execute();
         BQSupportFuncts.logger.info("Job status: "
@@ -318,13 +370,12 @@ public class BQSupportFuncts {
      * Parses a (instance of table).getid() and gives back the id only for the
      * table
      * 
-     * @param getid
+     * @param getId
      *            (instance of table).getid()
      * @return the id only for the table
      */
-    public static String gettableidfrom_tablegetid(String getid) {
-        String ret = getid.substring(getid.lastIndexOf(".") + 1);
-        return ret;
+    public static String getTableIdFromTableDotGetId(String getId) {
+        return getId.substring(getId.lastIndexOf(".") + 1);
     }
     
     /**
@@ -347,20 +398,28 @@ public class BQSupportFuncts {
      *             ProjectId, DatasetId fails
      *             </p>
      */
-    public static List<Tables> gettables(String tablenamepattern,
+    public static List<Tables> getTables(String tableNamePattern,
             String projectId, String datasetId, BQConnection connection)
-            throws IOException {
+            throws IOException {        
+        logger.debug("Function call getTables : " + 
+            "tableNamePattern: " + (tableNamePattern != null ? tableNamePattern : "null") +
+            ", projectId: " + (projectId != null ? projectId : "null") + 
+            ", datasetID:" + (datasetId != null ? datasetId : "null") +
+            "connection");
+        projectId = projectId.replace("__", ":").replace("_", ".");
         List<Tables> tables = connection.getBigquery().tables()
                 .list(projectId, datasetId).execute().getTables();
         if (tables != null && tables.size() != 0) {
-            if (tablenamepattern != null) {
+            if (tableNamePattern != null) {
                 List<Tables> tablesSearch = new ArrayList<Tables>();
                 for (Tables in : tables) {
-                    if (matchpattern(in.getId(), tablenamepattern)) {
+                    if (matchPattern(getTableIdFromTableDotGetId(in.getId()),
+                            tableNamePattern)) {
                         tablesSearch.add(in);
                     }
                 }
                 if (tablesSearch.size() == 0) {
+                    logger.debug("returning null");
                     return null;
                 }
                 else {
@@ -372,6 +431,7 @@ public class BQSupportFuncts {
             }
         }
         else {
+            logger.debug("returning null");
             return null;
         }
     }
@@ -395,40 +455,48 @@ public class BQSupportFuncts {
      *             DatasetId TableId fails
      *             <p>
      */
-    public static List<Table> GetTables(BQConnection connection,
+    public static List<Table> getTables(BQConnection connection,
             String catalog, String schema, String tablename) throws IOException {
         List<Table> RET = new ArrayList<Table>();
-        
-        List<Projects> Projects = BQSupportFuncts.getcatalogs(catalog,
+        logger.debug("Function call getTables : " + 
+                "catalog: " + (catalog != null ? catalog : "null") +
+                ", schema: " + (schema != null ? schema : "null") + 
+                ", tablename:" + (tablename != null ? tablename : "null") +
+                "connection");
+        //getting the projects for this connection
+        List<Projects> Projects = BQSupportFuncts.getCatalogs(catalog,
                 connection);
         
         if (Projects != null && Projects.size() != 0) {
             for (Projects proj : Projects) {
                 List<Datasets> datasetlist = null;
-                datasetlist = BQSupportFuncts.getdatasets(schema, proj.getId(),
+                datasetlist = BQSupportFuncts.getDatasets(schema, proj.getId(),
                         connection);
                 if (datasetlist != null && datasetlist.size() != 0) {
                     for (Datasets dataset : datasetlist) {
                         List<Tables> tables = null;
                         
-                        tables = BQSupportFuncts.gettables(tablename, proj
+                        tables = BQSupportFuncts.getTables(tablename, proj
                                 .getId(),
                                 BQSupportFuncts
-                                        .getdatasetidfrom_datasetgetid(dataset
+                                        .getDatasetIdFromDatasetDotGetId(dataset
                                                 .getId()), connection);
                         
                         if (tables != null && tables.size() != 0) {
                             for (Tables table : tables) {
-                                Table tbl = connection
-                                        .getBigquery()
-                                        .tables()
-                                        .get(proj.getId(),
-                                                BQSupportFuncts
-                                                        .getdatasetidfrom_datasetgetid(dataset
-                                                                .getId()),
-                                                BQSupportFuncts
-                                                        .gettableidfrom_tablegetid(table
-                                                                .getId()))
+                                //TODO replace projID __ -> : _ -> .
+                                String datasetString = BQSupportFuncts
+                                        .getDatasetIdFromDatasetDotGetId(dataset.getId());
+                                String tableString = BQSupportFuncts
+                                        .getTableIdFromTableDotGetId(table.getId());
+                                logger.debug("Calling connection.getBigquery().tables() " +
+                                        "dataset is: " + datasetString +
+                                        ", table is: " + tableString +
+                                        ", project is: " + proj.getId().replace("__", ":").replace("_", "."));
+                                Table tbl = connection.getBigquery().tables()
+                                        .get(proj.getId().replace("__", ":").replace("_", "."),
+                                                datasetString,
+                                                tableString)
                                         .execute();
                                 if (tbl != null) {
                                     RET.add(tbl);
@@ -451,6 +519,14 @@ public class BQSupportFuncts {
     }
     
     /**
+     * <br>
+     * Some DatabaseMetaData methods take arguments that are String patterns.
+     * These arguments all have names such as fooPattern. Within a pattern
+     * String, "%" means match any substring of 0 or more characters, and "_"
+     * means match any one character. Only metadata entries matching the search
+     * pattern are returned. If a search pattern argument is set to null, that
+     * argument's criterion will be dropped from the search.
+     * 
      * Checks if the input String matches the pattern string which may contain
      * %, which means it can be any character
      * 
@@ -458,17 +534,38 @@ public class BQSupportFuncts {
      * @param pattern
      * @return true if matches, false if not
      */
-    public static boolean matchpattern(String input, String pattern) {
-        if (pattern.contains("%")) {
-            return input.matches(pattern.replace("%", ".*"));
+    public static boolean matchPattern(String input, String pattern) {
+        if (pattern == null) {
+            return true;
         }
-        else
-            if (input.contains(pattern)) {
-                return true;
+        
+        boolean regexexpression = false;
+        String regexexpressionstring = null;
+        
+        if (pattern.contains("%")) {
+            regexexpression = true;
+            
+            if (regexexpressionstring == null) {
+                regexexpressionstring = pattern.replace("%", ".*");
+            }
+        }
+        if (pattern.contains("_")) {
+            regexexpression = true;
+            
+            if (regexexpressionstring == null) {
+                regexexpressionstring = pattern.replace("_", ".");
             }
             else {
-                return false;
+                regexexpressionstring = regexexpressionstring.replace("_", ".");
             }
+        }
+        if (regexexpression) {
+            return input.matches(regexexpressionstring);
+        }
+        else {
+            //return input.contains(pattern);
+            return input.equals(pattern);
+        }
     }
     
     /**
@@ -478,7 +575,7 @@ public class BQSupportFuncts {
      *            String of the Column type
      * @return java.sql.Types value of the given Columtype
      */
-    public static int ParseToSqlFieldType(String columntype) {
+    public static int parseToSqlFieldType(String columntype) {
         if (columntype.equals("FLOAT")) {
             return java.sql.Types.FLOAT;
         }
@@ -494,9 +591,13 @@ public class BQSupportFuncts {
                     if (columntype.equals("STRING")) {
                         return java.sql.Types.VARCHAR;
                     }
-                    else {
-                        return 0;
-                    }
+                    else
+                        if (columntype.equals("BIGINT")){
+                            return java.sql.Types.BIGINT;
+                        }
+                        else {
+                            return 0;
+                        }        
     }
     
     /**
@@ -508,9 +609,8 @@ public class BQSupportFuncts {
      * @throws IOException
      *             if the load from file fails
      */
-    public static Properties ReadFromPropFile(String filePath)
+    public static Properties readFromPropFile(String filePath)
             throws IOException {
-        
         // Read properties file.
         Properties properties = new Properties();
         properties.load(new FileInputStream(filePath));
@@ -536,8 +636,8 @@ public class BQSupportFuncts {
      */
     public static Job startQuery(Bigquery bigquery, String projectId,
             String querySql) throws IOException {
-        BQSupportFuncts.logger.info("Inserting Query Job: " + querySql);
-        
+        BQSupportFuncts.logger.info("Inserting Query Job: " + querySql.replace("\t","").replace("\n", " ").replace("\r", ""));
+        projectId = projectId.replace("__", ":").replace("_", ".");
         Job job = new Job();
         JobConfiguration config = new JobConfiguration();
         JobConfigurationQuery queryConfig = new JobConfigurationQuery();
@@ -548,7 +648,6 @@ public class BQSupportFuncts {
         
         Insert insert = bigquery.jobs().insert(querySql, job);
         insert.setProjectId(projectId);
-        Job myjob = insert.execute();
-        return myjob;
+        return insert.execute();
     }
 }

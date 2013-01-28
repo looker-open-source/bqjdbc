@@ -61,14 +61,14 @@ public class BQPreparedStatement extends BQStatementRoot implements
     String RunnableStatement = null;
     
     /**
-     * Reference for the Conatainer that contains parameters for
-     * preparedstatement
+     * Reference for the Container that contains parameters for
+     * preparedStatement
      */
     String[] Parameters = null;
     
     /**
      * Constructor for BQStatement object just initializes local variables as
-     * preparedstatement
+     * preparedStatement
      * 
      * @param querysql
      * @param projectid
@@ -76,7 +76,8 @@ public class BQPreparedStatement extends BQStatementRoot implements
      */
     public BQPreparedStatement(String querysql, String projectid,
             BQConnection bqConnection) {
-        this.logger.debug("Constructor of PreparedStatement Running");
+        this.logger.debug("Constructor of PreparedStatement Running " + 
+            "projectid is:" + projectid + "sqlquery: " + querysql);
         
         this.ProjectId = projectid;
         this.connection = bqConnection;
@@ -133,7 +134,6 @@ public class BQPreparedStatement extends BQStatementRoot implements
                 count++;
             }
         }
-        
         if (count != 0) {
             this.Parameters = new String[count];
         }
@@ -244,23 +244,32 @@ public class BQPreparedStatement extends BQStatementRoot implements
         }
         this.starttime = System.currentTimeMillis();
         Job referencedJob;
+        
+        // ANTLR Parser
+        BQQueryParser parser = new BQQueryParser(this.RunnableStatement,
+                this.connection);
+        this.RunnableStatement = parser.parse();
+        
         try {
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
-                    this.connection.getBigquery(), this.ProjectId,
+                    this.connection.getBigquery(), 
+                    this.ProjectId.replace("__", ":").replace("_", "."),
                     this.RunnableStatement);
             this.logger.info("Executing Query: " + this.RunnableStatement);
         }
         catch (IOException e) {
-            throw new BQSQLException(e);
+            throw new BQSQLException("Something went wrong with the query: " + this.RunnableStatement,e);
         }
         try {
             do {
                 if (BQSupportFuncts.getQueryState(referencedJob,
-                        this.connection.getBigquery(), this.ProjectId).equals(
-                        "DONE")) {
-                    return new BQResultSet(BQSupportFuncts.GetQueryResults(
-                            this.connection.getBigquery(), this.ProjectId,
+                        this.connection.getBigquery(), 
+                        this.ProjectId.replace("__", ":").replace("_", "."))
+                        .equals("DONE")) {
+                    return new BQResultSet(BQSupportFuncts.getQueryResults(
+                            this.connection.getBigquery(), 
+                            this.ProjectId.replace("__", ":").replace("_", "."),
                             referencedJob), this);
                 }
                 // Pause execution for half second before polling job status
@@ -276,7 +285,7 @@ public class BQPreparedStatement extends BQStatementRoot implements
             // it runs for a minimum of 1 time
         }
         catch (IOException e) {
-            throw new BQSQLException(e);
+            throw new BQSQLException("Something went wrong with the query: " + this.RunnableStatement,e);
         }
         catch (InterruptedException e) {
             e.printStackTrace();
@@ -302,6 +311,7 @@ public class BQPreparedStatement extends BQStatementRoot implements
     
     @Override
     public ParameterMetaData getParameterMetaData() throws SQLException {
+        logger.debug("function call: getParameterMetaData()");
         // TODO IMPLEMENT
         return null;
     }

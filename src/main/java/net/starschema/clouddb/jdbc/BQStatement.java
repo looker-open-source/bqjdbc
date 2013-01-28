@@ -42,6 +42,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
      * @param bqConnection
      */
     public BQStatement(String projectid, BQConnection bqConnection) {
+        logger.debug("Constructor of BQStatement is running projectid is: " + projectid);
         this.ProjectId = projectid;
         this.connection = bqConnection;
         this.resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;
@@ -59,6 +60,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
      */
     public BQStatement(String projectid, BQConnection bqConnection,
             int resultSetType, int resultSetConcurrency) throws BQSQLException {
+        logger.debug("Constructor of BQStatement is running projectid is: "+ projectid +
+                ",resultSetType is: " + resultSetType +
+                ",resutSetConcurrency is: " + resultSetConcurrency);
         if (resultSetConcurrency == ResultSet.CONCUR_UPDATABLE) {
             throw new BQSQLException(
                     "The Resultset Concurrency can't be ResultSet.CONCUR_UPDATABLE");
@@ -78,24 +82,31 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
         }
+        
         this.starttime = System.currentTimeMillis();
         Job referencedJob;
+        // ANTLR Parsing
+        BQQueryParser parser = new BQQueryParser(querySql, this.connection);
+        querySql = parser.parse();
         try {
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
-                    this.connection.getBigquery(), this.ProjectId, querySql);
-            this.logger.info("Executing Query: " + querySql);
+                    this.connection.getBigquery(), 
+                    this.ProjectId.replace("__", ":").replace("_", "."), querySql);
+            this.logger.debug("Executing Query: " + querySql);
         }
         catch (IOException e) {
-            throw new BQSQLException(e);
+            throw new BQSQLException("Something went wrong with the query: " + querySql,e);
         }
         try {
             do {
                 if (BQSupportFuncts.getQueryState(referencedJob,
-                        this.connection.getBigquery(), this.ProjectId).equals(
+                        this.connection.getBigquery(), 
+                        this.ProjectId.replace("__", ":").replace("_", ".")).equals(
                         "DONE")) {
-                    return new BQResultSet(BQSupportFuncts.GetQueryResults(
-                            this.connection.getBigquery(), this.ProjectId,
+                    return new BQResultSet(BQSupportFuncts.getQueryResults(
+                            this.connection.getBigquery(), 
+                            this.ProjectId.replace("__", ":").replace("_", "."),
                             referencedJob), this);
                 }
                 // Pause execution for half second before polling job status
@@ -111,7 +122,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             // it runs for a minimum of 1 time
         }
         catch (IOException e) {
-            throw new BQSQLException(e);
+            throw new BQSQLException("Something went wrong with the query: " + querySql,e);
         }
         catch (InterruptedException e) {
             e.printStackTrace();

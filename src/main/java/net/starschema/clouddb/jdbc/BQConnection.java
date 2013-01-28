@@ -50,6 +50,8 @@ import org.apache.log4j.Logger;
 
 import com.google.api.services.bigquery.Bigquery;
 
+// import net.starschema.clouddb.bqjdbc.logging.Logger;
+
 /**
  * The connection class which builds the connection between BigQuery and the
  * Driver
@@ -71,9 +73,17 @@ public class BQConnection implements Connection {
     /**
      * The projectid which needed for the queries.
      */
-    private String projectid = null;
+    private String projectId = null;
     /** Boolean to determine if the Connection is closed */
     private boolean isclosed = false;
+    
+    /** Boolean to determine, to use or doesn't use the ANTLR parser */
+    private boolean transformQuery = false;
+    
+    /** getter for transformQuery */
+    public boolean getTransformQuery(){
+        return transformQuery;
+    }
     
     /** List to contain sql warnings in */
     private List<SQLWarning> SQLWarningList = new ArrayList<SQLWarning>();
@@ -94,120 +104,128 @@ public class BQConnection implements Connection {
      */
     public BQConnection(String url, Properties loginProp) throws SQLException {
         
-        this.logger = Logger.getLogger(BQConnection.class);
+        this.logger = Logger.getLogger(this.getClass());
         this.URLPART = url;
         this.isclosed = false;
         
-        if (url.contains("&user=") && url.contains("&password=")) {
+        //If the URL contains user/password we'll use that
+        //If it doesn't we'll look them in the loginProp
+        boolean containUserPassword = false;       
+        String userId;
+        String userKey;
+        
+        boolean serviceAccount = false;
+
+        String projectid;
+        
+        if (url.contains("&user=") && url.contains("&password=")){
+            containUserPassword = true;
             this.logger.debug("url contains &user and &password");
+        }
+        else this.logger.debug("url doesn't contains &user and &password");
+
+        //getting the user/password for the connection
+        if(containUserPassword)
+        {
+            //getting the User/Password from the URL
             int passwordindex = url.indexOf("&password=");
-            int userindex = url.indexOf("&user=");
-            
-            String id;
-            String key;
+            int userindex = url.indexOf("&user=");           
             try {
-                id = URLDecoder.decode(url.substring(
+                userId = URLDecoder.decode(url.substring(
                         userindex + "&user=".length(), passwordindex), "UTF-8");
-                key = URLDecoder.decode(
+                userKey = URLDecoder.decode(
                         url.substring(passwordindex + "&password=".length()),
                         "UTF-8");
             }
             catch (UnsupportedEncodingException e2) {
                 throw new BQSQLException(e2);
             }
-            
-            String projectid;
-            try {
-                projectid = URLDecoder.decode(
-                        url.substring(url.lastIndexOf(":") + 1), "UTF-8");
-                this.logger.debug("projectid + end of url: " + projectid);
+        }
+        else{
+            //getting the User/Password from property
+            userId = loginProp.getProperty("user");
+            userKey = loginProp.getProperty("password");
+        }
+        
+        //getting the project ID
+        try {
+            projectid = URLDecoder.decode(
+                    url.substring(url.lastIndexOf(":") + 1), "UTF-8");
+            this.logger.debug("projectid + end of url: " + projectid);
+            //we either got parameters with ?:
+            if(projectid.contains("?")){
+            this.projectId = projectid.substring(0, projectid.indexOf("?"));
             }
-            catch (UnsupportedEncodingException e1) {
-                throw new BQSQLException(e1);
-            }
-            if (url.contains("?withServiceAccount=true")) {
-                this.logger.debug("url contains ?withServiceAccount=true");
-                this.projectid = projectid.substring(0, projectid.indexOf("?"));
-                this.logger.debug("Project id is: " + this.projectid);
-                try {
-                    this.bigquery = Oauth2Bigquery.authorizeviaservice(id, key);
-                    this.logger.info("Authorized with service account");
-                }
-                catch (GeneralSecurityException e) {
-                    throw new BQSQLException(e);
-                }
-                catch (IOException e) {
-                    throw new BQSQLException(e);
-                }
-            }
-            else
-                if (url.contains("?withServiceAccount=false")) {
-                    this.logger.debug("url contains ?withServiceAccount=false");
-                    this.projectid = projectid.substring(0,
-                            projectid.indexOf("?"));
-                    this.logger.debug("Project id is: " + this.projectid);
-                    this.bigquery = Oauth2Bigquery.authorizeviainstalled(id,
-                            key);
-                    this.logger.info("Authorized with Oauth");
-                }
-                else {
-                    this.logger
-                            .debug("url doesn't contains ?withServiceAccount");
-                    this.projectid = projectid.substring(0,
-                            projectid.indexOf("&user"));
-                    this.logger.debug("Project id is: " + this.projectid);
-                    this.bigquery = Oauth2Bigquery.authorizeviainstalled(id,
-                            key);
-                    this.logger.info("Authorized with Oauth");
-                }
+            //or we got the projectID right
+            else this.projectId = projectid;
+        }
+        catch (UnsupportedEncodingException e1) {
+            throw new BQSQLException(e1);
+        }
+        //lets replace the : with __ and . with _
+        projectId = projectId.replace(":" , "__").replace(".", "_");
+        //Connect with serviceAccount?
+        String lowerCasedUrl = url.toLowerCase();
+        if (lowerCasedUrl.contains("?withserviceaccount=true")) {
+            serviceAccount = true;
+            this.logger.debug("url contains ?withServiceAccount=true");
+        }
+        else{
+            String sa = "";
+            if(loginProp.getProperty("withServiceAccount") != null) sa = loginProp.getProperty("withServiceAccount");
+            if(loginProp.getProperty("withServiceaccount") != null) sa = loginProp.getProperty("withServiceaccount");
+            if(loginProp.getProperty("withserviceAccount") != null) sa = loginProp.getProperty("withserviceAccount");
+            if(loginProp.getProperty("withserviceaccount") != null) sa = loginProp.getProperty("withserviceaccount");
+            if(loginProp.getProperty("WithServiceAccount") != null) sa = loginProp.getProperty("WithServiceAccount");
+            if(loginProp.getProperty("WithServiceaccount") != null) sa = loginProp.getProperty("WithServiceaccount");
+            if(loginProp.getProperty("WithserviceAccount") != null) sa = loginProp.getProperty("WithserviceAccount");
+            if(loginProp.getProperty("Withserviceaccount") != null) sa = loginProp.getProperty("Withserviceaccount");
+            serviceAccount = false;
+           serviceAccount = Boolean.parseBoolean(sa);
+           logger.debug("from the properties we got for withServiceAccount the following: " + 
+                   sa +" which converts to: " + Boolean.toString(serviceAccount));
+        }
+        
+        //do we want to transform Queries?
+        if (lowerCasedUrl.contains("transformquery=true")){
+            this.transformQuery=true;
+            this.logger.debug("url contains transformQuery=true");
         }
         else {
-            this.logger.debug("url doesn't contains &user and &password");
-            String id = loginProp.getProperty("user");
-            String key = loginProp.getProperty("password");
-            String projectid;
+            String lp = "";
+            if(loginProp.getProperty("transformQuery") != null) lp = loginProp.getProperty("transformQuery");
+            if(loginProp.getProperty("TransformQuery") != null) lp = loginProp.getProperty("TransformQuery");
+            if(loginProp.getProperty("Transformquery") != null) lp = loginProp.getProperty("Transformquery");
+            if(loginProp.getProperty("transformquery") != null) lp = loginProp.getProperty("transformquery");
+            this.transformQuery = false;             
+            this.transformQuery = Boolean.parseBoolean(lp);
+            logger.debug("from the properties we got for transformQuery the following: " + 
+                    lp +" which converts to: " + Boolean.toString(transformQuery));
+        }
+        
+        /**
+         * Lets make a connection:
+         * 
+         */
+        //do we have a serviceaccount to connect with?
+        if(serviceAccount){
             try {
-                projectid = URLDecoder.decode(
-                        url.substring(url.lastIndexOf(":") + 1), "UTF-8");
-                this.logger.debug("Project id with end of url: " + projectid);
+                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userKey);
+                this.logger.info("Authorized with service account");
             }
-            catch (UnsupportedEncodingException e1) {
-                throw new BQSQLException(e1);
+            catch (GeneralSecurityException e) {
+                throw new BQSQLException(e);
             }
-            
-            if (url.contains("?withServiceAccount=true")) {
-                this.logger.debug("url contains ?withServiceAccount=true");
-                this.projectid = projectid.substring(0, projectid.indexOf("?"));
-                this.logger.debug("Project id is: " + this.projectid);
-                try {
-                    this.bigquery = Oauth2Bigquery.authorizeviaservice(id, key);
-                    this.logger.info("Authorized with service account");
-                }
-                catch (GeneralSecurityException e) {
-                    throw new BQSQLException(e);
-                }
-                catch (IOException e) {
-                    throw new BQSQLException(e);
-                }
-            }
-            else {
-                if (url.contains("?withServiceAccount=false")) {
-                    this.logger.debug("url contains ?withServiceAccount=false");
-                    this.projectid = projectid.substring(0,
-                            projectid.indexOf("?"));
-                    this.logger.debug("Project id is: " + this.projectid);
-                }
-                else {
-                    this.logger
-                            .debug("url doesn't contains ?withServiceAccount");
-                    this.projectid = projectid;
-                    this.logger.debug("Project id is: " + this.projectid);
-                }
-                this.logger.debug("Authorizing with Oauth as installed");
-                this.bigquery = Oauth2Bigquery.authorizeviainstalled(id, key);
-                this.logger.info("Authorized with oauth");
+            catch (IOException e) {
+                throw new BQSQLException(e);
             }
         }
+        //let use Oauth
+        else {
+            this.bigquery = Oauth2Bigquery.authorizeviainstalled(userId,userKey);
+            this.logger.info("Authorized with Oauth");
+        }
+        logger.debug("The project id for this connections is: " + this.projectId);
     }
     
     /**
@@ -255,11 +273,11 @@ public class BQConnection implements Connection {
         if (this.isclosed) {
             throw new BQSQLException(
                     "There's no commit in Google BigQuery.\nConnection Status: Closed.");
-        }
+        }/*
         else {
             throw new BQSQLException(
                     "There's no commit in Google BigQuery.\nConnection Status: Open.");
-        }
+        }*/
     }
     
     /**
@@ -344,7 +362,7 @@ public class BQConnection implements Connection {
         if (this.isclosed) {
             throw new BQSQLException("Connection is closed.");
         }
-        return new BQStatement(this.projectid, this);
+        return new BQStatement(this.projectId, this);
     }
     
     /** {@inheritDoc} */
@@ -354,7 +372,7 @@ public class BQConnection implements Connection {
         if (this.isClosed()) {
             throw new BQSQLException("The Connection is Closed");
         }
-        return new BQStatement(this.projectid, this, resultSetType,
+        return new BQStatement(this.projectId, this, resultSetType,
                 resultSetConcurrency);
     }
     
@@ -412,7 +430,8 @@ public class BQConnection implements Connection {
      */
     @Override
     public String getCatalog() throws SQLException {
-        return this.projectid;
+        logger.debug("function call getCatalog returning projectId: "+projectId);
+        return this.projectId;
     }
     
     /**
@@ -473,8 +492,8 @@ public class BQConnection implements Connection {
     /**
      * Getter method for projectid
      */
-    public String getprojectid() {
-        return this.projectid;
+    public String getProjectId() {
+        return this.projectId;
     }
     
     /**
@@ -586,7 +605,7 @@ public class BQConnection implements Connection {
                             + String.valueOf(timeout));
         }
         try {
-            this.bigquery.datasets().list(this.projectid).execute();
+            this.bigquery.datasets().list(this.projectId.replace("__", ":").replace("_", ".")).execute();
         }
         catch (IOException e) {
             return false;
@@ -618,6 +637,7 @@ public class BQConnection implements Connection {
      */
     @Override
     public String nativeSQL(String sql) throws SQLException {
+        logger.debug("Function called nativeSQL() " + sql);
         return sql;
         // TODO
     }
@@ -676,10 +696,10 @@ public class BQConnection implements Connection {
      */
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        this.logger.debug("Creating Prepared Statement with parameters:");
+        this.logger.debug("Creating Prepared Statement project id is: "
+                + this.projectId + " with parameters:");
         this.logger.debug(sql);
-        this.logger.debug(this.projectid);
-        PreparedStatement stm = new BQPreparedStatement(sql, this.projectid,
+        PreparedStatement stm = new BQPreparedStatement(sql, this.projectId,
                 this);
         return stm;
     }
@@ -703,7 +723,13 @@ public class BQConnection implements Connection {
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType,
             int resultSetConcurrency) throws SQLException {
-        PreparedStatement stm = new BQPreparedStatement(sql, this.projectid,
+        this.logger.debug("Creating Prepared Statement" + 
+            " project id is: " + this.projectId + 
+            ", resultSetType (int) is: " + String.valueOf(resultSetType) + 
+            ", resultSetConcurrency (int) is: " + String.valueOf(resultSetConcurrency)
+            +" with parameters:");
+        this.logger.debug(sql);
+        PreparedStatement stm = new BQPreparedStatement(sql, this.projectId,
                 this, resultSetType, resultSetConcurrency);
         return stm;
     }
@@ -778,7 +804,8 @@ public class BQConnection implements Connection {
      */
     @Override
     public void rollback() throws SQLException {
-        throw new BQSQLException("Not implemented." + "rollback()");
+        logger.debug("function call: rollback() not implemented ");
+        //throw new BQSQLException("Not implemented." + "rollback()");
     }
     
     /**
@@ -873,14 +900,16 @@ public class BQConnection implements Connection {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Not implemented yet.
+     * BigQuery is ReadOnly always so this is a noop
      * </p>
      * 
      * @throws BQSQLException
      */
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-        throw new BQSQLException("Not implemented." + "setReadOnly(bool)");
+        if (this.isClosed()) {
+            throw new BQSQLException("This Connection is Closed");
+        }
     }
     
     /**

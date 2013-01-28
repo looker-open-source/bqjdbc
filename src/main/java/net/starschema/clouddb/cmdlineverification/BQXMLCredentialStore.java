@@ -48,8 +48,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import net.starschema.clouddb.jdbc.BQConnection;
-
 import org.apache.log4j.Logger;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -61,6 +59,8 @@ import org.xml.sax.SAXException;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.auth.oauth2.CredentialStore;
 
+// import net.starschema.clouddb.bqjdbc.logging.Logger;
+
 /**
  * Implements CredentialStore to use XML file to store Refresh Tokens encrypted
  * with AES
@@ -70,7 +70,9 @@ import com.google.api.client.auth.oauth2.CredentialStore;
  */
 public class BQXMLCredentialStore implements CredentialStore {
     
-    static Logger logger = Logger.getLogger(BQConnection.class);
+    // static Logger logger = new Logger(BQXMLCredentialStore.class.getName());
+    static Logger logger = Logger.getLogger(BQXMLCredentialStore.class
+            .getName());
     
     /**
      * Decrypts AES encrypted byte array

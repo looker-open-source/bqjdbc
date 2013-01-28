@@ -48,6 +48,8 @@ import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryScopes;
 
+// import net.starschema.clouddb.bqjdbc.logging.Logger;
+
 public class Oauth2Bigquery {
     
     private static String servicepath = null;
@@ -55,7 +57,8 @@ public class Oauth2Bigquery {
     /**
      * Log4j logger, for debugging.
      */
-    static Logger logger = Logger.getLogger(Oauth2Bigquery.class);
+    // static Logger logger = new Logger(Oauth2Bigquery.class.getName());
+    static Logger logger = Logger.getLogger(Oauth2Bigquery.class.getName());
     /**
      * Browsers to try:
      */
@@ -225,7 +228,7 @@ public class Oauth2Bigquery {
                     return;
                 }
                 catch (IOException e) {
-                    logger.debug(e);
+                    logger.debug(null, e);
                     // handled below
                 }
             }
@@ -239,7 +242,7 @@ public class Oauth2Bigquery {
             return;
         }
         catch (Exception e) {
-            logger.debug(e);
+            logger.debug(null, e);
             // handled below
         }
         // Next try browsers
@@ -277,7 +280,7 @@ public class Oauth2Bigquery {
                 }
         }
         catch (Exception e) {
-            logger.debug(e);
+            logger.debug(null, e);
             // handled below
         }
         // Finally just ask user to open in their browser using copy-paste
