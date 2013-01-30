@@ -25,6 +25,7 @@ package net.starschema.clouddb.jdbc;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -165,21 +166,9 @@ public class BQSupportFuncts {
         List<Projects> projects = Connection.getBigquery().projects().list()
                 .execute().getProjects();        
         
-/*
-        Projects publicData = new Projects();
-        publicData.setFriendlyName("Public Data Samples");
-        publicData.setId("publicdata:samples");
-        publicData.setKind("bigquery#project");
-        ProjectReference publicDataReference = new ProjectReference();
-        publicDataReference.setProjectId("publicdata:samples");
-        publicData.setProjectReference(publicDataReference);
-  */      
         //since we'll use . -> _ : -> __ conversion, it's easier to
         // replace all the . : before we do any compare
-        if (projects != null && projects.size() != 0) {             //we got projects!
-            //TODO maybe we should add the publicdata:samples too?
-    //        projects.add(publicData);
-            
+        if (projects != null && projects.size() != 0) {             //we got projects!          
             for (Projects projects2 : projects) {                
                 projects2.setId(projects2.getId().replace(".", "_").replace(":", "__"));
                 //updating the reference too
@@ -306,7 +295,6 @@ public class BQSupportFuncts {
             pos = getId.indexOf(":", pos + 1);  
         }
         String ret = getId.substring(0, pos); // Cutting out the project id
-        //logger.debug("getprojectidfrom_anygetid , input is: " + getId + ", return is: " + ret);
         return ret;
     }
     
@@ -332,6 +320,19 @@ public class BQSupportFuncts {
         GetQueryResultsResponse queryResult = bigquery.jobs()
                 .getQueryResults(projectId,
                         completedJob.getJobReference().getJobId()).execute();
+        long totalRows = queryResult.getTotalRows().longValue();
+        if(totalRows == 0){
+            return queryResult;
+        }
+        while( totalRows  > (long)queryResult.getRows().size() ) {
+            queryResult.getRows().addAll(
+                bigquery.jobs()
+                    .getQueryResults(projectId,
+                            completedJob.getJobReference().getJobId())
+                    .setStartIndex(BigInteger.valueOf((long)queryResult.getRows().size()) )
+                    .execute()
+                    .getRows());           
+        }
         return queryResult;
     }
     

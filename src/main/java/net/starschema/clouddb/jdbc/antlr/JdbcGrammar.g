@@ -161,7 +161,7 @@ Rule to parse a where condition expression, creates Tree node WHEREEXPRESSION an
 whereexpression
 :
     (WHEREKEYWORD '1' '=' '1') //do nothing
-    | (WHEREKEYWORD '1' '=' '0') ->^(LIMITEXPRESSION)
+    | (WHEREKEYWORD '1' '=' '0') ->^(LIMITEXPRESSION)  //1 = 0 should show 0 row, just the column names we'll use LIMIT 1
     | (WHEREKEYWORD expr
     )->^(WHEREEXPRESSION
                     expr
