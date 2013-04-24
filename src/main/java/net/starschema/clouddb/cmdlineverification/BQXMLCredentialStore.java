@@ -41,6 +41,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -315,7 +316,7 @@ public class BQXMLCredentialStore implements CredentialStore {
     public boolean load(String userId, Credential credential)
             throws IOException {
         Document doc = null;
-        doc = this.loadorcreateDocument(this.documentpath);
+        doc = this.loadOrCreateDocument(this.documentpath);
         
         String ClientSecret = userId.substring(userId.indexOf(":") + 1);
         
@@ -359,7 +360,7 @@ public class BQXMLCredentialStore implements CredentialStore {
      * @return
      * @throws IOException
      */
-    private Document loadDocument(String path) throws IOException {
+    private Document loadDocument(String path) {
         InputStream file = null;
         try {
             file = new FileInputStream(path);
@@ -381,11 +382,16 @@ public class BQXMLCredentialStore implements CredentialStore {
             return null;
         }
         catch (IOException e) {
-            // TODO Auto-generated catch block
             return null;
         }
         finally {
-            file.close();
+            try {
+                file.close();
+            }
+            catch (IOException e) {
+                logger.warn("Failed to close the credential store xml file.");
+                return null;
+            }
         }
     }
     
@@ -398,7 +404,7 @@ public class BQXMLCredentialStore implements CredentialStore {
      * @return
      * @throws IOException
      */
-    private Document loadorcreateDocument(String path) throws IOException {
+    private Document loadOrCreateDocument(String path) throws IOException {
         Document doc = null;
         doc = this.loadDocument(path);
         if (doc == null) {
@@ -407,36 +413,34 @@ public class BQXMLCredentialStore implements CredentialStore {
             DocumentBuilder docBuilder = null;
             try {
                 docBuilder = docFactory.newDocumentBuilder();
-            }
-            catch (ParserConfigurationException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
-            // root elements
-            doc = docBuilder.newDocument();
-            Element rootElement = doc.createElement("ClientCredentials");
-            doc.appendChild(rootElement);
-            
-            TransformerFactory transformerFactory = TransformerFactory
+           
+                // root elements
+                doc = docBuilder.newDocument();
+                Element rootElement = doc.createElement("ClientCredentials");
+                doc.appendChild(rootElement);
+                
+                TransformerFactory transformerFactory = TransformerFactory
                     .newInstance();
-            Transformer transformer = null;
-            try {
+                Transformer transformer = null;
                 transformer = transformerFactory.newTransformer();
-            }
-            catch (TransformerConfigurationException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            DOMSource source = new DOMSource(doc);
-            StreamResult result = new StreamResult(new File(path));
-            try {
+                
+                DOMSource source = new DOMSource(doc);
+                StreamResult result = new StreamResult(new File(path));
+                
                 transformer.transform(source, result);
             }
-            catch (TransformerException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            catch (ParserConfigurationException e1) {
+                logger.warn("",e1);
+                throw new IOException("Failed to load",e1);
             }
-            
+            catch (TransformerConfigurationException e) {
+                logger.warn("",e);
+                throw new IOException("Failed to load",e);
+            }
+            catch (TransformerException e) {
+                logger.warn("",e);
+                throw new IOException("Failed to load",e);
+            }
         }
         return doc;
     }
@@ -454,7 +458,7 @@ public class BQXMLCredentialStore implements CredentialStore {
     public void store(String userId, Credential credential) throws IOException {
         Document doc = null;
         logger.debug(this.documentpath);
-        doc = this.loadorcreateDocument(this.documentpath);
+        doc = this.loadOrCreateDocument(this.documentpath);
         
         NodeList elements = doc.getElementsByTagName("Credential");
         Element loadelement = null;
@@ -511,14 +515,16 @@ public class BQXMLCredentialStore implements CredentialStore {
         Transformer transformer = null;
         try {
             transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(new File(this.documentpath));
+
+            transformer.transform(source, result);
         }
         catch (TransformerConfigurationException e) {
             throw new IOException(e);
-        }
-        DOMSource source = new DOMSource(doc);
-        StreamResult result = new StreamResult(new File(this.documentpath));
-        try {
-            transformer.transform(source, result);
         }
         catch (TransformerException e) {
             throw new IOException(e);

@@ -9,7 +9,6 @@ import java.sql.Statement;
 
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
-import net.starschema.clouddb.jdbc.BQSupportMethods;
 
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -54,7 +53,60 @@ public class GrammarTestsToBeFixed {
     
     
     static String input;    
-
+    @Test
+    public void testStringLiteral() {
+        input="SELECT * FROM efashion.ARTICLE_LOOKUP al " +
+                " WHERE al.ARTICLE_LABEL = \"Pastel Colored Viscose Scarf\"";
+        NewConnection();                
+        try {
+            Statement myStatement = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, 
+                  ResultSet.CONCUR_READ_ONLY);
+            ResultSet myResult = myStatement
+                    .executeQuery(input);
+            HelperFunctions.printer(myResult);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Assert.fail(e.toString());
+        }
+        Assert.assertTrue(true);
+    }
+    
+    @Test
+    public void testStringLiteralOnLeft() {
+        input="SELECT * FROM efashion.ARTICLE_LOOKUP al " +
+                " WHERE \"Pastel Colored Viscose Scarf\" = al.ARTICLE_LABEL";
+        NewConnection();                
+        try {
+            Statement myStatement = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, 
+                  ResultSet.CONCUR_READ_ONLY);
+            ResultSet myResult = myStatement
+                    .executeQuery(input);
+            HelperFunctions.printer(myResult);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Assert.fail(e.toString());
+        }
+        Assert.assertTrue(true);
+    }
+    
+    @Test
+    public void testIntegerOnLeft() {
+        input="SELECT * FROM efashion.ARTICLE_LOOKUP al " +
+                " WHERE ARTICLE_CODE = 115121";
+        NewConnection();                
+        try {
+            Statement myStatement = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, 
+                  ResultSet.CONCUR_READ_ONLY);
+            ResultSet myResult = myStatement
+                    .executeQuery(input);
+            HelperFunctions.printer(myResult);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Assert.fail(e.toString());
+        }
+        Assert.assertTrue(true);
+    }
+    
     /**
      * To reproduce the error in BiRT
      */
@@ -63,7 +115,8 @@ public class GrammarTestsToBeFixed {
             
         input = "select ARTICLE_LOOKUP.ARTICLE_CODE \r\n" + 
         		" from ARTICLE_LOOKUP";
-
+        input = "SELECT * FROM efashion.ARTICLE_LOOKUP_T a, efashion.SHOP_FACTS b " +
+                "WHERE (a.ARTICLE_CODE = b.ARTICLE_CODE) ";
         logger.info("Running test: birtTableDotColumnFromTable " + input );
             
         ResultSet queryResult = null;
@@ -81,7 +134,7 @@ public class GrammarTestsToBeFixed {
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
-        printer(queryResult);
+        HelperFunctions.printer(queryResult);
     }
     
     @Test
@@ -114,7 +167,7 @@ public class GrammarTestsToBeFixed {
         Assert.fail("SQLException" + e.toString());
     }
     Assert.assertNotNull(queryResult);
-    printer(queryResult);
+    HelperFunctions.printer(queryResult);
 }      
     
     @Test
@@ -135,7 +188,7 @@ public class GrammarTestsToBeFixed {
         Assert.fail("SQLException" + e.toString());
     }
     Assert.assertNotNull(queryResult);
-    printer(queryResult);
+    HelperFunctions.printer(queryResult);
 }   
     
     
@@ -163,14 +216,14 @@ public class GrammarTestsToBeFixed {
         Assert.fail("SQLException" + e.toString());
     }
     Assert.assertNotNull(queryResult);
-    printer(queryResult);
+    HelperFunctions.printer(queryResult);
 }           
 
     @Test
     public void squirrelOne() {
         
         input = "SELECT *\r\n" + 
-                "FROM joska.ARTICLE_LOOKUP AS AL\r\n" + 
+                "FROM efashion.ARTICLE_LOOKUP AS AL\r\n" + 
                 "JOIN\r\n" + 
                 "     efashion.ARTICLE_COLOR_LOOKUP\r\n" + 
                 "ON\r\n" + 
@@ -186,14 +239,14 @@ public class GrammarTestsToBeFixed {
         Assert.fail("SQLException" + e.toString());
     }
     Assert.assertNotNull(queryResult);
-    printer(queryResult);
+    HelperFunctions.printer(queryResult);
 }   
 
     @Test
     public void squirrelTwo() {
                 
         input = "SELECT ARTICLE_LOOKUP.ARTICLE_CODE, ARTICLE_LOOKUP.ARTICLE_LABEL, ARTICLE_LOOKUP.SALE_PRICE\r\n" + 
-                "FROM efashion2.ARTICLE_LOOKUP"; 
+                "FROM efashion.ARTICLE_LOOKUP"; 
     logger.info("Running test: squirrelTwo " + input );
         
     ResultSet queryResult = null;
@@ -205,7 +258,7 @@ public class GrammarTestsToBeFixed {
         Assert.fail("SQLException" + e.toString());
     }
     Assert.assertNotNull(queryResult);
-    printer(queryResult);
+    HelperFunctions.printer(queryResult);
 }   
     
     @Test
@@ -224,7 +277,7 @@ public class GrammarTestsToBeFixed {
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
-        printer(queryResult);
+        HelperFunctions.printer(queryResult);
     }    
     
     @Test
@@ -243,9 +296,101 @@ public class GrammarTestsToBeFixed {
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
-        printer(queryResult);
+        HelperFunctions.printer(queryResult);
     }    
     
+    @Test
+    public void testSquirrelForwardOnly() {
+        input="SELECT * SHOP_FACTS";
+        NewConnection();
+        try {
+            Assert.assertTrue(con.getMetaData().supportsResultSetType(ResultSet.TYPE_FORWARD_ONLY));
+            Assert.assertTrue(con.getMetaData().supportsResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE));
+            Assert.assertFalse(con.getMetaData().supportsResultSetType(ResultSet.TYPE_SCROLL_SENSITIVE));
+            Statement myStatement = con.createStatement();
+            ResultSet myResult = myStatement
+                    .executeQuery(input);
+            HelperFunctions.printer(myResult);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Assert.fail(e.toString());
+        }
+        try {
+            Statement myStatement = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, 
+                  ResultSet.CONCUR_READ_ONLY);
+            ResultSet myResult = myStatement
+                    .executeQuery(input);
+            HelperFunctions.printer(myResult);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Assert.fail(e.toString());
+        }
+        Assert.assertTrue(true);
+    }
+    
+    @Test
+    public void testSquirrelForwardOnlyOneRow() {
+        input="SELECT count(*) FROM SHOP_FACTS";
+        NewConnection();
+        try {
+            Statement myStatement = con.createStatement();
+            ResultSet myResult = myStatement
+                    .executeQuery(input);
+            //HelperFunctions.printer(myResult);
+            while(myResult.next()) {
+                System.out.println(myResult.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Assert.fail(e.toString());
+        }        
+        Assert.assertTrue(true);
+    }
+    
+    @Test
+    public void testSquirrelForwardOnlyJoinEach() {
+        input="    SELECT count(*) FROM " +
+                "bank.CdrcallFact a JOIN EACH bank.CdrcallFact b ON a.IDRSSD = b.IDRSSD";
+        /*input="    SELECT * FROM " +
+                "bank.CdrcallFact a JOIN EACH bank.CdrcallFact b ON a.IDRSSD = b.IDRSSD";*/
+        NewConnection();
+        try {
+            Statement myStatement = con.createStatement();
+            //Statement myStatement = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            ResultSet myResult = myStatement
+                    .executeQuery(input);
+            HelperFunctions.printer(myResult);
+           /* while(myResult.next()) {
+                System.out.println(myResult.getString(1));
+            }*/
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Assert.fail(e.toString());
+        }        
+        Assert.assertTrue(true);
+    }
+    
+    
+    @Test
+    public void testResultSetCaching() {
+        input = "Select * FROM SHOP_FACTS LIMIT 1000";
+        logger.info("Running test: testMaxFieldSizePrepared \r\n" + input );
+            
+        ResultSet queryResult = null;
+        try {
+            Statement stm = con.createStatement();
+//            PreparedStatement stm = con.prepareStatement(input);
+//            stm.setMaxFieldSize(3);
+            stm.setFetchSize(10);
+            queryResult = stm.executeQuery(input);
+        }
+        catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(queryResult);
+        HelperFunctions.printer(queryResult);
+    }    
     
     //---------------------------------------------------
     //---------------------------------------------------
@@ -256,43 +401,6 @@ public class GrammarTestsToBeFixed {
     
         
     
-    /**
-     * Prints a String[][] QueryResult to Log
-     * 
-     * @param input
-     */
-    private void printer(ResultSet input) {
-        String columnnames = "";
-        try {
-            for (int i = 1; i <= input.getMetaData().getColumnCount(); i++) {
-                    columnnames += input.getMetaData().getColumnName(i)+"\t";
-                }
-            }
-            catch (SQLException e) {
-                logger.warn(e);
-            }
-        logger.debug(columnnames);
-        String[][] inputArray = null;
-        try {
-            inputArray = BQSupportMethods.GetQueryResult(input);
-        }
-        catch (SQLException e) {
-            logger.warn(e);
-        }
-        //limiting the output to 10 lines
-        //for all the results use "s < input[0].length"s
-        for (int s = 0; s < 10 && s < inputArray[0].length ; s++) {
-            String Output = "";
-            for (int i = 0; i < inputArray.length; i++) {
-                if (i == inputArray.length - 1) {
-                    Output += inputArray[i][s];
-                }
-                else {
-                    Output += inputArray[i][s] + "\t";
-                }
-            }
-            this.logger.debug(Output);
-        }
-    }
+    
         
 }

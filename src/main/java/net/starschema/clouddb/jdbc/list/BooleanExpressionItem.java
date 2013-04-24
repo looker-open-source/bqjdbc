@@ -157,8 +157,14 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
                                         builder);
                                 break;
                             case JdbcGrammarParser.STRINGLIT:
-                                this.right = new StringLiteral(child
-                                        .getChild(0).getChild(1).getText());
+                                String stringLit = "";
+                                Tree grandChild = child.getChild(0);
+                                for(int j= 1 ; j<grandChild.getChildCount()-1; j++) {
+                                    stringLit += grandChild.getChild(j).getText();
+                                    stringLit += " ";
+                                }                                
+                                this.right = new StringLiteral(stringLit.substring(0, stringLit.length()-1));
+                                
                                 break;
                             case JdbcGrammarParser.INTEGERPARAM:                                
                                 this.right = new StringLiteral(child
@@ -180,12 +186,13 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
                                         builder);
                                 break;
                             case JdbcGrammarParser.STRINGLIT:
-                                this.left = new StringLiteral(child.getChild(0)
-                                        .getText());
-                                break;
-                            case JdbcGrammarParser.INTEGERPARAM:
-                                this.right = new StringLiteral(child
-                                        .getChild(0).getChild(0).getText());
+                                String stringLit = "";
+                                Tree grandChild = child.getChild(0);
+                                for(int j= 1 ; j<grandChild.getChildCount()-1; j++) {
+                                    stringLit += grandChild.getChild(j).getText();
+                                    stringLit += " ";
+                                }                                
+                                this.left = new StringLiteral(stringLit.substring(0, stringLit.length()-1));
                                 break;
                             default:
                                 break;

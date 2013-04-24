@@ -443,7 +443,7 @@ Rule for parsing the Type of a join creates Tree node JOINTYPE (Keyword)
 */
 joinclause
 :
-    (jointypes? JOINKEYWORD)->^(JOINTYPE jointypes? JOINKEYWORD ^(TEXT TEXT[$joinclause.text])) 
+    (jointypes? JOINKEYWORD EACH?)->^(JOINTYPE jointypes? JOINKEYWORD EACH? ^(TEXT TEXT[$joinclause.text])) 
 ;
 
 
@@ -742,7 +742,7 @@ Rule to parse an sql like expression
 */
 likeclause
 :
-    likesubclause -> ^(LIKEEXPRESSION likesubclause)
+    LIKEKEYWORD likesubclause -> ^(LIKEEXPRESSION likesubclause)
 ;
 
 likesubclause:

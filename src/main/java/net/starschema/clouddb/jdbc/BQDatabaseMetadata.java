@@ -2735,6 +2735,32 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsResultSetConcurrency(int type, int concurrency)
             throws SQLException {
+        if(ResultSet.TYPE_FORWARD_ONLY == type) {
+            if(ResultSet.CONCUR_READ_ONLY == concurrency) {
+                return true;
+            } 
+            if(ResultSet.CONCUR_UPDATABLE == concurrency) {
+                return false;
+            }
+        }
+
+        if(ResultSet.TYPE_SCROLL_INSENSITIVE == type) {
+            if(ResultSet.CONCUR_READ_ONLY == concurrency) {
+                return true;
+            } 
+            if(ResultSet.CONCUR_UPDATABLE == concurrency) {
+                return false;
+            }
+        }
+
+        if(ResultSet.TYPE_SCROLL_SENSITIVE == type) {
+            if(ResultSet.CONCUR_READ_ONLY == concurrency) {
+                return true;
+            } 
+            if(ResultSet.CONCUR_UPDATABLE == concurrency) {
+                return false;
+            }
+        }
         return false;
     }
     
@@ -2761,12 +2787,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
      */
     @Override
     public boolean supportsResultSetType(int type) throws SQLException {
-        if (type == java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        if (type == java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE) return true;
+        if (type == ResultSet.TYPE_FORWARD_ONLY) return true;
+        return false;
     }
     
     /**

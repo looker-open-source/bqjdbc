@@ -41,6 +41,9 @@ DESC:           (D E S C)| (D E S C E N D I N G);
 /** DISTINCT keyword, case insensitive */
 DISTINCT: D I S T I N C T ;
 
+/** EACH keyword, case insensitive */
+EACH: E A C H ;
+
 /** FULL keyword, case insensitive  */
 FULl_KEYWORD: F U L L ;
 /** FROM keyword, case insensitive */

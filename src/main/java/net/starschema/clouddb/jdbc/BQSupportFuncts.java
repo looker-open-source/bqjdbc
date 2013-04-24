@@ -337,6 +337,33 @@ public class BQSupportFuncts {
     }
     
     /**
+     * Returns the result of a completed query
+     * 
+     * @param bigquery
+     *            Instance of authorized Bigquery client
+     * @param projectId
+     *            The id of the Project the completed job was run in
+     * @param completedJob
+     *            The Job instance of the completed job
+     * @return the result of a completed query specified by projectId and
+     *         completedJob
+     * @throws IOException
+     *             <p>
+     *             if the request to get QueryResults specified by the given
+     *             ProjectId and Job id fails
+     *             </p>
+     */
+    public static GetQueryResultsResponse getQueryResultsDivided(Bigquery bigquery,
+            String projectId, Job completedJob, BigInteger startAtRow, int fetchCount) throws IOException {
+        GetQueryResultsResponse queryResult;
+        queryResult = bigquery.jobs()
+                .getQueryResults(projectId,
+                        completedJob.getJobReference().getJobId())
+                        .setStartIndex(startAtRow)
+                        .setMaxResults((long) fetchCount).execute();
+        return queryResult;
+    }
+    /**
      * Returns the status of a job
      * 
      * @param myjob

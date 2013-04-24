@@ -362,6 +362,8 @@ public class BQConnection implements Connection {
         if (this.isclosed) {
             throw new BQSQLException("Connection is closed.");
         }
+        logger.debug("Creating statement with resultsettype: forward only," +
+        		" concurrency: read only");
         return new BQStatement(this.projectId, this);
     }
     
@@ -372,6 +374,8 @@ public class BQConnection implements Connection {
         if (this.isClosed()) {
             throw new BQSQLException("The Connection is Closed");
         }
+        logger.debug("Creating statement with resultsettype: " + resultSetType 
+                + " concurrency: " + resultSetConcurrency);
         return new BQStatement(this.projectId, this, resultSetType,
                 resultSetConcurrency);
     }

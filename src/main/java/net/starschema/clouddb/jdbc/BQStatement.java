@@ -45,7 +45,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         logger.debug("Constructor of BQStatement is running projectid is: " + projectid);
         this.ProjectId = projectid;
         this.connection = bqConnection;
-        this.resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;
+        //this.resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;
+        this.resultSetType = ResultSet.TYPE_FORWARD_ONLY;
         this.resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
     }
     
@@ -104,10 +105,17 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         this.connection.getBigquery(), 
                         this.ProjectId.replace("__", ":").replace("_", ".")).equals(
                         "DONE")) {
-                    return new BQResultSet(BQSupportFuncts.getQueryResults(
-                            this.connection.getBigquery(), 
-                            this.ProjectId.replace("__", ":").replace("_", "."),
-                            referencedJob), this);
+                    if(resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
+                        return new BQScrollableResultSet(BQSupportFuncts.getQueryResults(
+                                this.connection.getBigquery(), 
+                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                referencedJob), this);
+                    } else {
+                        return new BQForwardOnlyResultSet(
+                                this.connection.getBigquery(), 
+                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                referencedJob, this);
+                    }
                 }
                 // Pause execution for half second before polling job status
                 // again, to

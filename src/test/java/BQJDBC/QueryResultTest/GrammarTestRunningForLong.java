@@ -4,10 +4,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
-import net.starschema.clouddb.jdbc.BQSupportMethods;
 
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -92,7 +92,7 @@ public class GrammarTestRunningForLong {
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
-        printer(queryResult);
+        HelperFunctions.printer(queryResult);
     }    
         
     
@@ -116,7 +116,7 @@ public class GrammarTestRunningForLong {
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
-        printer(queryResult);
+        HelperFunctions.printer(queryResult);
     }
     
     
@@ -135,7 +135,7 @@ public class GrammarTestRunningForLong {
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
-        printer(queryResult);
+        HelperFunctions.printer(queryResult);
     }
             
     @Test
@@ -155,19 +155,23 @@ public class GrammarTestRunningForLong {
         		"   efashion.SHOP_FACTS\r\n" + 
         		"       ON\r\n" + 
         		"   efashion.SHOP_FACTS.ARTICLE_CODE = `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" + 
-        		"LIMIT 10";
+        		"LIMIT 1000000";
         logger.info("Running test: selectJokerFromFourJoin \r\n" + input );
         
         ResultSet queryResult = null;
         try {
-            queryResult = con.createStatement().executeQuery(input);
+            /*
+            Statement stm = con.createStatement(
+                    ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);*/
+            Statement stm = con.createStatement();
+            queryResult = stm.executeQuery(input);
         }
         catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
-        printer(queryResult);
+        HelperFunctions.printer(queryResult);
     }    
     
     @Test
@@ -218,7 +222,7 @@ public class GrammarTestRunningForLong {
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
-        printer(queryResult);
+        HelperFunctions.printer(queryResult);
     }    
          
     @Test
@@ -236,13 +240,13 @@ public class GrammarTestRunningForLong {
         		"  FROM\r\n" + 
         		"       `efashion`.SHOP_FACTS " +
         		"     JOIN `efashion`.PRODUCT_PROMOTION_FACTS " +
+                "             ON `efashion`.SHOP_FACTS.ARTICLE_CODE = `efashion`.PRODUCT_PROMOTION_FACTS.ARTICLE_CODE\r\n" +
         		"     JOIN `efashion`.ARTICLE_LOOKUP " +
         		"     ON `efashion`.PRODUCT_PROMOTION_FACTS.ARTICLE_CODE = `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE " +
         		"         JOIN `efashion`.CALENDAR_YEAR_LOOKUP " +
         		"         ON `efashion`.PRODUCT_PROMOTION_FACTS.WEEK_KEY = `efashion`.CALENDAR_YEAR_LOOKUP.WEEK_KEY " +
         		"             JOIN `efashion`.PROMOTION_LOOKUP " +
-        		"             ON `efashion`.PRODUCT_PROMOTION_FACTS.PROMOTION_KEY = `efashion`.PROMOTION_LOOKUP.PROMOTION_KEY " +
-        		"             ON `efashion`.SHOP_FACTS.ARTICLE_CODE = `efashion`.PRODUCT_PROMOTION_FACTS.ARTICLE_CODE\r\n" + 
+        		"             ON `efashion`.PRODUCT_PROMOTION_FACTS.PROMOTION_KEY = `efashion`.PROMOTION_LOOKUP.PROMOTION_KEY " + 
         		"";
         
     logger.info("Running test: selectJokerFromFourJoin \r\n" + input );
@@ -256,7 +260,7 @@ public class GrammarTestRunningForLong {
         Assert.fail("SQLException" + e.toString());
     }
     Assert.assertNotNull(queryResult);
-    printer(queryResult);
+    HelperFunctions.printer(queryResult);
 }      
     @Test
     public void inetClearReports() {
@@ -320,7 +324,7 @@ public class GrammarTestRunningForLong {
         Assert.fail("SQLException" + e.toString());
     }
     Assert.assertNotNull(queryResult);
-    printer(queryResult);
+    HelperFunctions.printer(queryResult);
 }   
     
     //---------------------------------------------------
@@ -329,46 +333,5 @@ public class GrammarTestRunningForLong {
     //---------------------------------------------------
     //---------------------------------------------------
     //---------------------------------------------------
-    
-        
-    
-    /**
-     * Prints a String[][] QueryResult to Log
-     * 
-     * @param input
-     */
-    private void printer(ResultSet input) {
-        String columnnames = "";
-        try {
-            for (int i = 1; i <= input.getMetaData().getColumnCount(); i++) {
-                    columnnames += input.getMetaData().getColumnName(i)+"\t";
-                }
-            }
-            catch (SQLException e) {
-                logger.warn(e);
-            }
-        logger.debug(columnnames);
-        String[][] inputArray = null;
-        try {
-            inputArray = BQSupportMethods.GetQueryResult(input);
-        }
-        catch (SQLException e) {
-            logger.warn(e);
-        }
-        //limiting the output to 10 lines
-        //for all the results use "s < input[0].length"s
-        for (int s = 0; s < 10 && s < inputArray[0].length ; s++) {
-            String Output = "";
-            for (int i = 0; i < inputArray.length; i++) {
-                if (i == inputArray.length - 1) {
-                    Output += inputArray[i][s];
-                }
-                else {
-                    Output += inputArray[i][s] + "\t";
-                }
-            }
-            this.logger.debug(Output);
-        }
-    }
         
 }

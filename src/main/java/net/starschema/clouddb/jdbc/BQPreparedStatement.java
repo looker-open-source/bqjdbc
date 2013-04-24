@@ -81,7 +81,8 @@ public class BQPreparedStatement extends BQStatementRoot implements
         
         this.ProjectId = projectid;
         this.connection = bqConnection;
-        this.resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;
+        //this.resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;  //-scrollable
+        this.resultSetType = ResultSet.TYPE_FORWARD_ONLY;
         this.resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
         this.PrecompiledSQL = querysql;
         if (!this.PrecompiledSQL.contains("?")) {
@@ -267,10 +268,17 @@ public class BQPreparedStatement extends BQStatementRoot implements
                         this.connection.getBigquery(), 
                         this.ProjectId.replace("__", ":").replace("_", "."))
                         .equals("DONE")) {
-                    return new BQResultSet(BQSupportFuncts.getQueryResults(
+                    if(resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
+                        return new BQScrollableResultSet(BQSupportFuncts.getQueryResults(
                             this.connection.getBigquery(), 
                             this.ProjectId.replace("__", ":").replace("_", "."),
                             referencedJob), this);
+                    } else {
+                        return new BQForwardOnlyResultSet(
+                                this.connection.getBigquery(), 
+                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                referencedJob, this);
+                    }
                 }
                 // Pause execution for half second before polling job status
                 // again, to
@@ -676,7 +684,7 @@ public class BQPreparedStatement extends BQStatementRoot implements
             throw new BQSQLException("Index is not valid");
         }
         else {
-            this.SetParameter(parameterIndex, "\"" + Long.toString(x) + "\"");
+            this.SetParameter(parameterIndex, Long.toString(x));
         }
         
     }

@@ -228,23 +228,13 @@ public class Oauth2Bigquery {
                     return;
                 }
                 catch (IOException e) {
-                    logger.debug(null, e);
+                    logger.debug("Failed with desktop.browse", e);
                     // handled below
                 }
             }
         }
-        logger.debug("Then try with url.connect");
-        try {
-            URL myURL = new URL(url);
-            URLConnection myURLConnection = myURL.openConnection();
-            myURLConnection.connect();
-            logger.debug("success");
-            return;
-        }
-        catch (Exception e) {
-            logger.debug(null, e);
-            // handled below
-        }
+        
+       
         // Next try browsers
         logger.debug("Try with browsers");
         // Code from Bare Bones Browser Launcher
@@ -260,9 +250,9 @@ public class Oauth2Bigquery {
             }
             else
                 if (osName.startsWith("Windows")) {
-                    logger.debug("Windows FileProtocolHandler should handle the URL");
+                    logger.debug("Let's run internet suxplorer! with the URL: " + url);                    
                     Runtime.getRuntime().exec(
-                            "rundll32 url.dll,FileProtocolHandler " + url);
+                            "cmd.exe /c start iexplore.exe \"" + url + "\"");
                     return;
                 }
                 else { // assume Unix or Linux-
@@ -280,12 +270,28 @@ public class Oauth2Bigquery {
                 }
         }
         catch (Exception e) {
+            logger.debug("Failed", e);
+            // handled below
+        }
+        
+        logger.debug("Then try with url.connect");
+        try {
+            URL myURL = new URL(url);
+            URLConnection myURLConnection = myURL.openConnection();
+            myURLConnection.connect();
+            logger.debug("success");
+            return;
+        }
+        catch (Exception e) {
             logger.debug(null, e);
             // handled below
         }
+        
         // Finally just ask user to open in their browser using copy-paste
         System.out.println("Please open the following URL in your browser:");
         System.out.println("  " + url);
+        System.err.println("Please open the following URL in your browser:");
+        System.err.println("  " + url);
     }
     
     /**

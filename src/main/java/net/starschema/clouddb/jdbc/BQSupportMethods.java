@@ -42,17 +42,17 @@ public class BQSupportMethods {
             throws SQLException {
         int ColumnCount = result.getMetaData().getColumnCount();
         List<List<String>> returned = new ArrayList<List<String>>();
-        
+        //TODO finish the converter :D       
         for (int i = 0; i < ColumnCount; i++) {
             returned.add(new ArrayList<String>());
-            List<String> Column = returned.get(i);
-            result.first();
-            while (result.isAfterLast() != true) {
-                Column.add(result.getString(i + 1));
-                result.next();
+        }        
+        
+        while (result.next() == true) {
+            for (int i = 0; i < ColumnCount; i++) {                
+                returned.get(i).add(result.getString(i+1));
             }
-            result.beforeFirst();
         }
+
         String[][] returning = new String[returned.size()][];
         for (int i = 0; i < returned.size(); i++) {
             returning[i] = new String[returned.get(i).size()];

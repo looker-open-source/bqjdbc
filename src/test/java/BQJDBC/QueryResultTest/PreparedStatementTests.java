@@ -169,8 +169,7 @@ public class PreparedStatementTests {
         catch (SQLException e) {
             Assert.fail(e.toString());
         }
-        try {
-            theResult.first();
+        try { 
             ResultSetMetaData metadata = theResult.getMetaData();
             int ColumnCount = metadata.getColumnCount();
             // Print Out Column Names
@@ -181,7 +180,7 @@ public class PreparedStatementTests {
             System.out.println(Line + "\n");
             
             // Print out Column Values
-            while (!theResult.isAfterLast()) {
+            while(theResult.next()) {
                 Line = "";
                 for (int i = 0; i < ColumnCount; i++) {
                     if (i == 0) {
@@ -190,9 +189,9 @@ public class PreparedStatementTests {
                     Line += String.format("%-32s", theResult.getString(i + 1));
                 }
                 System.out.println(Line);
-                theResult.next();
                 actual++;
-            }
+            } 
+            
         }
         catch (SQLException e) {
             Assert.fail(e.toString());
@@ -228,12 +227,10 @@ public class PreparedStatementTests {
             Assert.fail(e.toString());
         }
         try {
-            theResult.first();
             // Count Column Values
-            while (!theResult.isAfterLast()) {
-                theResult.next();
+            while (theResult.next()) {
                 Actual++;
-            }
+            }   
         }
         catch (SQLException e) {
             Assert.fail(e.toString());
@@ -326,7 +323,6 @@ public class PreparedStatementTests {
             Assert.fail(e.toString());
         }
         try {
-            theResult.first();
             ResultSetMetaData metadata = theResult.getMetaData();
             int ColumnCount = metadata.getColumnCount();
             // Print Out Column Names
@@ -337,7 +333,7 @@ public class PreparedStatementTests {
             System.out.println(Line + "\n");
             
             // Print out Column Values
-            while (!theResult.isAfterLast()) {
+            while (theResult.next()) {
                 Line = "";
                 for (int i = 0; i < ColumnCount; i++) {
                     // if(i==0)
@@ -349,8 +345,7 @@ public class PreparedStatementTests {
                     Line += String.format("%-15s", theResult.getString(i + 1));
                 }
                 System.out.println(Line);
-                theResult.next();
-            }
+            }  
         }
         catch (SQLException e) {
             Assert.fail(e.toString());
@@ -389,7 +384,11 @@ public class PreparedStatementTests {
             Result.first();
         }
         catch (SQLException e) {
-            Assert.fail(e.toString());
+            try{
+                Result.next();
+            } catch (Exception ef) {
+                
+            }
         }
         try {
             Assert.assertTrue(
@@ -431,7 +430,11 @@ public class PreparedStatementTests {
             Result.first();
         }
         catch (SQLException e) {
-            Assert.fail(e.toString());
+            try {
+                Result.next();
+            }
+            catch (SQLException e1) {
+            }
         }
         try {
             Assert.assertTrue(
@@ -474,7 +477,6 @@ public class PreparedStatementTests {
             Assert.fail(e.toString());
         }
         try {
-            theResult.first();
             ResultSetMetaData metadata = theResult.getMetaData();
             int ColumnCount = metadata.getColumnCount();
             // Print Out Column Names
@@ -485,16 +487,14 @@ public class PreparedStatementTests {
             System.out.println(Line + "\n");
             
             // Print out Column Values
-            while (!theResult.isAfterLast()) {
+            while (theResult.next()) {
                 Line = "";
                 for (int i = 0; i < ColumnCount; i++) {
                     Line += String.format("%-32s", theResult.getString(i + 1));
                 }
                 System.out.println(Line);
-                theResult.next();
-                
                 Actual++;
-            }
+            } 
         }
         catch (SQLException e) {
             Assert.fail(e.toString());
@@ -575,7 +575,6 @@ public class PreparedStatementTests {
             Assert.fail(e.toString());
         }
         try {
-            theResult.first();
             ResultSetMetaData metadata = theResult.getMetaData();
             int ColumnCount = metadata.getColumnCount();
             // Print Out Column Names
@@ -586,7 +585,7 @@ public class PreparedStatementTests {
             System.out.println(Line + "\n");
             
             // Print out Column Values
-            while (!theResult.isAfterLast()) {
+            while (theResult.next()) {
                 Line = "";
                 for (int i = 0; i < ColumnCount; i++) {
                     if (i == 0) {
@@ -595,9 +594,8 @@ public class PreparedStatementTests {
                     Line += String.format("%-32s", theResult.getString(i + 1));
                 }
                 System.out.println(Line);
-                theResult.next();
                 actual++;
-            }
+            } 
         }
         catch (SQLException e) {
             Assert.fail(e.toString());

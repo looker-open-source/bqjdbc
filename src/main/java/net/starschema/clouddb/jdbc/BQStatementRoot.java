@@ -252,9 +252,16 @@ public abstract class BQStatementRoot {
                 if (BQSupportFuncts.getQueryState(referencedJob,
                         this.connection.getBigquery(), this.ProjectId).equals(
                         "DONE")) {
-                    return new BQResultSet(BQSupportFuncts.getQueryResults(
-                            this.connection.getBigquery(), this.ProjectId,
-                            referencedJob), this);
+                    if(resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
+                        return new BQScrollableResultSet(BQSupportFuncts.getQueryResults(
+                                this.connection.getBigquery(), this.ProjectId,
+                                referencedJob), this);
+                    } else {
+                        return new BQForwardOnlyResultSet(
+                                this.connection.getBigquery(), 
+                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                referencedJob, this);
+                    }
                 }
                 // Pause execution for half second before polling job status
                 // again, to

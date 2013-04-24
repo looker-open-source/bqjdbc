@@ -78,7 +78,7 @@ public class BQDriver implements java.sql.Driver {
     /** MAJOR Version of the driver */
     private static final int MAJOR_VERSION = 1;
     /** Minor Version of the driver */
-    private static final int MINOR_VERSION = 1;
+    private static final int MINOR_VERSION = 3;
     
     /** Registers the driver with the drivermanager */
     static {

@@ -23,6 +23,7 @@
 package BQJDBC.QueryResultTest;
 
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -100,27 +101,7 @@ public class QueryResultTest {
             e.printStackTrace();
         }
     }
-    
-    /**
-     * Prints a String[][] QueryResult to Log
-     * 
-     * @param input
-     */
-    private void printer(String[][] input) {
-        for (int s = 0; s < input[0].length; s++) {
-            String Output = "";
-            for (int i = 0; i < input.length; i++) {
-                if (i == input.length - 1) {
-                    Output += input[i][s];
-                }
-                else {
-                    Output += input[i][s] + "\t";
-                }
-            }
-            this.logger.debug(Output);
-        }
-    }
-    
+          
     @Test
     public void QueryResultTest01() {
         final String sql = "SELECT TOP(word, 10), COUNT(*) FROM publicdata:samples.shakespeare";
@@ -149,7 +130,7 @@ public class QueryResultTest {
         Assert.assertNotNull(Result);
         
         this.logger.debug(description);
-        this.printer(expectation);
+        HelperFunctions.printer(expectation);
         try {
             Assert.assertTrue(
                     "Comparing failed in the String[][] array",
@@ -182,7 +163,7 @@ public class QueryResultTest {
         Assert.assertNotNull(Result);
         
         this.logger.debug(description);
-            this.printer(expectation);
+            HelperFunctions.printer(expectation);
         try {
             Assert.assertTrue(
                     "Comparing failed in the String[][] array",
@@ -208,7 +189,7 @@ public class QueryResultTest {
         java.sql.ResultSet result = null;
         try {
             Statement stmt = con.createStatement();
-            stmt.setQueryTimeout(20);
+            //stmt.setQueryTimeout(60);
             result = stmt.executeQuery(sql);
         }
         catch (SQLException e) {
@@ -244,7 +225,7 @@ public class QueryResultTest {
         Assert.assertNotNull(Result);
         
         this.logger.debug(description);
-            this.printer(expectation);
+            HelperFunctions.printer(expectation);
         try {
             Assert.assertTrue(
                     "Comparing failed in the String[][] array",
@@ -278,7 +259,8 @@ public class QueryResultTest {
         
         this.logger.debug(description);
         try {
-            Assert.assertFalse(Result.first());
+            if(Result.getType() != ResultSet.TYPE_FORWARD_ONLY) 
+                Assert.assertFalse(Result.first());
         }
         catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -308,7 +290,7 @@ public class QueryResultTest {
         Assert.assertNotNull(Result);
         
         this.logger.debug(description);
-            this.printer(expectation);
+            HelperFunctions.printer(expectation);
         try {
             Assert.assertTrue(
                     "Comparing failed in the String[][] array",
@@ -345,7 +327,7 @@ public class QueryResultTest {
         
         this.logger.debug(description);
         
-            this.printer(expectation);
+            HelperFunctions.printer(expectation);
         
         try {
             Assert.assertTrue(
@@ -384,7 +366,7 @@ public class QueryResultTest {
         
         this.logger.debug(description);
        
-            this.printer(expectation);
+            HelperFunctions.printer(expectation);
         
         try {
             Assert.assertTrue(
@@ -421,7 +403,7 @@ public class QueryResultTest {
         
         this.logger.debug(description);
       
-            this.printer(expectation);
+            HelperFunctions.printer(expectation);
         
         try {
             Assert.assertTrue(
@@ -475,5 +457,42 @@ public class QueryResultTest {
             Assert.fail("schema problem");
         }
         
+    }
+    
+    @Test
+    public void QueryResultTest12() {
+        int limitNum = 40000;
+        final String sql = "SELECT weight_pounds  FROM publicdata:samples.natality LIMIT "  + limitNum;
+       
+        this.logger.info("Test number: 12");
+        this.logger.info("Running query:" + sql);
+        
+        java.sql.ResultSet Result = null;
+        try {
+            Statement stm = con.createStatement(
+                    ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            stm.setFetchSize(1000);
+            Result = stm.executeQuery(sql);
+        }
+        catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(Result);
+        try {/*
+            int j = 0;
+            for (int i = 0; i < limitNum-1; i++) {
+                if(i%1000 == 0) {
+                    logger.debug("fetched 1k for the " + ++j + ". time");
+                }
+                Assert.assertTrue(Result.next());  
+            }*/
+            Result.absolute(limitNum);
+            Assert.assertTrue(true);
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
     }
 }

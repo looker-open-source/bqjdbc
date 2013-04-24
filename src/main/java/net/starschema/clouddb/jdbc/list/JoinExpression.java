@@ -40,7 +40,7 @@ public class JoinExpression extends Node {
     Node rightItem;
     JoinType type = null;
     OnClause onClause = null;
-    
+    boolean each = false;
     SelectStatement selectStatement;
     
     
@@ -250,6 +250,9 @@ public class JoinExpression extends Node {
                             default:
                                 break;
                         }
+                        if( child.getChild(1).getType() == JdbcGrammarParser.EACH) {
+                            each = true;
+                        }
                         break;
                     default:
                         break;
@@ -321,7 +324,7 @@ public class JoinExpression extends Node {
                     + " JOIN " + newline;
         }
         else {
-            result += newline + this.tab(level + 1) + " JOIN " + newline;
+            result += newline + this.tab(level + 1) + (each?" JOIN EACH ":" JOIN ") + newline;
         }
         result += this.rightItem.toPrettyString(newlevel);
         result += newline + this.onClause.toPrettyString(newlevel);
