@@ -55,6 +55,7 @@ import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.TableCell;
+import com.google.api.client.util.Data;
 
 /**
  * This class implements the java.sql.ResultSet interface, as a Forward only resultset
@@ -153,12 +154,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                 .get(columnIndex - 1).getType();
 
         TableCell field = ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1);
-        String result = field.getV().toString();
-        if (result == null) {
+
+        if (Data.isNull(field.getV())) {
             this.wasnull = true;
             return null;
         }
         else {
+            String result = field.getV().toString();
             this.wasnull = false;
             try {
                 if (Columntype.equals("STRING")) {

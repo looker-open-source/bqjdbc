@@ -194,7 +194,7 @@ public class Oauth2Bigquery {
      * @throws IOException
      */
     public static Bigquery authorizeviaservice(String serviceaccountemail,
-            String keypath) throws GeneralSecurityException, IOException, Exception {
+            String keypath) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
 
         List<String> scopes = new ArrayList<String>();
