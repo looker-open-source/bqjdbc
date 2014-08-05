@@ -1,20 +1,20 @@
 /**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * This class implements the java.sql.DatabaseMetaData interface
  */
 
@@ -43,142 +43,142 @@ import com.google.api.services.bigquery.model.TableFieldSchema;
 
 /**
  * This class implements the DatabaseMetadata interface
- * 
+ *
  * @author Gunics Balázs, Horváth Attila
  */
 class BQDatabaseMetadata implements DatabaseMetaData {
-    
+
     /**
      * Reference for the Connection object that made this DatabaseMetadata
      * object
      */
     BQConnection Connection;
-    
+
     /**
      * Reference for the Logger Class
      */
     // static Logger logger = new Logger(BQDatabaseMetadata.class.getName());
     static Logger logger = Logger.getLogger(BQDatabaseMetadata.class.getName());
-    
+
     /**
      * We currently doesn't support multiple open resultsets.
      */
     static boolean multipleOpenResultsSupported = false;
-    
+
     /**
      * Constructor that initializes variables
-     * 
+     *
      * @param bqConnection
      */
     public BQDatabaseMetadata(BQConnection bqConnection) {
         this.Connection = bqConnection;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Since bigquery doesn't support stored jobs, we'll return with a false.
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean allProceduresAreCallable() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Only the usable Tables name are returned.
      * </p>
-     * 
+     *
      * @return true
      */
     @Override
     public boolean allTablesAreSelectable() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Since commit is not supported, we return false, and no result sets will
      * be closed, nor committed
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * This feature missing from the driver, so we return with a false
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * This feature missing from the driver.
      * </p>
-     * 
+     *
      * @return true
      */
     @Override
     public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Bigquery doesn't has a delete function, we can delete only tables.
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean deletesAreDetected(int type) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * LONGVARCHAR and LONGVARBINARY are not supported.
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * returns an empty resultset
      * </p>
-     * 
+     *
      * @return empty resultset
      */
     @Override
     public ResultSet getAttributes(String catalog, String schemaPattern,
             String typeNamePattern, String attributeNamePattern)
             throws SQLException {
-        logger.debug("Function call getAttributes catalog: " + 
+        logger.debug("Function call getAttributes catalog: " +
                 (catalog != null ? catalog : "null") + ", schemaPattern: " +
                 (schemaPattern != null ? schemaPattern : "null") + ", typeNamePattern:" +
                 (typeNamePattern != null ? typeNamePattern : "null") + ", attributeNamePattern: " +
@@ -240,13 +240,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         return new DMDResultSet(new Object[0][21], Col,
                 DMDResultSetType.getAttributes);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * This feature is not yet impelemented.
      * </p>
-     * 
+     *
      * @return an empty dataset
      */
     @Override
@@ -276,7 +276,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         return new DMDResultSet(new Object[0][8], Col,
                 DMDResultSetType.getBestRowIdentifier);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public ResultSet getCatalogs() throws SQLException {
@@ -284,7 +284,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         try {
             List<Projects> Projects = this.Connection.getBigquery().projects()
                     .list().execute().getProjects();
-            
+
             if (Projects != null && Projects.size() != 0) {
                 String[] Data = new String[Projects.size()];
                 String toLog = "";
@@ -307,27 +307,27 @@ class BQDatabaseMetadata implements DatabaseMetaData {
             throw new BQSQLException(e);
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Returns a : as a catalog separator
      * </p>
-     * 
+     *
      * @return :
      */
     @Override
     public String getCatalogSeparator() throws BQSQLException {
         logger.debug("function call: getCatalogSeparator() return is ':'");
-        return ":"; 
+        return ":";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Returns the default catalog term: "project"
      * </p>
-     * 
+     *
      * @return project
      */
     @Override
@@ -335,33 +335,33 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         logger.debug("function call: getCatalogTerm()");
         return "project";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * returns the supported clients in a result set
      * </p>
-     * 
+     *
      * @return supported clients
      */
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
         logger.debug("Function call getClientInfoProperties()");
-        return new DMDResultSet(new Object[][] { 
+        return new DMDResultSet(new Object[][] {
                 { "iSQL", 64, "iSQL", "http://isql.sourceforge.net/" } }
-        
+
         , new String[] { "NAME", "MAX_LEN", "DEFAULT_VALUE", "DESCRIPTION" },
                 DMDResultSetType.getClientInfoProperties);
         // TODO add more clients!
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Since no Grantor, Grantee, and privilege, this won't be used, we'll
      * return an empty resultset
      * </p>
-     * 
+     *
      * @returns a Resultset with no Data
      */
     @Override
@@ -385,17 +385,17 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 "", "", "NO" } }, Col, DMDResultSetType.getColumnPrivileges);
         // TODO we might need this more implemented.
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public ResultSet getColumns(String catalog, String schemaPattern,
             String tableNamePattern, String columnNamePattern)
             throws SQLException {
-        logger.debug("Function call getColumns" 
+        logger.debug("Function call getColumns"
             + "catalog: " + (catalog != null ? catalog : "null") +
-            ", schemaPattern: " + (schemaPattern != null ? schemaPattern : "null" )+ 
-            ", tableNamePattern:" + 
-            (tableNamePattern != null ? tableNamePattern : "null") + 
+            ", schemaPattern: " + (schemaPattern != null ? schemaPattern : "null" )+
+            ", tableNamePattern:" +
+            (tableNamePattern != null ? tableNamePattern : "null") +
             ", columnNamePattern: " +
             (columnNamePattern != null ? columnNamePattern : "null"));
         List<Table> Tables = null;
@@ -410,7 +410,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         catch (IOException e) {
             throw new BQSQLException(e);
         }
-        
+
         if (Tables != null) {
             List<String[]> data = new ArrayList<String[]>();
             for (int i = 0; i < Tables.size(); i++) {
@@ -421,7 +421,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                         .getDatasetIdFromTableDotGetId(UparsedId);
                 String TableId = BQSupportFuncts
                         .getTableIdFromTableDotGetId(UparsedId);
-                
+
                 List<TableFieldSchema> tblfldschemas = Tables.get(i)
                         .getSchema().getFields();
                 if (tblfldschemas != null && tblfldschemas.size() != 0) {
@@ -527,9 +527,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
             }
         }
         else {
-            return new DMDResultSet(new String[][] {                     
+            return new DMDResultSet(new String[][] {
                     { null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, 
+                        null, null, null, null, null, null, null, null, null, null,
                         null, null, null} },
                     new String[] { "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
                             "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME",
@@ -542,19 +542,19 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                             "IS_AUTOINCREMENT", }, DMDResultSetType.getColumns);
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Connection getConnection() throws SQLException {
         return this.Connection;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Cross Reference Not supported, we return an empty resulset
      * </p>
-     * 
+     *
      * @return an empty resultset
      */
     @Override
@@ -600,7 +600,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 DMDResultSetType.getCrossReference);
         // TODO
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -611,7 +611,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getDatabaseMajorVersion() throws SQLException {
         return 2;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -622,7 +622,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getDatabaseMinorVersion() throws SQLException {
         return 1;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -633,7 +633,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public String getDatabaseProductName() throws SQLException {
         return "Google Big Query";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -644,32 +644,32 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public String getDatabaseProductVersion() throws SQLException {
         return "google bigquery v2-1.3.3-beta";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Commit is not supported, so we return with no transaction
      * </p>
-     * 
+     *
      * return TRANSACTION_NONE
      */
     @Override
     public int getDefaultTransactionIsolation() throws SQLException {
         return java.sql.Connection.TRANSACTION_NONE;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public int getDriverMajorVersion() {
         return BQDriver.getMajorVersionAsStatic();
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public int getDriverMinorVersion() {
         return BQDriver.getMinorVersionAsStatic();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -680,20 +680,20 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public String getDriverName() throws SQLException {
         return "Starschema.net:BigQuery JDBC driver";
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public String getDriverVersion() throws SQLException {
         return BQDriver.getMajorVersionAsStatic() + "."
                 + BQDriver.getMinorVersionAsStatic();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not working.
      * </p>
-     * 
+     *
      * @return an empty resultset
      */
     @Override
@@ -737,7 +737,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         return new DMDResultSet(new Object[0][14], Col,
                 DMDResultSetType.getExportedKeys);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -748,13 +748,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public String getExtraNameCharacters() throws SQLException {
         return "( ) : . , \\ \" / ' ' * < = > + - % & | ^ << >> ~ != <> >= <= ";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
@@ -765,13 +765,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         throw new BQSQLException("Not implemented."
                 + "getFunctionColumns(String,String,String,String)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
@@ -781,7 +781,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         throw new BQSQLException("Not implemented."
                 + "getFunctions(String,String,String)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -792,13 +792,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public String getIdentifierQuoteString() throws SQLException {
         return "\\\"";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Since we doesn't support keys, it returns an empty Result Set
      * </p>
-     * 
+     *
      * @return ResultSet
      */
     @Override
@@ -842,13 +842,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         return new DMDResultSet(new Object[0][14], Col,
                 DMDResultSetType.getImportedKeys);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Currently not supported.
      * </p>
-     * 
+     *
      * @return An empty Result Set
      */
     @Override
@@ -895,19 +895,19 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 DMDResultSetType.getIndexInfo);
         // TODO implement it more
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public int getJDBCMajorVersion() throws SQLException {
         return BQDriver.getMajorVersionAsStatic();
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public int getJDBCMinorVersion() throws SQLException {
         return BQDriver.getMinorVersionAsStatic();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -918,7 +918,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getMaxBinaryLiteralLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -929,7 +929,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getMaxCatalogNameLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -940,7 +940,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getMaxCharLiteralLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -951,7 +951,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getMaxColumnNameLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -962,7 +962,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getMaxColumnsInGroupBy() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -973,7 +973,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getMaxColumnsInIndex() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -984,7 +984,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getMaxColumnsInOrderBy() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -995,7 +995,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getMaxColumnsInSelect() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1006,59 +1006,59 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getMaxColumnsInTable() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Limit is not known.
      * </p>
-     * 
+     *
      * @return 0
      */
     @Override
     public int getMaxConnections() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Limit is not known
      * </p>
-     * 
+     *
      * @return 0
      */
     @Override
     public int getMaxCursorNameLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * No index in bigquery, so limit is not known
      * </p>
-     * 
+     *
      * @return 0
      */
     @Override
     public int getMaxIndexLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Procedures not supported currently
      * </p>
-     * 
+     *
      * @return 0
      */
     @Override
     public int getMaxProcedureNameLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1069,85 +1069,85 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getMaxRowSize() throws SQLException {
         return 64 * 1024;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Limit is not known
      * </p>
-     * 
+     *
      * @return 0
      */
     @Override
     public int getMaxSchemaNameLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Limit is not known
      * </p>
-     * 
+     *
      * @return 0
      */
     @Override
     public int getMaxStatementLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Limit is not known
      * </p>
-     * 
+     *
      * @return 0
      */
     @Override
     public int getMaxStatements() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Limit is not known
      * </p>
-     * 
+     *
      * @return 0
      */
     @Override
     public int getMaxTableNameLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Limit is not known;
      * </p>
-     * 
+     *
      * @return 0;
      */
     @Override
     public int getMaxTablesInSelect() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Limit is not known
      * </p>
-     * 
+     *
      * @return 0
      */
     @Override
     public int getMaxUserNameLength() throws SQLException {
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1193,13 +1193,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 + "{ fn  ROUND() }," + "{ fn  SIN() }," + "{ fn  SINH() },"
                 + "{ fn  SQRT() }," + "{ fn  TAN() }," + "{ fn  TANH() }";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * No primary keys in BigQuery, so we return an empty Result Set
      * </p>
-     * 
+     *
      * @return ResultSet
      */
     @Override
@@ -1224,13 +1224,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         return new DMDResultSet(new Object[0][8], Col,
                 DMDResultSetType.getPrimaryKeys);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Procedures not supported, so we return with an empty ResultSet
      * </p>
-     * 
+     *
      * @return empty resultset
      */
     @Override
@@ -1297,7 +1297,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         return new DMDResultSet(new Object[0][20], Col,
                 DMDResultSetType.getProcedureColumns);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1305,7 +1305,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
      * https://developers.google.com/bigquery/docs/reference/v2/
      * https://developers.google.com/bigquery/docs/query-reference
      * </p>
-     * 
+     *
      * @return an empty Result Set
      */
     @Override
@@ -1332,20 +1332,20 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         return new DMDResultSet(new Object[0][9], Col,
                 DMDResultSetType.getProcedures);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Procedures are not supported
      * </p>
-     * 
+     *
      * @return ""
      */
     @Override
     public String getProcedureTerm() throws SQLException {
         return "";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1356,7 +1356,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getResultSetHoldability() throws SQLException {
         return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1367,29 +1367,27 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public RowIdLifetime getRowIdLifetime() throws SQLException {
         return RowIdLifetime.ROWID_UNSUPPORTED;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public ResultSet getSchemas() throws SQLException {
         logger.debug("Function call getSchemas()");
-        
+
         String[][] data = null;
-        
+
         List<Projects> Projects;
         try {
-            Projects = this.Connection.getBigquery().projects().list()
-                    .execute().getProjects();
+            Projects = this.Connection.getBigquery().projects().list().execute().getProjects();
         }
         catch (IOException e) {
             throw new BQSQLException(e);
         }
-        
+
         if (Projects != null && Projects.size() != 0) {
             for (Projects proj : Projects) {
                 DatasetList datasetcontainer = null;
                 try {
-                    datasetcontainer = this.Connection.getBigquery().datasets()
-                            .list(proj.getId()).execute();
+                    datasetcontainer = this.Connection.getBigquery().datasets().list(proj.getId()).execute();
                 }
                 catch (IOException e) {
                     throw new BQSQLException(e);
@@ -1423,15 +1421,15 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                     DMDResultSetType.getSchemas);
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Similar to getSchemas, but we can filter the results with the catalog and
      * schema
-     * 
+     *
      * </p>
-     * 
+     *
      * @param catalog
      *            - the catalog, AKA the project ID
      * @param schemaPattern
@@ -1458,7 +1456,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
          * narrow down the search. Returns: a ResultSet object in which each row
          * is a schema description
          */
-        
+
         try {
             Projects = this.Connection.getBigquery().projects().list()
                     .execute().getProjects();
@@ -1497,7 +1495,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 }
             }
         }
-        
+
         if (data != null) {
             return new DMDResultSet(data, new String[] { "TABLE_SCHEM",
                     "TABLE_CATALOG" }, DMDResultSetType.getSchemas);
@@ -1508,7 +1506,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                     DMDResultSetType.getSchemas);
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1519,7 +1517,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public String getSchemaTerm() throws SQLException {
         return "schema";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1530,7 +1528,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public String getSearchStringEscape() throws SQLException {
         return "";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1589,7 +1587,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 + "UTC_USEC_TO_DAY,UTC_USEC_TO_HOUR,UTC_USEC_TO_MONTH,"
                 + "UTC_USEC_TO_WEEK,UTC_USEC_TO_YEAR,POSITION";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1600,7 +1598,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public int getSQLStateType() throws SQLException {
         return DatabaseMetaData.sqlStateSQL;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1623,13 +1621,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 + "{ fn RPAD() }," + "{ fn SUBSTR() }," + "{ fn UPPER( },";
         // expr CONTAINS 'str'
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @return an empty ResultSet
      */
     @Override
@@ -1648,13 +1646,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         return new DMDResultSet(new Object[0][4], Col,
                 DMDResultSetType.getSuperTables);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Super Types are not supported
      * </p>
-     * 
+     *
      * @return empty ResultSet
      */
     @Override
@@ -1677,7 +1675,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         return new DMDResultSet(new Object[0][6], Col,
                 DMDResultSetType.getSuperTypes);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1688,13 +1686,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public String getSystemFunctions() throws SQLException {
         return "";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Returns an empty resultset
      * </p>
-     * 
+     *
      */
     @Override
     public ResultSet getTablePrivileges(String catalog, String schemaPattern,
@@ -1716,13 +1714,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 DMDResultSetType.getTablePrivileges);
         // TODO we might need this more implemented.
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public ResultSet getTables(String catalog, String schemaPattern,
             String tableNamePattern, String[] types) throws SQLException {
         if(catalog!= null && (catalog == " " || catalog.length() == 0)){
-            logger.debug("Catalog length was: " + 
+            logger.debug("Catalog length was: " +
                     catalog.length() + " it's an empty string replacing it with 'null' ");
             catalog = null;
         }
@@ -1769,7 +1767,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 data[i][5] = null;
                 data[i][6] = BQSupportFuncts.getProjectIdFromAnyGetId(UparsedId).replace(":", "__").replace(".", "_");
                 data[i][7] = BQSupportFuncts.getDatasetIdFromTableDotGetId(UparsedId);
-                data[i][8] = BQSupportFuncts.getTableIdFromTableDotGetId(UparsedId);                
+                data[i][8] = BQSupportFuncts.getTableIdFromTableDotGetId(UparsedId);
                 data[i][9] = null;
             }
             return new DMDResultSet(data, new String[] { "TABLE_CAT",
@@ -1780,7 +1778,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         }
         else {
             logger.debug("no result or empty result, returning with nulls");
-            return new DMDResultSet(new String[][] { 
+            return new DMDResultSet(new String[][] {
                     { null, null, null, null,null,null,null,null,null,null} },
                     new String[] { "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
                             "TABLE_TYPE", "REMARKS", "TYPE_CAT", "TYPE_SCHEM",
@@ -1788,7 +1786,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                             "REF_GENERATION" }, DMDResultSetType.getTables);
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1803,7 +1801,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         return new DMDResultSet(Res.toArray(), new String[] { "TABLE_TYPE" },
                 DMDResultSetType.getTableTypes);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1827,13 +1825,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 + "{ fn UTC_USEC_TO_MONTH() }," + "{ fn UTC_USEC_TO_WEEK() },"
                 + "{ fn UTC_USEC_TO_YEAR() }";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not yet implemented, returning an empty Result Set
      * </p>
-     * 
+     *
      * @return an empty ResultSet
      */
     @Override
@@ -1869,13 +1867,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 DMDResultSetType.getTypeInfo);
         // TODO we might need this more implemented
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported, so we're returning an empty ResultSet
      * </p>
-     * 
+     *
      * @return an empty ResultSet
      */
     @Override
@@ -1901,7 +1899,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // short => type code of the source type of a DISTINCT type or ...
         return new DMDResultSet(new Object[0][7], Col, DMDResultSetType.getUDTs);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1912,7 +1910,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public String getURL() throws SQLException {
         return "https://developers.google.com/bigquery/";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1921,17 +1919,17 @@ class BQDatabaseMetadata implements DatabaseMetaData {
      */
     @Override
     public String getUserName() throws SQLException {
-        logger.debug("Function call getUserName()  returning the projectID: " 
+        logger.debug("Function call getUserName()  returning the projectID: "
                 + this.Connection.getProjectId());
         return this.Connection.getProjectId();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * returns an empty resultset
      * </p>
-     * 
+     *
      */
     @Override
     public ResultSet getVersionColumns(String catalog, String schema,
@@ -1960,7 +1958,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 DMDResultSetType.getVersionColumns);
         // TODO we might need it
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1971,14 +1969,14 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean insertsAreDetected(int type) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
-     * Retrieves whether a catalog appears at the start of a fully qualified table name. If not, the catalog appears at the end. 
+     * Retrieves whether a catalog appears at the start of a fully qualified table name. If not, the catalog appears at the end.
      * <h1>Implementation Details:</h1><br>
-     * 
+     *
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
@@ -1986,7 +1984,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         logger.debug("Function call isCatalogAtStart(), return is true ");
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -1997,20 +1995,20 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean isReadOnly() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2021,7 +2019,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean locatorsUpdateCopy() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2032,7 +2030,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean nullPlusNonNullIsNull() throws SQLException {
         return true; // TODO test it!
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2043,7 +2041,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean nullsAreSortedAtEnd() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2054,7 +2052,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean nullsAreSortedAtStart() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2065,7 +2063,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean nullsAreSortedHigh() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2076,7 +2074,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean nullsAreSortedLow() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2087,7 +2085,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean othersDeletesAreVisible(int type) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2098,7 +2096,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean othersInsertsAreVisible(int type) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2109,7 +2107,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean othersUpdatesAreVisible(int type) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2120,7 +2118,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean ownDeletesAreVisible(int type) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2131,7 +2129,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean ownInsertsAreVisible(int type) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2142,7 +2140,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean ownUpdatesAreVisible(int type) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2153,7 +2151,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean storesLowerCaseIdentifiers() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2164,7 +2162,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2175,7 +2173,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean storesMixedCaseIdentifiers() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2186,7 +2184,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2197,7 +2195,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean storesUpperCaseIdentifiers() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2208,7 +2206,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2219,7 +2217,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsAlterTableWithAddColumn() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2230,46 +2228,46 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsAlterTableWithDropColumn() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * It doesn't support the ANSI92
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean supportsANSI92EntryLevelSQL() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * It does not support the ANSI92
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean supportsANSI92FullSQL() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * It doesn't supports ANSI92
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean supportsANSI92IntermediateSQL() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2280,7 +2278,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsBatchUpdates() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2291,7 +2289,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsCatalogsInDataManipulation() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2302,7 +2300,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2312,9 +2310,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
         return false;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2324,9 +2322,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsCatalogsInProcedureCalls() throws SQLException {
         return false;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2336,9 +2334,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsCatalogsInTableDefinitions() throws SQLException {
         return false;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2348,9 +2346,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsColumnAliasing() throws SQLException {
         return true;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2360,9 +2358,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsConvert() throws SQLException {
         return false;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2373,9 +2371,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsConvert(int fromType, int toType)
             throws SQLException {
         return false;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2386,7 +2384,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsCoreSQLGrammar() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2398,7 +2396,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         // http://publib.boulder.ibm.com/infocenter/iseries/v5r3/index.jsp?topic=%2Fsqlp%2Frbafyexsub1.htm
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2410,7 +2408,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
             throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2422,7 +2420,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
             throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2433,7 +2431,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsDifferentTableCorrelationNames() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2443,9 +2441,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsExpressionsInOrderBy() throws SQLException {
         return true;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2455,9 +2453,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsExtendedSQLGrammar() throws SQLException {
         return false;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2467,9 +2465,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsFullOuterJoins() throws SQLException {
         return false;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2479,9 +2477,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsGetGeneratedKeys() throws SQLException {
         return false;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2492,7 +2490,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsGroupBy() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2503,7 +2501,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsGroupByBeyondSelect() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2514,7 +2512,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsGroupByUnrelated() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2525,7 +2523,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsIntegrityEnhancementFacility() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2536,7 +2534,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsLikeEscapeClause() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2546,9 +2544,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsLimitedOuterJoins() throws SQLException {
         return true;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2559,7 +2557,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsMinimumSQLGrammar() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2570,7 +2568,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsMixedCaseIdentifiers() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2581,7 +2579,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2592,7 +2590,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsMultipleOpenResults() throws SQLException {
         return multipleOpenResultsSupported; // In the current version.
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2602,9 +2600,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsMultipleResultSets() throws SQLException {
         return false;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2615,7 +2613,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsMultipleTransactions() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2626,7 +2624,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsNamedParameters() throws SQLException {
         return false; // Bigquery doesn't support stored jobs.
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2637,7 +2635,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsNonNullableColumns() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2648,7 +2646,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2659,7 +2657,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2670,7 +2668,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2681,7 +2679,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2692,7 +2690,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsOrderByUnrelated() throws SQLException {
         return false; // Tested
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2703,7 +2701,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsOuterJoins() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2714,7 +2712,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsPositionedDelete() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2725,7 +2723,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsPositionedUpdate() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2738,7 +2736,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         if(ResultSet.TYPE_FORWARD_ONLY == type) {
             if(ResultSet.CONCUR_READ_ONLY == concurrency) {
                 return true;
-            } 
+            }
             if(ResultSet.CONCUR_UPDATABLE == concurrency) {
                 return false;
             }
@@ -2747,7 +2745,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         if(ResultSet.TYPE_SCROLL_INSENSITIVE == type) {
             if(ResultSet.CONCUR_READ_ONLY == concurrency) {
                 return true;
-            } 
+            }
             if(ResultSet.CONCUR_UPDATABLE == concurrency) {
                 return false;
             }
@@ -2756,14 +2754,14 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         if(ResultSet.TYPE_SCROLL_SENSITIVE == type) {
             if(ResultSet.CONCUR_READ_ONLY == concurrency) {
                 return true;
-            } 
+            }
             if(ResultSet.CONCUR_UPDATABLE == concurrency) {
                 return false;
             }
         }
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2774,15 +2772,15 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsResultSetHoldability(int holdability)
             throws SQLException {
         return false; // Only read only functions atm.
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Our resultset is scroll insensitive
      * </p>
-     * 
+     *
      * @return TYPE_SCROLL_INSENSITIVE
      */
     @Override
@@ -2791,7 +2789,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         if (type == ResultSet.TYPE_FORWARD_ONLY) return true;
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2802,7 +2800,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsSavepoints() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2813,7 +2811,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsSchemasInDataManipulation() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2824,7 +2822,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsSchemasInIndexDefinitions() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2835,7 +2833,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2846,7 +2844,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsSchemasInProcedureCalls() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2857,7 +2855,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsSchemasInTableDefinitions() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2868,7 +2866,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsSelectForUpdate() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2879,7 +2877,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsStatementPooling() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2890,7 +2888,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2901,7 +2899,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsStoredProcedures() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2912,7 +2910,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsSubqueriesInComparisons() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2922,9 +2920,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     @Override
     public boolean supportsSubqueriesInExists() throws SQLException {
         return false;
-        
+
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2941,7 +2939,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsSubqueriesInIns() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2952,7 +2950,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsSubqueriesInQuantifieds() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2963,7 +2961,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsTableCorrelationNames() throws SQLException {
         return false;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean supportsTransactionIsolationLevel(int level)
@@ -2975,7 +2973,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
             return false;
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2986,7 +2984,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsTransactions() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -2997,7 +2995,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsUnion() throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -3008,13 +3006,13 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean supportsUnionAll() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * No wrappers in the current version
      * </p>
-     * 
+     *
      * @throws SQLException
      */
     @Override
@@ -3022,7 +3020,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         throw new BQSQLException("no object found that implements "
                 + iface.toString());
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -3033,7 +3031,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean updatesAreDetected(int type) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -3044,7 +3042,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     public boolean usesLocalFilePerTable() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>

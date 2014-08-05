@@ -1,20 +1,20 @@
 /**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * This class implements functions to Authorize bigquery client
  */
 
@@ -25,7 +25,10 @@ import java.awt.Desktop.Action;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.PrintWriter;
+
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -44,6 +47,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryScopes;
@@ -51,9 +55,9 @@ import com.google.api.services.bigquery.BigqueryScopes;
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
 public class Oauth2Bigquery {
-    
+
     private static String servicepath = null;
-    
+
     /**
      * Log4j logger, for debugging.
      */
@@ -70,13 +74,13 @@ public class Oauth2Bigquery {
      * {@link #authorize}.
      */
     private static GoogleClientSecrets clientSecrets = null;
-    
+
     /**
      * Reference to the GoogleAuthorizationCodeFlow used in this installed
      * application authorization sequence
      */
     public static GoogleAuthorizationCodeFlow codeflow = null;
-    
+
     /**
      * The default path to the properties file that stores the xml file location
      * where client credentials are saved
@@ -84,11 +88,11 @@ public class Oauth2Bigquery {
     private static String PathForXmlStore = System.getProperty("user.home")
             + File.separator + ".bqjdbc" + File.separator
             + "xmllocation.properties";
-    
+
     /**
      * Authorizes the installed application to access user's protected data. if
      * possible, gets the credential from xml file at PathForXmlStore
-     * 
+     *
      * @param transport
      *            HTTP transport
      * @param jsonFactory
@@ -100,16 +104,16 @@ public class Oauth2Bigquery {
      */
     public static Credential authorize(HttpTransport transport,
             JsonFactory jsonFactory, VerificationCodeReceiver receiver,
-            Iterable<String> scopes, String clientid, String clientsecret)
+            List<String> scopes, String clientid, String clientsecret)
             throws Exception {
-        
+
         BQXMLCredentialStore Store = new BQXMLCredentialStore(
                 Oauth2Bigquery.PathForXmlStore);
-        
+
         GoogleClientSecrets.Details details = new Details();
         details.setClientId(clientid);
         details.setClientSecret(clientsecret);
-        details.setFactory(CmdlineUtils.getJsonFactory());
+        details.set("Factory", CmdlineUtils.getJsonFactory());
         details.setAuthUri("https://accounts.google.com/o/oauth2/auth");
         details.setTokenUri("https://accounts.google.com/o/oauth2/token");
         GoogleClientSecrets secr = new GoogleClientSecrets()
@@ -118,7 +122,6 @@ public class Oauth2Bigquery {
                 .setJsonFactory(CmdlineUtils.getJsonFactory())
                 .setTransport(CmdlineUtils.getHttpTransport())
                 .setClientSecrets(secr).build();
-        
         if (Store.load(clientid + ":" + clientsecret, CredentialForReturn) == true) {
             return CredentialForReturn;
         }
@@ -138,7 +141,6 @@ public class Oauth2Bigquery {
                     .newTokenRequest(code).setRedirectUri(redirectUri)
                     .execute();
             // store credential and return it
-            
             // Also ads a RefreshListener, so the token will be always
             // automatically refreshed.
             return Oauth2Bigquery.codeflow.createAndStoreCredential(response,
@@ -148,11 +150,11 @@ public class Oauth2Bigquery {
             receiver.stop();
         }
     }
-    
+
     /**
      * Authorizes a bigquery Connection with the given "Installed Application"
      * Clientid and Clientsecret
-     * 
+     *
      * @param clientid
      * @param clientsecret
      * @return Authorized bigquery Connection
@@ -180,11 +182,11 @@ public class Oauth2Bigquery {
         Oauth2Bigquery.servicepath = bigquery.getServicePath();
         return bigquery;
     }
-    
+
     /**
      * This function gives back an Authorized Bigquery Client It uses a service
      * account, which doesn't need user interaction for connect
-     * 
+     *
      * @param serviceaccountemail
      * @param keypath
      * @return Authorized Bigquery Client via serviceaccount e-mail and keypath
@@ -192,28 +194,34 @@ public class Oauth2Bigquery {
      * @throws IOException
      */
     public static Bigquery authorizeviaservice(String serviceaccountemail,
-            String keypath) throws GeneralSecurityException, IOException {
+            String keypath) throws GeneralSecurityException, IOException, Exception {
         logger.debug("Authorizing with service account.");
+
+        List<String> scopes = new ArrayList<String>();
+        scopes.add(BigqueryScopes.BIGQUERY);
         GoogleCredential credential = new GoogleCredential.Builder()
                 .setTransport(CmdlineUtils.getHttpTransport())
                 .setJsonFactory(CmdlineUtils.getJsonFactory())
                 .setServiceAccountId(serviceaccountemail)
                 // e-mail ADDRESS!!!!
-                .setServiceAccountScopes(BigqueryScopes.BIGQUERY)
+                .setServiceAccountScopes(scopes)
                 // Currently we only want to access bigquery, but it's possible
                 // to name more than one service too
                 .setServiceAccountPrivateKeyFromP12File(new File(keypath))
                 .build();
-        
+        logger.debug("Authorizied?");
         Bigquery bigquery = new Builder(CmdlineUtils.getHttpTransport(),
                 CmdlineUtils.getJsonFactory(), credential).build();
+        logger.debug("Authorizing with service asdf.");
         Oauth2Bigquery.servicepath = bigquery.getServicePath();
+        logger.debug("Authorizing with service no.");
+
         return bigquery;
     }
-    
+
     /**
      * Open a browser at the given URL.
-     * 
+     *
      * @param url
      */
     private static void browse(String url) {
@@ -233,8 +241,8 @@ public class Oauth2Bigquery {
                 }
             }
         }
-        
-       
+
+
         // Next try browsers
         logger.debug("Try with browsers");
         // Code from Bare Bones Browser Launcher
@@ -250,7 +258,7 @@ public class Oauth2Bigquery {
             }
             else
                 if (osName.startsWith("Windows")) {
-                    logger.debug("Let's run internet suxplorer! with the URL: " + url);                    
+                    logger.debug("Let's run internet suxplorer! with the URL: " + url);
                     Runtime.getRuntime().exec(
                             "cmd.exe /c start iexplore.exe \"" + url + "\"");
                     return;
@@ -273,7 +281,7 @@ public class Oauth2Bigquery {
             logger.debug("Failed", e);
             // handled below
         }
-        
+
         logger.debug("Then try with url.connect");
         try {
             URL myURL = new URL(url);
@@ -286,14 +294,14 @@ public class Oauth2Bigquery {
             logger.debug(null, e);
             // handled below
         }
-        
+
         // Finally just ask user to open in their browser using copy-paste
         System.out.println("Please open the following URL in your browser:");
         System.out.println("  " + url);
         System.err.println("Please open the following URL in your browser:");
         System.err.println("  " + url);
     }
-    
+
     /**
      * Returns the Google client secrets or {@code null} before initialized in
      * {@link #authorize}.
@@ -301,15 +309,15 @@ public class Oauth2Bigquery {
     public static GoogleClientSecrets getClientSecrets() {
         return Oauth2Bigquery.clientSecrets;
     }
-    
+
     public static String getservicepath() {
         return Oauth2Bigquery.servicepath;
     }
-    
+
     /**
      * Creates GoogleClientsecrets "installed application" instance based on
      * given Clientid, and Clientsecret
-     * 
+     *
      * @param jsonFactory
      * @param clientid
      * @param clientsecret
@@ -332,10 +340,9 @@ public class Oauth2Bigquery {
                     + "\"auth_uri\": \"https://accounts.google.com/o/oauth2/auth\",\n"
                     + "\"token_uri\": \"https://accounts.google.com/o/oauth2/token\"\n"
                     + "}\n" + "}";
-            InputStream inputStream = new ByteArrayInputStream(
-                    clientsecrets.getBytes());
+            StringReader stringReader = new StringReader(clientsecrets);
             Oauth2Bigquery.clientSecrets = GoogleClientSecrets.load(
-                    jsonFactory, inputStream);
+                    jsonFactory, stringReader);
         }
         return Oauth2Bigquery.clientSecrets;
     }

@@ -1,22 +1,22 @@
 /**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * This class implements the java.sql.ResultSet interface's Cursor
- * 
+ *
  */
 
 package net.starschema.clouddb.jdbc;
@@ -54,34 +54,35 @@ import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.TableRow;
+import com.google.api.services.bigquery.model.TableCell;
 
 /**
  * This class implements the java.sql.ResultSet interface, as a Forward only resultset
- * 
+ *
  * @author Balazs Gunics
- * 
+ *
  *
  */
 public class BQForwardOnlyResultSet implements java.sql.ResultSet {
-    
+
     // Logger logger = new Logger(ScrollableResultset.class.getName());
     Logger logger = Logger.getLogger(BQForwardOnlyResultSet.class.getName());
     /** Reference for holding the current InputStream given back by get methods */
     protected InputStream Strm = null;
-    
+
     /** The boolean that holds if the last get has given back null or not */
     protected boolean wasnull = false;
-    
+
     /** The Array which get iterated with cursor it's size can be set with FETCH_SIZE*/
     protected Object[] RowsofResult;
-    
+
     /** This holds if the resultset is closed or not */
     protected Boolean Closed = false;
-    
+
     /**Paging size, the original result will be paged by FETCH_SIZE rows     */
     protected int FETCH_SIZE = 100;
     /**The Fetched rows count at the original results     */
-    protected BigInteger FETCH_POS = BigInteger.ZERO; 
+    protected BigInteger FETCH_POS = BigInteger.ZERO;
     /** Are we at the first row? */
     protected boolean AT_FIRST = true;
     /** REference for the original statement which created this resultset     */
@@ -94,10 +95,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     private String projectId;
     /** Reference for the Job */
     private Job completedJob;
-    /** Cursor position which goes from -1 to FETCH_SIZE then 0 to FETCH_SIZE 
+    /** Cursor position which goes from -1 to FETCH_SIZE then 0 to FETCH_SIZE
      * The -1 is needed because of the while(Result.next() == true) { } iterating method*/
     private int Cursor=-1;
-    
+
     /**
      * Constructor for the forward only resultset
      * @param bigquery - the bigquery client to be used to connect
@@ -115,7 +116,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         this.projectId =  projectId;
         // initial load
         try {
-            this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery, 
+            this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery,
                     projectId, completedJob, FETCH_POS, FETCH_SIZE);
         }
         catch (IOException e) {
@@ -128,9 +129,9 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         } else {                        //we got results, it wasn't empty
             this.RowsofResult = this.Result.getRows().toArray();
             FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long)this.RowsofResult.length));
-        }        
+        }
     }
-    
+
     /**
      * Returns the current rows Object at the given index
      * @param columnIndex - the column to be used
@@ -150,8 +151,9 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         }
         String Columntype = this.Result.getSchema().getFields()
                 .get(columnIndex - 1).getType();
-        String result = ((TableRow) this.RowsofResult[this.Cursor]).getF()
-                .get(columnIndex - 1).getV();
+
+        TableCell field = ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1);
+        String result = field.getV().toString();
         if (result == null) {
             this.wasnull = true;
             return null;
@@ -171,7 +173,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                 if (Columntype.equals("INTEGER")) {
                     return Integer.parseInt(result);
                 }
-                throw new BQSQLException("Unsupported Type");
+                if (Columntype.equals("TIMESTAMP")) {
+                    long val = new BigDecimal(result).longValue() * 1000;
+                    return new Timestamp(val);
+                }
+                throw new BQSQLException("Unsupported Type (" + Columntype + ")");
             }
             catch (NumberFormatException e) {
                 throw new BQSQLException(e);
@@ -198,8 +204,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throw new BQSQLException("ColumnIndex is not valid");
         }
         if(this.RowsofResult == null) throw new SQLException("Invalid position!");
-        String result = ((TableRow) this.RowsofResult[this.Cursor]).getF()
-                .get(columnIndex - 1).getV();
+        String result = (String) ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1).getV();
         if (result == null) {
             this.wasnull = true;
         }
@@ -208,7 +213,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         }
         return result;
     }
-    
+
     /**
      * Not supported in forward only resultset
      * @param row
@@ -220,7 +225,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throw new BQSQLException(
                     "The Type of the Resultset is TYPE_FORWARD_ONLY, absolute is not supported");
     }
-    
+
     /**
      * Not supported in forward only resultset
      * @throws SQLException - this isn't a forward only resultset
@@ -232,7 +237,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                     "The Type of the Resultset is TYPE_FORWARD_ONLY");
         }
     }
-    
+
     /**
      * Not supported in forward only resultset
      * @throws SQLException - this isn't a forward only resultset
@@ -243,20 +248,20 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throw new BQSQLException("This Resultset is Closed");
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
     public void cancelRowUpdates() throws SQLException {
         throw new BQSQLFeatureNotSupportedException("cancelWorUpdates()");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -270,7 +275,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             // TODO implement Warnings
         }
     }
-    
+
     /**
      * Closes the resultset this function never FAILS!
      */
@@ -280,11 +285,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         this.Closed = true;
         this.RowsofResult = null;
     }
-    
+
     /**
      * If the Strm reference is not null it closes the underlying stream, if an
      * error occurs throws SQLException</p>
-     * 
+     *
      * @throws SQLException
      *             if error occurs while trying to close the stream
      */
@@ -298,26 +303,26 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             }
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * We support read only functions in the current version.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void deleteRow() throws SQLException {
         throw new BQSQLFeatureNotSupportedException("deleteRow()");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
@@ -333,7 +338,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         }
         throw new BQSQLException("No Such column labeled: " + columnLabel);
     }
-    
+
     /**
      * Not supported in forward only resultset
      * @return - SQLException
@@ -344,33 +349,33 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         throw new BQSQLException(
                     "The Type of the Resultset is TYPE_FORWARD_ONLY");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Arrays are not supported in the current version
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public Array getArray(int columnIndex) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getArray(int)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Arrays are not supported in the current version
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public Array getArray(String columnLabel) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getArray(string)");
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
@@ -395,7 +400,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return this.Strm;
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public InputStream getAsciiStream(String columnLabel) throws SQLException {
@@ -420,11 +425,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return this.Strm;
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-        
+
         String coltype = this.getMetaData().getColumnTypeName(columnIndex);
         if (coltype.equals("STRING")) {
             String Value = this.getString(columnIndex);
@@ -449,7 +454,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                 else {
                     return new java.math.BigDecimal(Value);
                 }
-                
+
             }
             else
                 if (coltype.equals("FLOAT")) {
@@ -470,23 +475,23 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                         throw new NumberFormatException("Undefined format");
                     }
     }
-    
+
     // Implemented Get functions Using Cursor
-    
+
     /** {@inheritDoc} */
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale)
             throws SQLException {
         return this.getBigDecimal(columnIndex).setScale(scale);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getBigDecimal(columnIndex);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale)
@@ -494,7 +499,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         int columnIndex = this.findColumn(columnLabel);
         return this.getBigDecimal(columnIndex, scale);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
@@ -513,7 +518,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return this.Strm;
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public InputStream getBinaryStream(String columnLabel) throws SQLException {
@@ -532,33 +537,33 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return this.Strm;
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public Blob getBlob(int columnIndex) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getBlob(int)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public Blob getBlob(String columnLabel) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getBlob(string)");
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
@@ -570,14 +575,14 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return Boolean.parseBoolean(Value);
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean getBoolean(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getBoolean(columnIndex);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public byte getByte(int columnIndex) throws SQLException {
@@ -594,14 +599,14 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             }
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public byte getByte(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getByte(columnIndex);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
@@ -613,14 +618,14 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return Value.getBytes();
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getBytes(columnIndex);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Reader getCharacterStream(int columnIndex) throws SQLException {
@@ -636,7 +641,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return rdr;
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Reader getCharacterStream(String columnLabel) throws SQLException {
@@ -652,39 +657,39 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return rdr;
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public Clob getClob(int columnIndex) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getClob(int)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public Clob getClob(String columnLabel) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getClob(string)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always Returns ResultSet.CONCUR_READ_ONLY
      * </p>
-     * 
+     *
      * @return ResultSet.CONCUR_READ_ONLY
      */
     @Override
@@ -694,20 +699,20 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         }
         return ResultSet.CONCUR_READ_ONLY;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public String getCursorName() throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getCursorName()");
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Date getDate(int columnIndex) throws SQLException {
@@ -719,7 +724,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return new java.sql.Date(value);
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
@@ -731,21 +736,21 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return new java.sql.Date(value + cal.getTimeZone().getRawOffset());
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Date getDate(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getDate(columnIndex);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Date getDate(String columnLabel, Calendar cal) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getDate(columnIndex, cal);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public double getDouble(int columnIndex) throws SQLException {
@@ -762,33 +767,33 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             }
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public double getDouble(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getDouble(columnIndex);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
     public int getFetchDirection() throws SQLException {
         return ResultSet.FETCH_FORWARD;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
@@ -796,7 +801,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         //throw new BQSQLException("Not implemented." + "getfetchSize()");
         return FETCH_SIZE;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public float getFloat(int columnIndex) throws SQLException {
@@ -813,27 +818,27 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             }
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public float getFloat(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getFloat(columnIndex);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Read only mode, no commits.
      * </p>
-     * 
+     *
      * @return CLOSE_CURSORS_AT_COMMIT
      */
     @Override
     public int getHoldability() throws SQLException {
         return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public int getInt(int columnIndex) throws SQLException {
@@ -850,14 +855,14 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             }
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public int getInt(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getInt(columnIndex);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public long getLong(int columnIndex) throws SQLException {
@@ -874,20 +879,20 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             }
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public long getLong(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getLong(columnIndex);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
@@ -897,91 +902,91 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         }
         return new BQResultsetMetaData(this.Result);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Returns the value of getCharacterStream(columnIndex)
      * </p>
-     * 
+     *
      * @see #getCharacterStream(int)
      */
     @Override
     public Reader getNCharacterStream(int columnIndex) throws SQLException {
         return this.getCharacterStream(columnIndex);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Returns the value of getCharacterStream(columnLabel)
      * </p>
-     * 
+     *
      * @see #getCharacterStream(String)
      */
     @Override
     public Reader getNCharacterStream(String columnLabel) throws SQLException {
         return this.getCharacterStream(columnLabel);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public NClob getNClob(int columnIndex) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getNClob(int");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public NClob getNClob(String columnLabel) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getNClob(string)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Returns the value getString(columnIndex)
      * </p>
-     * 
+     *
      * @see #getString(int)
      */
     @Override
     public String getNString(int columnIndex) throws SQLException {
         return this.getString(columnIndex);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Returns the value getString(columnLabel)
      * </p>
-     * 
+     *
      * @see #getString(String)
      */
     @Override
     public String getNString(String columnLabel) throws SQLException {
         return this.getString(columnLabel);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -990,20 +995,20 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         throw new BQSQLFeatureNotSupportedException("getObject(int,Map)");
         // TODO Implement TypeMaps
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Object getObject(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getObject(columnIndex);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not s.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1012,66 +1017,66 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         throw new BQSQLFeatureNotSupportedException("getObject(string,Map)");
         // TODO Implement TypeMaps
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public Ref getRef(int columnIndex) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getRef(int)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public Ref getRef(String columnLabel) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getref(String)");
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public int getRow() throws SQLException {
             throw new BQSQLException(
                     "The Type of the Resultset is TYPE_FORWARD_ONLY");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public RowId getRowId(int columnIndex) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getRowId(int)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public RowId getRowId(String columnLabel) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getRowId(String)");
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public short getShort(int columnIndex) throws SQLException {
@@ -1088,49 +1093,49 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             }
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public short getShort(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getShort(columnIndex);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public SQLXML getSQLXML(int columnIndex) throws SQLException {
         return new net.starschema.clouddb.jdbc.BQSQLXML(
                 this.getString(columnIndex));
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public SQLXML getSQLXML(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getSQLXML(columnIndex);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always Returns null
      * </p>
-     * 
+     *
      * @return null
      */
     @Override
     public Statement getStatement() throws SQLException {
         return this.Statementreference;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public String getString(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getString(columnIndex);
-        
+
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Time getTime(int columnIndex) throws SQLException {
@@ -1142,7 +1147,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return new java.sql.Time(value);
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
@@ -1159,21 +1164,21 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return new java.sql.Time(cal.getTimeZone().getRawOffset() + value);
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Time getTime(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getTime(columnIndex);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Time getTime(String columnLabel, Calendar cal) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getTime(columnIndex, cal);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
@@ -1185,7 +1190,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return new java.sql.Timestamp(value);
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Timestamp getTimestamp(int columnIndex, Calendar cal)
@@ -1199,14 +1204,14 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                     + value);
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Timestamp getTimestamp(String columnLabel) throws SQLException {
         int columnIndex = this.findColumn(columnLabel);
         return this.getTimestamp(columnIndex);
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Timestamp getTimestamp(String columnLabel, Calendar cal)
@@ -1214,13 +1219,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         int columnIndex = this.findColumn(columnLabel);
         return this.getTimestamp(columnIndex, cal);
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always returns ResultSet.TYPE_SCROLL_INSENSITIVE
      * </p>
-     * 
+     *
      * @return ResultSet.TYPE_SCROLL_INSENSITIVE
      */
     @Override
@@ -1230,13 +1235,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         }
         return ResultSet.TYPE_FORWARD_ONLY;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1244,13 +1249,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         throw new BQSQLFeatureNotSupportedException(
                 "Deprecated. use getCharacterStream in place of getUnicodeStream");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1258,7 +1263,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         throw new BQSQLFeatureNotSupportedException(
                 "Deprecated. use getCharacterStream in place of getUnicodeStream");
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public URL getURL(int columnIndex) throws SQLException {
@@ -1275,7 +1280,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             }
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public URL getURL(String columnLabel) throws SQLException {
@@ -1292,13 +1297,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             }
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always returns null
      * </p>
-     * 
+     *
      * @return null
      */
     @Override
@@ -1306,29 +1311,29 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         // TODO implement error handling
         return null;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void insertRow() throws SQLException {
         throw new BQSQLFeatureNotSupportedException("insertRow()");
     }
-    
+
     /** {@inheritDoc} */
     @Override
-    public boolean isAfterLast() throws SQLException {        
+    public boolean isAfterLast() throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Resultset is Closed");
         }
         throw new BQSQLException("Forward_only resultset doesn't support isAfterLast() ");
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean isBeforeFirst() throws SQLException {
@@ -1338,13 +1343,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if(Cursor == -1) return true;
         throw new BQSQLException("Forward_only resultset doesn't support isBeforeFirst() ");
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean isClosed() throws SQLException {
         return this.Closed;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean isFirst() throws SQLException {
@@ -1358,53 +1363,53 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     public boolean isLast() throws SQLException {
         throw new BQSQLFeatureNotSupportedException("This Resultset is Closed");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean last() throws SQLException {
             throw new BQSQLException(
                     "The Type of the Resultset is TYPE_FORWARD_ONLY");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void moveToCurrentRow() throws SQLException {
         throw new BQSQLFeatureNotSupportedException("moveToCurrentRow()");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void moveToInsertRow() throws SQLException {
         throw new BQSQLFeatureNotSupportedException("moveToInsertRow()");
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean next() throws SQLException {
@@ -1422,11 +1427,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
            return true;
         } else {
             try {
-                this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery, 
+                this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery,
                         projectId, completedJob, FETCH_POS, FETCH_SIZE);
             }
             catch (IOException e) {
-            } //should not happen        
+            } //should not happen
             if (this.Result.getRows() == null) {
                 this.RowsofResult = null;
                 return false;
@@ -1436,147 +1441,147 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                 FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long)this.RowsofResult.length));
                 Cursor = 0;
                 return true;
-            }      
+            }
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean previous() throws SQLException {
             throw new BQSQLException(
                     "The Type of the Resultset is TYPE_FORWARD_ONLY");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not supported.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void refreshRow() throws SQLException {
         throw new BQSQLFeatureNotSupportedException("refreshRow()");
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean relative(int rows) throws SQLException {
             throw new BQSQLException(
                     "The Type of the Resultset is TYPE_FORWARD_ONLY");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public boolean rowDeleted() throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public boolean rowInserted() throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public boolean rowUpdated() throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
     public void setFetchDirection(int direction) throws SQLException {
         throw new BQSQLException("Not implemented." + "setFetchDirection(int)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
     public void setFetchSize(int rows) throws SQLException {
         FETCH_SIZE = rows;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
         throw new BQSQLException("Not implemented." + "unwrap(Class<T>)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateArray(int columnIndex, Array x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateArray(String columnLabel, Array x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1584,13 +1589,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1598,13 +1603,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1612,13 +1617,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1626,13 +1631,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1640,13 +1645,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1654,13 +1659,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1668,13 +1673,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1682,13 +1687,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1696,13 +1701,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1710,13 +1715,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1724,13 +1729,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1738,13 +1743,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1752,13 +1757,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1766,26 +1771,26 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             long length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateBlob(int columnIndex, Blob x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1793,13 +1798,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1807,26 +1812,26 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateBlob(String columnLabel, Blob x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1834,13 +1839,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1848,26 +1853,26 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             long length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateBoolean(int columnIndex, boolean x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1875,65 +1880,65 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateByte(int columnIndex, byte x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateByte(String columnLabel, byte x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateBytes(int columnIndex, byte[] x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateBytes(String columnLabel, byte[] x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1941,13 +1946,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1955,13 +1960,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1969,13 +1974,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1983,13 +1988,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -1997,13 +2002,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             int length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2011,39 +2016,39 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             long length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateClob(int columnIndex, Clob x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateClob(int columnIndex, Reader reader) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2051,26 +2056,26 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateClob(String columnLabel, Clob x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2078,13 +2083,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not impel
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2092,143 +2097,143 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateDate(int columnIndex, Date x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateDate(String columnLabel, Date x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateDouble(int columnIndex, double x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateDouble(String columnLabel, double x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateFloat(int columnIndex, float x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateFloat(String columnLabel, float x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateInt(int columnIndex, int x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateInt(String columnLabel, int x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateLong(int columnIndex, long x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateLong(String columnLabel, long x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2236,13 +2241,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2250,13 +2255,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2264,13 +2269,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2278,39 +2283,39 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             long length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateNClob(int columnIndex, NClob nClob) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateNClob(int columnIndex, Reader reader) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2318,13 +2323,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2332,13 +2337,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2346,13 +2351,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2360,13 +2365,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2374,13 +2379,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2388,52 +2393,52 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateNull(int columnIndex) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateNull(String columnLabel) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateObject(int columnIndex, Object x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2441,26 +2446,26 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateObject(String columnLabel, Object x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2468,104 +2473,104 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateRef(int columnIndex, Ref x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateRef(String columnLabel, Ref x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateRow() throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateRowId(int columnIndex, RowId x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateRowId(String columnLabel, RowId x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateShort(int columnIndex, short x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateShort(String columnLabel, short x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2573,13 +2578,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2587,65 +2592,65 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateString(int columnIndex, String x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateString(String columnLabel, String x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateTime(int columnIndex, Time x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
     public void updateTime(String columnLabel, Time x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2653,13 +2658,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Throws BQSQLFeatureNotSupportedException
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
     @Override
@@ -2667,7 +2672,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean wasNull() throws SQLException {

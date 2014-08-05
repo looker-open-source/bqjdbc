@@ -1,20 +1,20 @@
 /**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * This class implements the java.sql.ResultSetMetaData interface
  */
 
@@ -35,24 +35,24 @@ import com.google.api.services.bigquery.model.TableSchema;
 
 /**
  * This class implements the java.sql.ResultSetMetadata interface
- * 
+ *
  * @author Horváth Attila
- * 
+ *
  */
 class BQResultsetMetaData implements ResultSetMetaData {
-    
+
     /** Reference of the bigquery GetQueryResultsResponse object */
     GetQueryResultsResponse result = null;
-    
+
     /** Reference of the bigquery GetQueryResultsResponse object */
     ResultSet results = null;
-    
+
     /** Logger instance */
     Logger logger = Logger.getLogger(BQResultsetMetaData.class.getName());
-    
+
     /**
      * Constructor that initializes variables
-     * 
+     *
      * @param result
      *            the bigquery GetQueryResultsResponse object
      */
@@ -60,13 +60,13 @@ class BQResultsetMetaData implements ResultSetMetaData {
         //logger.debug("function call getResultSetMetaData()");
         this.result = result;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Returns the BigQuery Projects ID
      * </p>
-     * 
+     *
      * @return projectID
      */
     @Override
@@ -75,19 +75,19 @@ class BQResultsetMetaData implements ResultSetMetaData {
                 this.result.getJobReference().getProjectId());
         return this.result.getJobReference().getProjectId();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
     public String getColumnClassName(int column) throws SQLException {
         this.logger.debug("Function call getcolumnclassname(" + column + ")");
-        
+
         String Columntype = null;
         try {
             Columntype = this.result.getSchema().getFields().get(column - 1)
@@ -99,7 +99,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         catch (NullPointerException e) {
             throw new BQSQLException(e);
         }
-        
+
         if (Columntype.equals("FLOAT")) {
             return Float.class.getName();
         }
@@ -119,7 +119,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
                         throw new BQSQLException("Unsupported Type");
                     }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public int getColumnCount() throws SQLException {
@@ -138,13 +138,13 @@ class BQResultsetMetaData implements ResultSetMetaData {
             return 0;
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * returns 64*1024
      * </p>
-     * 
+     *
      */
     @Override
     public int getColumnDisplaySize(int column) throws SQLException {
@@ -152,11 +152,11 @@ class BQResultsetMetaData implements ResultSetMetaData {
         // TODO Check the maximum lenght of characters contained in this
         // resulset for each column
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public String getColumnLabel(int column) throws SQLException {
-        
+
         if (this.getColumnCount() == 0) {
             throw new IndexOutOfBoundsException();
         }
@@ -168,7 +168,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
             throw new BQSQLException(e);
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public String getColumnName(int column) throws SQLException {
@@ -184,7 +184,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
             throw new BQSQLException("getColumnName(int)", e);
         }
     }
-    
+
     /**
      * {@inheritDoc} <br>
      * note: This Can only Return due to bigquery:<br>
@@ -206,7 +206,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnType(int)", e);
         }
-        
+
         if (Columntype.equals("FLOAT")) {
             return java.sql.Types.FLOAT;
         }
@@ -226,7 +226,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
                         return 0;
                     }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public String getColumnTypeName(int column) throws SQLException {
@@ -244,7 +244,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         }
         return Columntype;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public int getPrecision(int column) throws SQLException {
@@ -259,7 +259,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getPrecision(int)", e);
         }
-        
+
         if (Columntype.equals("FLOAT")) {
             return Float.MAX_EXPONENT;
         }
@@ -280,13 +280,13 @@ class BQResultsetMetaData implements ResultSetMetaData {
                         return 0;
                     }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     @Override
@@ -294,8 +294,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         if (this.getColumnType(column) == java.sql.Types.FLOAT) {
             int max = 0;
             for (int i = 0; i < this.result.getRows().size(); i++) {
-                String rowdata = this.result.getRows().get(i).getF()
-                        .get(column - 1).getV();
+                String rowdata = (String) this.result.getRows().get(i).getF().get(column - 1).getV();
                 if (rowdata.contains(".")) {
                     int pointback = rowdata.length() - rowdata.indexOf(".");
                     if (pointback > max) {
@@ -309,13 +308,13 @@ class BQResultsetMetaData implements ResultSetMetaData {
             return 0;
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * No support in bigquery to get the schema for the column.
      * </p>
-     * 
+     *
      * @return ""
      */
     @Override
@@ -324,13 +323,13 @@ class BQResultsetMetaData implements ResultSetMetaData {
                 ") will return empty string ");
         return "";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * No option in BigQuery api to get the Table name from column.
      * </p>
-     * 
+     *
      * @return ""
      */
     @Override
@@ -339,26 +338,26 @@ class BQResultsetMetaData implements ResultSetMetaData {
                 ") will return empty string ");
         return "";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * No ato increment option in bigquery.
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean isAutoIncrement(int column) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always returns false
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
@@ -367,117 +366,117 @@ class BQResultsetMetaData implements ResultSetMetaData {
         // Google bigquery is case insensitive
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * We store everything as string.
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean isCurrency(int column) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always returns false
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean isDefinitelyWritable(int column) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always returns ResultSetMetaData.columnNullable
      * </p>
-     * 
+     *
      * @return ResultSetMetaData.columnNullable
      */
     @Override
     public int isNullable(int column) throws SQLException {
         return ResultSetMetaData.columnNullable;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always returns true
      * </p>
-     * 
+     *
      * @return true
      */
     @Override
     public boolean isReadOnly(int column) throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Everything can be in Where.
      * </p>
-     * 
+     *
      * @return true
      */
     @Override
     public boolean isSearchable(int column) throws SQLException {
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Partly implemented.
      * </p>
-     * 
+     *
      * @return false;
      */
     @Override
     public boolean isSigned(int column) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always returns false
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always returns false
      * </p>
-     * 
+     *
      * @return false
      */
     @Override
     public boolean isWritable(int column) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always throws SQLExceptionL
      * </p>
-     * 
+     *
      * @throws SQLException
      *             always
      */
