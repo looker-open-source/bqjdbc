@@ -199,7 +199,7 @@ public class BQResultSet extends ScrollableResultset<Object> implements
                     return Boolean.parseBoolean(result);
                 }
                 if (Columntype.equals("INTEGER")) {
-                    return Integer.parseInt(result);
+                    return Long.parseLong(result);
                 }
                 if (Columntype.equals("TIMESTAMP")) {
                     long val = new BigDecimal(result).longValue() * 1000;
