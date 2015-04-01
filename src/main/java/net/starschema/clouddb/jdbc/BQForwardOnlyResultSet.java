@@ -206,14 +206,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throw new BQSQLException("ColumnIndex is not valid");
         }
         if(this.RowsofResult == null) throw new SQLException("Invalid position!");
-        String result = (String) ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1).getV();
-        if (result == null) {
+        Object resultObject = ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1).getV();
+        if (com.google.api.client.util.Data.isNull(resultObject)) {
             this.wasnull = true;
+            return null;
         }
-        else {
-            this.wasnull = false;
-        }
-        return result;
+        this.wasnull = false;
+        return (String) resultObject;
     }
 
     /**
