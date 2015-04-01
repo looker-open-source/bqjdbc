@@ -23,6 +23,8 @@ import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
 /**
@@ -155,6 +157,7 @@ public class BQSQLException extends SQLException {
     public BQSQLException(String reason, String sqlState, int vendorCode,
             Throwable cause) {
         super(reason, sqlState, vendorCode, cause);
+        enrichReason(reason, cause);
         this.logger.debug("SQLexception " + reason + " " + sqlState + " "
                 + String.valueOf(vendorCode), cause);
     }
@@ -173,7 +176,7 @@ public class BQSQLException extends SQLException {
      *            - the underlying reason for this SQLException
      */
     public BQSQLException(String reason, String sqlState, Throwable cause) {
-        super(reason, sqlState, cause);
+        super(enrichReason(reason, cause), sqlState, cause);
         this.logger.debug("SQLexception " + reason + " " + sqlState, cause);
     }
     
@@ -190,7 +193,7 @@ public class BQSQLException extends SQLException {
      *            - the underlying reason for this SQLException
      */
     public BQSQLException(String reason, Throwable cause) {
-        super(reason, cause);
+        super(enrichReason(reason, cause), cause);
         this.logger.debug("SQLexception " + reason, cause);
     }
     
@@ -208,6 +211,23 @@ public class BQSQLException extends SQLException {
     public BQSQLException(Throwable cause) {
         super(cause);
         this.logger.debug("SQLexception ", cause);
+    }
+    
+    /**
+     * <p>
+     * Append error details in the reason (if some details are available).
+     * </p>
+     * Most of error details are in the Google exception.
+     */
+    private static String enrichReason(String reason, Throwable cause) {
+        String prefix = reason != null && !reason.isEmpty() ? reason + " - " : "";
+        if (cause instanceof GoogleJsonResponseException) {
+            GoogleJsonResponseException googleJsonResponseException = (GoogleJsonResponseException) cause;
+            if (googleJsonResponseException.getDetails() != null) {
+                return prefix + googleJsonResponseException.getDetails().getMessage();
+            }
+        }
+        return reason;
     }
     
 }
