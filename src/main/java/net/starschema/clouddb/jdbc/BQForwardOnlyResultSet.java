@@ -126,7 +126,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery,
                     projectId, completedJob, FETCH_POS, FETCH_SIZE);
         } catch (IOException e) {
-            throw new SQLException("Failed to retrieve data", e);
+            throw new BQSQLException("Failed to retrieve data", e);
         } //should not happen
         if (this.Result == null) {  //if we don't have results at all
             this.RowsofResult = null;
@@ -209,7 +209,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throw new BQSQLException("ColumnIndex is not valid");
         }
 
-        if (this.RowsofResult == null) throw new SQLException("Invalid position!");
+        if (this.RowsofResult == null) throw new BQSQLException("Invalid position!");
         Object resultObject = ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1).getV();
         if (com.google.api.client.util.Data.isNull(resultObject)) {
             this.wasnull = true;
