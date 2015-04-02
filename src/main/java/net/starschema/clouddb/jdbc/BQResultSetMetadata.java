@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableSchema;
@@ -36,7 +37,7 @@ import com.google.api.services.bigquery.model.TableSchema;
 /**
  * This class implements the java.sql.ResultSetMetadata interface
  *
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  *
  */
 class BQResultsetMetaData implements ResultSetMetaData {
@@ -190,7 +191,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * note: This Can only Return due to bigquery:<br>
      * java.sql.Types.FLOAT<br>
      * java.sql.Types.BOOLEAN<br>
-     * java.sql.Types.INTEGER<br>
+     * java.sql.Types.BIGINT<br>
      * java.sql.Types.VARCHAR
      * */
     @Override
@@ -216,7 +217,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
             }
             else
                 if (Columntype.equals("INTEGER")) {
-                    return java.sql.Types.INTEGER;
+                    return java.sql.Types.BIGINT; // INTEGER in BigQuery has 64 bits so it maps BIGINT sql type (Sql INTEGER is "only" 32 bits)
                 }
                 else
                     if (Columntype.equals("STRING")) {
@@ -270,7 +271,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
             }
             else
                 if (Columntype.equals("INTEGER")) {
-                    return Integer.SIZE;
+                    return 64; // BigQuery's Integer have 64 bits
                 }
                 else
                     if (Columntype.equals("STRING")) {
@@ -294,7 +295,11 @@ class BQResultsetMetaData implements ResultSetMetaData {
         if (this.getColumnType(column) == java.sql.Types.FLOAT) {
             int max = 0;
             for (int i = 0; i < this.result.getRows().size(); i++) {
-                String rowdata = (String) this.result.getRows().get(i).getF().get(column - 1).getV();
+                Object rowdataObject = this.result.getRows().get(i).getF().get(column - 1).getV();
+                if (Data.isNull(rowdataObject)) {
+                    return 0;
+                }
+                String rowdata = (String) rowdataObject;
                 if (rowdata.contains(".")) {
                     int pointback = rowdata.length() - rowdata.indexOf(".");
                     if (pointback > max) {
