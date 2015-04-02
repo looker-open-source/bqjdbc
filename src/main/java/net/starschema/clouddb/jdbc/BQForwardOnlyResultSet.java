@@ -211,7 +211,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
 
         if (this.RowsofResult == null) throw new BQSQLException("Invalid position!");
         Object resultObject = ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1).getV();
-        if (com.google.api.client.util.Data.isNull(resultObject)) {
+        if (Data.isNull(resultObject)) {
             this.wasnull = true;
             return null;
         }

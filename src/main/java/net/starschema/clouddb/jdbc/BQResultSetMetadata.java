@@ -32,6 +32,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
 
+import com.google.api.client.util.Data;
 import org.apache.log4j.Logger;
 
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
@@ -179,7 +180,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * note: This Can only Return due to bigquery:<br>
      * java.sql.Types.FLOAT<br>
      * java.sql.Types.BOOLEAN<br>
-     * java.sql.Types.INTEGER<br>
+     * java.sql.Types.BIGINT<br>
      * java.sql.Types.VARCHAR
      */
     @Override
@@ -200,7 +201,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         } else if (Columntype.equals("BOOLEAN")) {
             return java.sql.Types.BOOLEAN;
         } else if (Columntype.equals("INTEGER")) {
-            return java.sql.Types.INTEGER;
+            return java.sql.Types.BIGINT;
         } else if (Columntype.equals("STRING")) {
             return java.sql.Types.VARCHAR;
         } else {
@@ -245,7 +246,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
             return 1; // A boolean is 1 bit length, but it asks for byte, so
             // 1
         } else if (Columntype.equals("INTEGER")) {
-            return Integer.SIZE;
+            return 64;
         } else if (Columntype.equals("STRING")) {
             return 64 * 1024;
         } else {
@@ -266,7 +267,11 @@ class BQResultsetMetaData implements ResultSetMetaData {
         if (this.getColumnType(column) == java.sql.Types.FLOAT) {
             int max = 0;
             for (int i = 0; i < this.result.getRows().size(); i++) {
-                String rowdata = (String) this.result.getRows().get(i).getF().get(column - 1).getV();
+                Object rowdataObject = this.result.getRows().get(i).getF().get(column - 1).getV();
+                if (Data.isNull(rowdataObject)) {
+                    return 0;
+                }
+                String rowdata = (String) rowdataObject;
                 if (rowdata.contains(".")) {
                     int pointback = rowdata.length() - rowdata.indexOf(".");
                     if (pointback > max) {
@@ -455,3 +460,4 @@ class BQResultsetMetaData implements ResultSetMetaData {
         throw new BQSQLException("Not found");
     }
 }
+
