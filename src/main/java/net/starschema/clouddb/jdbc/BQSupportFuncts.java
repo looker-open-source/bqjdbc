@@ -52,7 +52,7 @@ import com.google.api.services.bigquery.model.TableCell;
 /**
  * This class contains static methods for interacting with BigQuery
  *
- * @author Gunics Balázs, Horváth Attila
+ * @author Gunics Balï¿½zs, Horvï¿½th Attila
  *
  */
 public class BQSupportFuncts {
@@ -606,27 +606,21 @@ public class BQSupportFuncts {
      */
     public static int parseToSqlFieldType(String columntype) {
         if (columntype.equals("FLOAT")) {
-            return java.sql.Types.FLOAT;
+            return java.sql.Types.DOUBLE;
         }
-        else
-            if (columntype.equals("BOOLEAN")) {
-                return java.sql.Types.BOOLEAN;
-            }
-            else
-                if (columntype.equals("INTEGER")) {
-                    return java.sql.Types.INTEGER;
-                }
-                else
-                    if (columntype.equals("STRING")) {
-                        return java.sql.Types.VARCHAR;
-                    }
-                    else
-                        if (columntype.equals("BIGINT")){
-                            return java.sql.Types.BIGINT;
-                        }
-                        else {
-                            return 0;
-                        }
+        if (columntype.equals("BOOLEAN")) {
+            return java.sql.Types.BOOLEAN;
+        }
+        if (columntype.equals("INTEGER")) {
+            return java.sql.Types.BIGINT;
+        }
+        if (columntype.equals("STRING")) {
+            return java.sql.Types.VARCHAR;
+        }
+        if (columntype.equals("TIMESTAMP")){
+            return java.sql.Types.TIMESTAMP;
+        }
+        return 0;
     }
 
     /**
