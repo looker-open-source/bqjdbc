@@ -219,17 +219,8 @@ public class BQPreparedStatement extends BQStatementRoot implements
      */
     @Override
     public boolean execute() throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("This Statement is Closed");
-        }
         this.resset = this.executeQuery();
-        this.logger.info("Executing Query: " + this.RunnableStatement);
-        if (this.resset != null) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return this.resset != null;
     }
     
     /** {@inheritDoc} */
@@ -246,6 +237,8 @@ public class BQPreparedStatement extends BQStatementRoot implements
         }
         this.starttime = System.currentTimeMillis();
         Job referencedJob;
+        
+        this.RunnableStatement = fixJdbcSyntax(this.RunnableStatement);
         
         // ANTLR Parser
         BQQueryParser parser = new BQQueryParser(this.RunnableStatement,
@@ -305,6 +298,17 @@ public class BQPreparedStatement extends BQStatementRoot implements
                 "Query run took more than the specified timeout");
     }
     
+    /** Replace Jdbc escape syntax like {ts '1999-01-09 20:11:11.123455'} with a BigQuery compatible expression */
+    private String fixJdbcSyntax(final String sql0) {
+        if (sql0 == null) {
+            return null; // Nothing to fix
+        }
+        final String sql1 = sql0.replaceAll("\\{ts '(?<timestamp>[0-9- :.]{14,26})'\\}", "TIMESTAMP('${timestamp}')");
+        final String sql2 = sql1.replaceAll("\\{d '(?<date>[0-9-]{8,10})'\\}", "TIMESTAMP('${date} 00:00')");
+        final String sql3 = sql2.replaceAll("\\{t '(?<time>[0-9:.]{5,15})'\\}", "TIMESTAMP('1970-01-01 ${time}')");
+        return sql3;
+    }
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
