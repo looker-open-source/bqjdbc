@@ -746,18 +746,15 @@ public class BQPreparedStatement extends BQStatementRoot implements
     @Override
     public void setTime(int parameterIndex, Time x) throws SQLException {
         check(parameterIndex);
-        Time s = new Time(x.getTime()
-                + Calendar.getInstance().getTimeZone().getRawOffset());
-        this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
+        setTime(parameterIndex, x, null);
     }
     
     @Override
     public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
         check(parameterIndex);
-        Time s = new Time(x.getTime()
-                + ((cal == null) ? Calendar.getInstance().getTimeZone()
-                        .getRawOffset() : cal.getTimeZone().getRawOffset()));
-        this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
+        final Calendar cal2 = cal == null ? Calendar.getInstance() : cal;
+        Time s = new Time(x.getTime() +  cal2.getTimeZone().getRawOffset()); // Hazardous conversion because without date, one can not know the Daylight Saving Time (DST) status
+        this.SetParameter(parameterIndex, "MSEC_TO_TIMESTAMP(" + s.getTime() % 86400000 + ")"); // 86400000 = 1 day in milliseconds (remove date part)
     }
     
     @Override
