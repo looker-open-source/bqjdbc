@@ -61,6 +61,7 @@ import com.google.api.services.bigquery.model.TableRow;
  * This class implements the java.sql.ResultSet interface, as a Forward only resultset
  *
  * @author Balazs Gunics
+ * @author Johann Siess
  *
  *
  */
@@ -149,27 +150,22 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
 
         String Columntype = this.Result.getSchema().getFields().get(columnIndex - 1).getType();
 
-        try {
-            if (Columntype.equals("STRING")) {
-                return result;
-            }
-            if (Columntype.equals("FLOAT")) {
-                return toDouble(result);
-            }
-            if (Columntype.equals("BOOLEAN")) {
-                return toBoolean(result);
-            }
-            if (Columntype.equals("INTEGER")) {
-                return toLong(result);
-            }
-            if (Columntype.equals("TIMESTAMP")) {
-                return toTimestamp(result, null);
-            }
-            throw new BQSQLException("Unsupported Type (" + Columntype + ")");
+        if (Columntype.equals("STRING")) {
+            return result;
         }
-        catch (NumberFormatException e) {
-            throw new BQSQLException(e);
+        if (Columntype.equals("FLOAT")) {
+            return toDouble(result);
         }
+        if (Columntype.equals("BOOLEAN")) {
+            return toBoolean(result);
+        }
+        if (Columntype.equals("INTEGER")) {
+            return toLong(result);
+        }
+        if (Columntype.equals("TIMESTAMP")) {
+            return toTimestamp(result, null);
+        }
+        throw new BQSQLException("Unsupported Type (" + Columntype + ")");
     }
     
     // toXXX = common "parsing" between Object and primitive types - to prevent discrepancies. The 4 firsts are the core ones (types supported by BigQuery)
@@ -185,7 +181,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return Double.valueOf(new BigDecimal(value).doubleValue());
         }
         catch (NumberFormatException e) {
-            throw new BQSQLException(e);
+            throw new BQSQLException("'" + value + "' is not a double", e); // e.g. NaN or really too big value - return Double.NaN ?
         }
     }
 
@@ -195,32 +191,37 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return Long.valueOf(new BigDecimal(value).longValue());
         }
         catch (NumberFormatException e) {
-            throw new BQSQLException(e);
+            throw new BQSQLException("'" + value + "' is not a long", e);
         }
     }
 
     /** Parse date/time types */
     private Timestamp toTimestamp(String value, Calendar cal) throws SQLException {
+        
+        final long dbValue;
         try {
-            long dbValue = new BigDecimal(value).movePointRight(3).longValue(); // movePointRight(3) =  *1000 (done before rounding) - from seconds (BigQuery specifications) to milliseconds (required by java). Precision under millisecond is discarded (BigQuery supports micro-seconds)
-            if (cal == null) {
-                cal = Calendar.getInstance(TimeZone.getTimeZone("UTC")); // The time zone of the server that host the JVM should NOT impact the results. Use UTC calendar instead (which wont apply any correction, whatever the time zone of the data)
-            }
-            
-            Calendar dbCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-            dbCal.setTimeInMillis(dbValue);
-            cal.set(Calendar.YEAR, dbCal.get(Calendar.YEAR));
-            cal.set(Calendar.MONTH, dbCal.get(Calendar.MONTH));
-            cal.set(Calendar.DAY_OF_MONTH, dbCal.get(Calendar.DAY_OF_MONTH));
-            cal.set(Calendar.HOUR_OF_DAY, dbCal.get(Calendar.HOUR_OF_DAY));
-            cal.set(Calendar.MINUTE, dbCal.get(Calendar.MINUTE));
-            cal.set(Calendar.SECOND, dbCal.get(Calendar.SECOND));
-            cal.set(Calendar.MILLISECOND, dbCal.get(Calendar.MILLISECOND));
-            return new Timestamp(cal.getTime().getTime());
+            dbValue = new BigDecimal(value).movePointRight(3).longValue(); // movePointRight(3) =  *1000 (done before rounding) - from seconds (BigQuery specifications) to milliseconds (required by java). Precision under millisecond is discarded (BigQuery supports micro-seconds)
         }
         catch (NumberFormatException e) {
-            throw new BQSQLException(e);
+            throw new BQSQLException("'" + value + "' is not a long (millisecond)", e);
         }
+        
+        if (cal == null) {
+            cal = Calendar.getInstance(TimeZone.getTimeZone("UTC")); // The time zone of the server that host the JVM should NOT impact the results. Use UTC calendar instead (which wont apply any correction, whatever the time zone of the data)
+        }
+        
+        Calendar dbCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        dbCal.setTimeInMillis(dbValue);
+        cal.set(Calendar.YEAR, dbCal.get(Calendar.YEAR));
+        cal.set(Calendar.MONTH, dbCal.get(Calendar.MONTH));
+        cal.set(Calendar.DAY_OF_MONTH, dbCal.get(Calendar.DAY_OF_MONTH));
+        cal.set(Calendar.HOUR_OF_DAY, dbCal.get(Calendar.HOUR_OF_DAY));
+        cal.set(Calendar.MINUTE, dbCal.get(Calendar.MINUTE));
+        cal.set(Calendar.SECOND, dbCal.get(Calendar.SECOND));
+        cal.set(Calendar.MILLISECOND, dbCal.get(Calendar.MILLISECOND));
+        return new Timestamp(cal.getTime().getTime());
+        
+        
     }
     
     // Secondary converters
