@@ -2,7 +2,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.starschema.clouddb.bqjdbc</groupId>
-  <artifactId>bqjdbc</artifactId>
+  <artifactId>zz_bqjdbc</artifactId>
   <name>Big Query over JDBC</name>
   <description>A simple JDBC driver, to reach Google's BigQuery</description>
   <repositories>
@@ -105,7 +105,7 @@
           </execution>
         </executions>
         <configuration>
-          <finalName>zz_${project.artifactId}-${project.version}-standalone</finalName>
+          <finalName>${project.artifactId}-${project.version}-standalone</finalName>
         </configuration>
       </plugin>
       <plugin>
@@ -117,7 +117,21 @@
           <target>1.6</target>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.1.1</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
-  <version>1.4</version>
+  <version>1.4.z1</version>
 </project>
