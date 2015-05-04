@@ -39,11 +39,11 @@ import com.google.api.services.bigquery.model.Job;
  * This class partially implements java.sql.Statement, and
  * java.sql.PreparedStatement
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  * @author Balazs Gunics
  * 
  */
-public abstract class BQStatementRoot {
+public abstract class BQStatementRoot implements java.sql.Statement {
     
     /** Reference to store the ran Query run by Executequery or Execute */
     ResultSet resset = null;
@@ -66,9 +66,15 @@ public abstract class BQStatementRoot {
      * Variable stores the time an execute is made
      */
     long starttime = 0;
+    
+    /**
+     * Maximum number of rows (pure, as specified by the user of the statement)
+     */
+    int maxRows = 0;
+    
     /**
      * Variable that stores the max row number which can be stored in the
-     * resultset
+     * resultset (like maxRows but tweaked - why ?)
      */
     int resultMaxRowCount = Integer.MAX_VALUE - 1;
     
@@ -416,8 +422,13 @@ public abstract class BQStatementRoot {
      * @return 0 -
      */
     
-    public int getMaxRows() throws SQLException {
+    public int getResultMaxRowCount() throws SQLException {
         return this.resultMaxRowCount;
+    }
+    
+    @Override
+    public int getMaxRows() throws SQLException {
+        return this.maxRows;
     }
     
     /**
@@ -693,15 +704,9 @@ public abstract class BQStatementRoot {
         this.maxFieldSize = arg0;
     }
     
-    /**
-     * <p>
-     * <h1>Implementation Details:</h1><br>
-     * arg0 == 0 ? arg0 : Integer.MAX_VALUE - 1
-     * </p>
-     * 
-     * @throws BQSQLException
-     */
+    @Override
     public void setMaxRows(int arg0) throws SQLException {
+        this.maxRows = arg0;
         this.resultMaxRowCount = arg0 == 0 ? arg0 : Integer.MAX_VALUE - 1;
     }
     

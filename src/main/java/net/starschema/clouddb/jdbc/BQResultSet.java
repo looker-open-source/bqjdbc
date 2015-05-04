@@ -35,7 +35,7 @@ import com.google.api.client.util.Data;
  * This class implements the java.sql.ResultSet interface its superclass is
  * ScrollableResultset
  *
- * @author Attila Horváth
+ * @author Attila Horvï¿½th
  */
 public class BQResultSet extends ScrollableResultset<Object> implements
         java.sql.ResultSet {
@@ -61,7 +61,7 @@ public class BQResultSet extends ScrollableResultset<Object> implements
         this.Result = bigQueryGetQueryResultResponse;
         BigInteger maxrow;
         try {
-            maxrow = BigInteger.valueOf(bqPreparedStatement.getMaxRows());
+            maxrow = BigInteger.valueOf(bqPreparedStatement.getResultMaxRowCount());
             this.Result.setTotalRows(maxrow);
         }
         catch (SQLException e) {
@@ -97,7 +97,7 @@ public class BQResultSet extends ScrollableResultset<Object> implements
         this.Result = bigQueryGetQueryResultResponse;
         BigInteger maxrow;
         try {
-            maxrow = BigInteger.valueOf(bqStatementRoot.getMaxRows());
+            maxrow = BigInteger.valueOf(bqStatementRoot.getResultMaxRowCount());
             this.Result.setTotalRows(maxrow);
         }
         catch (SQLException e) {

@@ -239,6 +239,7 @@ public class BQPreparedStatement extends BQStatementRoot implements
         Job referencedJob;
         
         this.RunnableStatement = fixJdbcSyntax(this.RunnableStatement);
+        this.RunnableStatement = addLimit(this.RunnableStatement, this.maxRows);
         
         // ANTLR Parser
         BQQueryParser parser = new BQQueryParser(this.RunnableStatement,
@@ -308,6 +309,30 @@ public class BQPreparedStatement extends BQStatementRoot implements
         final String sql3 = sql2.replaceAll("\\{t '(?<time>[0-9:.]{5,15})'\\}", "TIMESTAMP('1970-01-01 ${time}')");
         return sql3;
     }
+
+    /** Add a clause LIMIT at the end of the SQL */
+    private String addLimit(String sql, int maxRows) {
+        if (sql == null) {
+            return null; // Nothing to fix
+        }
+        if (maxRows <= 0) {
+            return sql; // No limit to add
+        }
+        if (sql.toUpperCase().contains("LIMIT ")) {
+            return sql; // Limit already set, directly in the query
+        }
+        return removeFinalSemicolon(sql.trim()) + " LIMIT " + maxRows;
+    }
+    
+    /** Return the input string without its final semicolon, if any */
+    private String removeFinalSemicolon(String s) {
+        char lastChar = s.charAt(s.length() - 1);
+        if (lastChar == ';') {
+            return s.substring(0, s.length() - 1);
+        }
+        return s;
+    }
+
 
     /**
      * <p>
