@@ -44,7 +44,7 @@ import com.google.api.services.bigquery.model.TableFieldSchema;
 /**
  * This class implements the DatabaseMetadata interface
  *
- * @author Gunics Balázs, Horváth Attila
+ * @author Gunics Balï¿½zs, Horvï¿½th Attila
  */
 class BQDatabaseMetadata implements DatabaseMetaData {
 
@@ -459,7 +459,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                             // or 2)
                             Col[9] = null;
                             // NULLABLE int => is NULL allowed.
-                            Col[10] = Column.getMode();
+                            Col[10] = nullableAsInt(Column.getMode());
                             // REMARKS String => comment describing column (may
                             // be null)
                             Col[11] = null;
@@ -480,7 +480,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                             Col[16] = String.valueOf(index);
                             // IS_NULLABLE String => ISO rules are used to
                             // determine the nullability for a column.
-                            Col[17] = "";
+                            Col[17] = isNullableISO(Column.getMode());
                             // SCOPE_CATLOG String => catalog of table that is
                             // the scope of a reference attribute (null if
                             // DATA_TYPE isn't REF)
@@ -542,6 +542,39 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                             "IS_AUTOINCREMENT", }, DMDResultSetType.getColumns);
         }
     }
+
+    private String nullableAsInt(String mode) {
+        if (mode == null) {
+            return String.valueOf(DatabaseMetaData.attributeNullableUnknown);
+        }
+        if ("NULLABLE".equals(mode)) {
+            return String.valueOf(DatabaseMetaData.attributeNullable);
+        }
+        if ("REQUIRED".equals(mode)) {
+            return String.valueOf(DatabaseMetaData.attributeNoNulls);
+        }
+        if ("REPEATED".equals(mode)) {
+            return String.valueOf(DatabaseMetaData.attributeNullableUnknown);
+        }
+        return String.valueOf(DatabaseMetaData.attributeNullableUnknown);
+    }
+    
+    private String isNullableISO(String mode) {
+        if (mode == null) {
+            return "";
+        }
+        if ("NULLABLE".equals(mode)) {
+            return "YES";
+        }
+        if ("REQUIRED".equals(mode)) {
+            return "NO";
+        }
+        if ("REPEATED".equals(mode)) {
+            return "";
+        }
+        return "";
+    }
+
 
     /** {@inheritDoc} */
     @Override
