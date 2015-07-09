@@ -49,7 +49,8 @@ import java.util.Calendar;
 import java.util.Map;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.Bigquery;
@@ -67,8 +68,8 @@ import com.google.api.services.bigquery.model.TableRow;
  */
 public class BQForwardOnlyResultSet implements java.sql.ResultSet {
 
-    // Logger logger = new Logger(ScrollableResultset.class.getName());
-    Logger logger = Logger.getLogger(BQForwardOnlyResultSet.class.getName());
+    private final Log logger = LogFactory.getLog(BQForwardOnlyResultSet.class);
+    
     /** Reference for holding the current InputStream given back by get methods */
     protected InputStream Strm = null;
 

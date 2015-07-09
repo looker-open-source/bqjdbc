@@ -21,7 +21,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 
@@ -53,8 +54,8 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 public class BQSQLException extends SQLException {
     
     private static final long serialVersionUID = -3669725541475950504L;
-    // Logger logger = new Logger(BQSQLException.class.getName());
-    Logger logger = Logger.getLogger(BQSQLException.class.getName());
+
+    private final Log logger = LogFactory.getLog(getClass());
     
     /**
      * <p>

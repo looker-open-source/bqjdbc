@@ -8,7 +8,8 @@ import java.sql.SQLException;
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ public class GrammarTest {
     /**
      * Logger initialization
      */
-    Logger logger = Logger.getLogger(this.toString());
+    private final Log logger = LogFactory.getLog(getClass());
     
     /**
      * Creates a new Connection to bigquery with the jdbc driver

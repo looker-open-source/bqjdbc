@@ -29,7 +29,8 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.google.api.services.bigquery.model.Job;
 
@@ -50,8 +51,8 @@ public abstract class BQStatementRoot implements java.sql.Statement {
     
     /** String containing the context of the Project */
     String ProjectId = null;
-    // Logger logger = new Logger(BQStatementRoot.class.getName());
-    Logger logger = Logger.getLogger(BQStatementRoot.class.getName());
+
+    protected final Log logger = LogFactory.getLog(BQStatementRoot.class);
     
     /** Variable that stores the closed state of the statement */
     boolean closed = false;

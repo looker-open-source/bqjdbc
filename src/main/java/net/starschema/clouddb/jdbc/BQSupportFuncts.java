@@ -31,7 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Jobs.Insert;
@@ -43,9 +44,9 @@ import com.google.api.services.bigquery.model.JobConfigurationQuery;
 import com.google.api.services.bigquery.model.ProjectList.Projects;
 import com.google.api.services.bigquery.model.ProjectReference;
 import com.google.api.services.bigquery.model.Table;
+import com.google.api.services.bigquery.model.TableCell;
 import com.google.api.services.bigquery.model.TableList.Tables;
 import com.google.api.services.bigquery.model.TableRow;
-import com.google.api.services.bigquery.model.TableCell;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -56,9 +57,8 @@ import com.google.api.services.bigquery.model.TableCell;
  *
  */
 public class BQSupportFuncts {
-    /** log4j.Logger instance */
-    // static Logger logger = new Logger(BQSupportFuncts.class.getName());
-    static Logger logger = Logger.getLogger(BQSupportFuncts.class.getName());
+
+    private final static Log logger = LogFactory.getLog(BQSupportFuncts.class);
 
     /**
      * Constructs a valid BigQuery JDBC driver URL from the specified properties

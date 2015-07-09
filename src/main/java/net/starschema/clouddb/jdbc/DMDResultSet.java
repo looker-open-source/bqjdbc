@@ -26,7 +26,8 @@ import java.sql.SQLException;
 
 import net.starschema.clouddb.jdbc.DMDResultSet.DMDResultSetType;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -34,7 +35,7 @@ import org.apache.log4j.Logger;
  * this class implements the java.sql.ResultSetMetaData interface for usage in
  * Resultsets which was made from DatabaseMetadata
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  * 
  */
 class COLResultSetMetadata implements java.sql.ResultSetMetaData {
@@ -42,9 +43,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
     String[] labels;
     
     /** Instance of logger */
-    // static Logger logger = new Logger(COLResultSetMetadata.class.getName());
-    static Logger logger = Logger.getLogger(COLResultSetMetadata.class
-            .getName());
+    private static final Log logger = LogFactory.getLog(COLResultSetMetadata.class);
     
     DMDResultSetType MetaDataType;
     
@@ -410,7 +409,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
  * Object[][] types instead of GetQueryResultsResponse.getrows() for giving back
  * Resultset Data from BQDatabaseMetadata
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  * 
  */
 public class DMDResultSet extends ScrollableResultset<Object> implements
@@ -422,7 +421,7 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
     }
     
     /** Instance of logger */
-    Logger logger;
+    private final Log logger = LogFactory.getLog(getClass());
     
     /** Var to store the resultsettype */
     DMDResultSetType ResultsetType;
@@ -443,7 +442,6 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
         this.RowsofResult = objects;
         this.Colnames = colnames;
         this.ResultsetType = type;
-        this.logger = Logger.getLogger(DMDResultSet.class.getName());
     }
     
     /** {@inheritDoc} */

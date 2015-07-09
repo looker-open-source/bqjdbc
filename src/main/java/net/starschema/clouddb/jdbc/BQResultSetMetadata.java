@@ -26,7 +26,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
@@ -50,7 +51,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
     ResultSet results = null;
 
     /** Logger instance */
-    Logger logger = Logger.getLogger(BQResultsetMetaData.class.getName());
+    private final Log logger = LogFactory.getLog(getClass());
 
     /**
      * Constructor that initializes variables

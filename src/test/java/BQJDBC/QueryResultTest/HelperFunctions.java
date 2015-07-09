@@ -3,10 +3,11 @@ package BQJDBC.QueryResultTest;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class HelperFunctions {
-    static Logger logger = Logger.getLogger("HelperFunctions");
+    private static final Log logger = LogFactory.getLog(HelperFunctions.class);
     
     /**
      * Prints a ResultSet QueryResult to Log

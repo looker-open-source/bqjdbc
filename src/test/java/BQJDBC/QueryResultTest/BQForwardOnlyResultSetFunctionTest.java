@@ -26,14 +26,15 @@ import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * This Junit test tests functions in BQResultset
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  * @author Gunics Balazs
  */
 public class BQForwardOnlyResultSetFunctionTest {
@@ -41,7 +42,7 @@ public class BQForwardOnlyResultSetFunctionTest {
     private static java.sql.Connection con = null;
     private static java.sql.ResultSet Result = null;
     
-    Logger logger = Logger.getLogger(BQForwardOnlyResultSetFunctionTest.class.getName());
+    private final Log logger = LogFactory.getLog(BQForwardOnlyResultSetFunctionTest.class);
     
     @Test
     public void ChainedCursorFunctionTest() {
