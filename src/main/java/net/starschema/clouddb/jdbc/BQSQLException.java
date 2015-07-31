@@ -24,10 +24,11 @@ import java.sql.SQLException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 
-// import net.starschema.clouddb.bqjdbc.logging.Logger;
 
+// import net.starschema.clouddb.bqjdbc.logging.Logger;
 /**
  * <p>
  * An exception that provides information on a database access error or other
@@ -226,6 +227,12 @@ public class BQSQLException extends SQLException {
             GoogleJsonResponseException googleJsonResponseException = (GoogleJsonResponseException) cause;
             if (googleJsonResponseException.getDetails() != null) {
                 return prefix + googleJsonResponseException.getDetails().getMessage();
+            }
+        }
+        if (cause instanceof TokenResponseException) {
+            TokenResponseException tokenResponseException = (TokenResponseException) cause;
+            if (tokenResponseException.getDetails() != null) {
+                return prefix + tokenResponseException.getDetails().getError();
             }
         }
         return reason;
