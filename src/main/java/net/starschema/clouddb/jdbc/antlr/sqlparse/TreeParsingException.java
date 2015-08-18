@@ -1,17 +1,17 @@
 /**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -31,19 +31,19 @@ import org.apache.log4j.Logger;
  * An exception that provides information on a Tree Parsing error.<br>
  * With logging them to the external logfile.
  * <p>
- * 
+ *
  * @author Balazs Gunics, Horvath Attila
- * 
+ *
  */
 public class TreeParsingException extends Exception {
-    
+
     /**
      * Generated Serial
      */
     private static final long serialVersionUID = 1951923923275407604L;
     // Logger logger = new Logger(TreeParsingException.class.getName());
     Logger logger = Logger.getLogger(TreeParsingException.class.getName());
-    
+
     /**
      * <p>
      * Constructs an Exception object.
@@ -54,12 +54,12 @@ public class TreeParsingException extends Exception {
         StringWriter sw = new StringWriter();
         super.printStackTrace(new PrintWriter(sw));
     }
-    
+
     /**
      * <p>
      * Constructs an Exception object.
      * </p>
-     * 
+     *
      * @param expected
      *            - the token we expected to get
      * @param reality
@@ -71,12 +71,12 @@ public class TreeParsingException extends Exception {
         StringWriter sw = new StringWriter();
         super.printStackTrace(new PrintWriter(sw));
     }
-    
+
     /**
      * <p>
      * Constructs an Exception object with a given reason.
      * </p>
-     * 
+     *
      * @param reason
      *            - a description of the exception
      */
@@ -85,12 +85,12 @@ public class TreeParsingException extends Exception {
         StringWriter sw = new StringWriter();
         super.printStackTrace(new PrintWriter(sw));
     }
-    
+
     /**
      * <p>
      * Constructs an Exception object with a given reason and cause.
      * </p>
-     * 
+     *
      * @param reason
      *            - a description of the exception
      * @param cause
@@ -99,17 +99,17 @@ public class TreeParsingException extends Exception {
     public TreeParsingException(String reason, Throwable cause) {
         super(reason, cause);
     }
-    
+
     /**
      * <p>
      * Constructs an Exception object with a given cause.
      * </p>
-     * 
+     *
      * @param cause
      *            - the underlying reason for this Exception
      */
     public TreeParsingException(Throwable cause) {
         super(cause);
     }
-    
+
 }

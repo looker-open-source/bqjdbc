@@ -35,7 +35,7 @@ import com.google.api.client.util.Data;
  * This class implements the java.sql.ResultSet interface its superclass is
  * ScrollableResultset
  *
- * @author Attila Horváth
+ * @author Attila Horvï¿½th
  */
 public class BQResultSet extends ScrollableResultset<Object> implements
         java.sql.ResultSet {
@@ -57,28 +57,25 @@ public class BQResultSet extends ScrollableResultset<Object> implements
     private BQStatement Statementreference = null;
 
     public BQResultSet(GetQueryResultsResponse bigQueryGetQueryResultResponse,
-            BQPreparedStatement bqPreparedStatement) {
+                       BQPreparedStatement bqPreparedStatement) {
         this.Result = bigQueryGetQueryResultResponse;
         BigInteger maxrow;
         try {
             maxrow = BigInteger.valueOf(bqPreparedStatement.getMaxRows());
             this.Result.setTotalRows(maxrow);
-        }
-        catch (SQLException e) {
-         // Should not happen.
+        } catch (SQLException e) {
+            // Should not happen.
         }
 
         try {
             maxFieldSize = bqPreparedStatement.getMaxFieldSize();
-        }
-        catch (SQLException e) {
-         // Should not happen.
+        } catch (SQLException e) {
+            // Should not happen.
         }
 
         if (this.Result.getRows() == null) {
             this.RowsofResult = null;
-        }
-        else {
+        } else {
             this.RowsofResult = this.Result.getRows().toArray();
         }
     }
@@ -86,34 +83,29 @@ public class BQResultSet extends ScrollableResultset<Object> implements
     /**
      * Constructor of BQResultset, that initializes all private variables
      *
-     * @param bigQueryGetQueryResultResponse
-     *            BigQueryGetQueryResultResponse from Bigquery
-     * @param bqStatementRoot
-     *            Reference of the Statement that creates this Resultset
+     * @param bigQueryGetQueryResultResponse BigQueryGetQueryResultResponse from Bigquery
+     * @param bqStatementRoot                Reference of the Statement that creates this Resultset
      */
     public BQResultSet(GetQueryResultsResponse bigQueryGetQueryResultResponse,
-            BQStatementRoot bqStatementRoot) {
+                       BQStatementRoot bqStatementRoot) {
 
         this.Result = bigQueryGetQueryResultResponse;
         BigInteger maxrow;
         try {
             maxrow = BigInteger.valueOf(bqStatementRoot.getMaxRows());
             this.Result.setTotalRows(maxrow);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
         } // Should not happen.
 
         try {
             maxFieldSize = bqStatementRoot.getMaxFieldSize();
-        }
-        catch (SQLException e) {
-         // Should not happen.
+        } catch (SQLException e) {
+            // Should not happen.
         }
 
         if (this.Result.getRows() == null) {
             this.RowsofResult = null;
-        }
-        else {
+        } else {
             this.RowsofResult = this.Result.getRows().toArray();
         }
         if (bqStatementRoot instanceof BQStatement) {
@@ -172,21 +164,18 @@ public class BQResultSet extends ScrollableResultset<Object> implements
         if (Data.isNull(field.getV())) {
             this.wasnull = true;
             return null;
-        }
-        else {
+        } else {
             String result = field.getV().toString();
             this.wasnull = false;
             try {
                 if (Columntype.equals("STRING")) {
-                  //removing the excess byte by the setmaxFiledSize
-                    if(maxFieldSize == 0 || maxFieldSize == Integer.MAX_VALUE){
+                    //removing the excess byte by the setmaxFiledSize
+                    if (maxFieldSize == 0 || maxFieldSize == Integer.MAX_VALUE) {
                         return result;
-                    }
-                    else {
-                        try{ //lets try to remove the excess bytes
+                    } else {
+                        try { //lets try to remove the excess bytes
                             return result.substring(0, maxFieldSize);
-                        }
-                        catch (IndexOutOfBoundsException iout){
+                        } catch (IndexOutOfBoundsException iout) {
                             //we don't need to remove any excess byte
                             return result;
                         }
@@ -206,8 +195,7 @@ public class BQResultSet extends ScrollableResultset<Object> implements
                     return new Timestamp(val);
                 }
                 throw new BQSQLException("Unsupported Type (" + Columntype + ")");
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -233,19 +221,16 @@ public class BQResultSet extends ScrollableResultset<Object> implements
                 .get(columnIndex - 1).getV();
         if (result == null) {
             this.wasnull = true;
-        }
-        else {
+        } else {
             this.wasnull = false;
         }
         //removing the excess byte by the setmaxFiledSize
-        if(maxFieldSize == 0 || maxFieldSize == Integer.MAX_VALUE){
+        if (maxFieldSize == 0 || maxFieldSize == Integer.MAX_VALUE) {
             return result;
-        }
-        else {
-            try{ //lets try to remove the excess bytes
+        } else {
+            try { //lets try to remove the excess bytes
                 return result.substring(0, maxFieldSize);
-            }
-            catch (IndexOutOfBoundsException iout){
+            } catch (IndexOutOfBoundsException iout) {
                 //we don't need to remove any excess byte
                 return result;
             }

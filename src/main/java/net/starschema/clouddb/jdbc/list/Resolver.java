@@ -11,17 +11,17 @@ public class Resolver {
     TreeBuilder builder;
     CallContainer container;
     protected Logger logger = Logger.getLogger(this.getClass());
-    
+
     public Resolver(TreeBuilder builder) {
-        
+
         this.connection = builder.getConnection();
         this.builder = builder;
         this.container = builder.callContainer;
     }
-    
+
     /**
      * Gets a sourceTable's all possible columns
-     * 
+     *
      * @param sourceTable
      * @return a List with the columns
      */
@@ -31,12 +31,12 @@ public class Resolver {
         List<String> columnstrings = this.builder.GetColumns(sourceTable);
         for (String string : columnstrings) {
             ColumnCall columnforreturn = new ColumnCall(null, null,
-                    this.builder, string,null);
+                    this.builder, string, null);
             returnlist.add(columnforreturn);
         }
         return returnlist;
     }
-    
+
 
     protected List<ColumnCall> parseSubQForJokers(SubQuery subQuery) {
         List<ColumnCall> returnlist = new ArrayList<ColumnCall>();
@@ -48,29 +48,28 @@ public class Resolver {
         }
         List<ColumnCall> columns = expression.getColumns();
         List<FunctionCall> functionCalls = expression.getFunctionCalls();
-        
+
         if (functionCalls != null) {
             this.logger.debug("HAS FUNCTIONCALLS");
             for (FunctionCall functionCall : functionCalls) {
-                returnlist.add(new ColumnCall(new String[] { subQuery.getUniqueId() },
-                        null, this.builder, functionCall.getAlias(), functionCall,null));
+                returnlist.add(new ColumnCall(new String[]{subQuery.getUniqueId()},
+                        null, this.builder, functionCall.getAlias(), functionCall, null));
             }
         }
-        
+
         if (columns != null) {
             this.logger.debug("HAS COLUMNS");
             for (ColumnCall column : columns) {
                 if (column.getAlias() != null) {
                     ColumnCall returncolumn = new ColumnCall(null, null,
-                            this.builder, column.getAlias(), column,null);
+                            this.builder, column.getAlias(), column, null);
                     returncolumn.addPrefixtoFront(subQuery.getAlias());
-                    
+
                     returnlist.add(returncolumn);
-                }
-                else {
+                } else {
                     ColumnCall returncolumn = new ColumnCall(null, null,
-                            this.builder, column.getName(), column,null);
-                   
+                            this.builder, column.getName(), column, null);
+
                     returncolumn.addPrefixtoFront(subQuery.getAlias());
                     returnlist.add(returncolumn);
                 }
@@ -78,6 +77,6 @@ public class Resolver {
         }
         return returnlist;
     }
-    
-    
+
+
 }
