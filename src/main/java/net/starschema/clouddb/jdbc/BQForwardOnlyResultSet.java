@@ -16,7 +16,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  * This class implements the java.sql.ResultSet interface's Cursor
- *
  */
 
 package net.starschema.clouddb.jdbc;
@@ -98,7 +97,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     private Job completedJob;
     /** Cursor position which goes from -1 to FETCH_SIZE then 0 to FETCH_SIZE
      * The -1 is needed because of the while(Result.next() == true) { } iterating method*/
-    private int Cursor=-1;
+    private int Cursor = -1;
 
     /**
      * Constructor for the forward only resultset
@@ -109,27 +108,26 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      * @throws SQLException - if we fail to get the results
      */
     public BQForwardOnlyResultSet(Bigquery bigquery, String projectId,
-            Job completedJob, BQStatementRoot bqStatementRoot) throws SQLException  {
+                                  Job completedJob, BQStatementRoot bqStatementRoot) throws SQLException {
         logger.debug("Created forward only resultset TYPE_FORWARD_ONLY");
         this.Statementreference = (Statement) bqStatementRoot;
         this.bigquery = bigquery;
-        this.completedJob =  completedJob;
-        this.projectId =  projectId;
+        this.completedJob = completedJob;
+        this.projectId = projectId;
         // initial load
         try {
             this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery,
                     projectId, completedJob, FETCH_POS, FETCH_SIZE);
-        }
-        catch (IOException e) {
-            throw new SQLException("Failed to retrieve data",e);
+        } catch (IOException e) {
+            throw new SQLException("Failed to retrieve data", e);
         } //should not happen
-        if (this.Result == null){  //if we don't have results at all
+        if (this.Result == null) {  //if we don't have results at all
             this.RowsofResult = null;
         } else if (this.Result.getRows() == null) {  //if we got results, but it was empty
             this.RowsofResult = null;
         } else {                        //we got results, it wasn't empty
             this.RowsofResult = this.Result.getRows().toArray();
-            FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long)this.RowsofResult.length));
+            FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long) this.RowsofResult.length));
         }
     }
 
@@ -158,8 +156,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if (Data.isNull(field.getV())) {
             this.wasnull = true;
             return null;
-        }
-        else {
+        } else {
             String result = field.getV().toString();
             this.wasnull = false;
             try {
@@ -180,8 +177,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                     return new Timestamp(val);
                 }
                 throw new BQSQLException("Unsupported Type (" + Columntype + ")");
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -205,12 +201,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                 || columnIndex < 1) {
             throw new BQSQLException("ColumnIndex is not valid");
         }
-        if(this.RowsofResult == null) throw new SQLException("Invalid position!");
+        if (this.RowsofResult == null) throw new SQLException("Invalid position!");
         String result = (String) ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1).getV();
         if (result == null) {
             this.wasnull = true;
-        }
-        else {
+        } else {
             this.wasnull = false;
         }
         return result;
@@ -224,8 +219,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      */
     @Override
     public boolean absolute(int row) throws SQLException {
-            throw new BQSQLException(
-                    "The Type of the Resultset is TYPE_FORWARD_ONLY, absolute is not supported");
+        throw new BQSQLException(
+                "The Type of the Resultset is TYPE_FORWARD_ONLY, absolute is not supported");
     }
 
     /**
@@ -299,8 +294,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if (this.Strm != null) {
             try {
                 this.Strm.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -349,7 +343,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     @Override
     public boolean first() throws SQLException {
         throw new BQSQLException(
-                    "The Type of the Resultset is TYPE_FORWARD_ONLY");
+                "The Type of the Resultset is TYPE_FORWARD_ONLY");
     }
 
     /**
@@ -388,14 +382,12 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             this.wasnull = true;
             this.Strm = null;
             return this.Strm;
-        }
-        else {
+        } else {
             this.wasnull = false;
             try {
                 inptstrm = new java.io.ByteArrayInputStream(
                         Value.getBytes("US-ASCII"));
-            }
-            catch (UnsupportedEncodingException e) {
+            } catch (UnsupportedEncodingException e) {
                 throw new BQSQLException(e);
             }
             this.Strm = inptstrm;
@@ -413,14 +405,12 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             this.wasnull = true;
             this.Strm = null;
             return this.Strm;
-        }
-        else {
+        } else {
             this.wasnull = false;
             try {
                 inptstrm = new java.io.ByteArrayInputStream(
                         Value.getBytes("US-ASCII"));
-            }
-            catch (UnsupportedEncodingException e) {
+            } catch (UnsupportedEncodingException e) {
                 throw new BQSQLException(e);
             }
             this.Strm = inptstrm;
@@ -437,45 +427,34 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             String Value = this.getString(columnIndex);
             if (this.wasNull()) {
                 return null;
-            }
-            else {
+            } else {
                 try {
                     return new java.math.BigDecimal(Value);
-                }
-                catch (NumberFormatException e) {
+                } catch (NumberFormatException e) {
                     throw new BQSQLException(e);
                 }
             }
-        }
-        else
-            if (coltype.equals("INTEGER")) {
-                int Value = this.getInt(columnIndex);
-                if (this.wasNull()) {
-                    return null;
-                }
-                else {
-                    return new java.math.BigDecimal(Value);
-                }
-
+        } else if (coltype.equals("INTEGER")) {
+            int Value = this.getInt(columnIndex);
+            if (this.wasNull()) {
+                return null;
+            } else {
+                return new java.math.BigDecimal(Value);
             }
-            else
-                if (coltype.equals("FLOAT")) {
-                    Float Value = this.getFloat(columnIndex);
-                    if (this.wasNull()) {
-                        return null;
-                    }
-                    else {
-                        return new java.math.BigDecimal(Value);
-                    }
-                }
-                else
-                    if (coltype.equals("BOOLEAN")) {
-                        throw new NumberFormatException(
-                                "Cannot format Boolean to BigDecimal");
-                    }
-                    else {
-                        throw new NumberFormatException("Undefined format");
-                    }
+
+        } else if (coltype.equals("FLOAT")) {
+            Float Value = this.getFloat(columnIndex);
+            if (this.wasNull()) {
+                return null;
+            } else {
+                return new java.math.BigDecimal(Value);
+            }
+        } else if (coltype.equals("BOOLEAN")) {
+            throw new NumberFormatException(
+                    "Cannot format Boolean to BigDecimal");
+        } else {
+            throw new NumberFormatException("Undefined format");
+        }
     }
 
     // Implemented Get functions Using Cursor
@@ -512,8 +491,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             this.wasnull = true;
             this.Strm = null;
             return this.Strm;
-        }
-        else {
+        } else {
             this.wasnull = false;
             inptstrm = new java.io.ByteArrayInputStream(Value.getBytes());
             this.Strm = inptstrm;
@@ -531,8 +509,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             this.wasnull = true;
             this.Strm = null;
             return this.Strm;
-        }
-        else {
+        } else {
             this.wasnull = false;
             inptstrm = new java.io.ByteArrayInputStream(Value.getBytes());
             this.Strm = inptstrm;
@@ -572,8 +549,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return false;
-        }
-        else {
+        } else {
             return Boolean.parseBoolean(Value);
         }
     }
@@ -591,12 +567,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        }
-        else {
+        } else {
             try {
                 return Byte.parseByte(Value);
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -615,8 +589,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return null;
-        }
-        else {
+        } else {
             return Value.getBytes();
         }
     }
@@ -636,8 +609,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if (Value == null) {
             this.wasnull = true;
             return null;
-        }
-        else {
+        } else {
             this.wasnull = false;
             Reader rdr = new StringReader(Value);
             return rdr;
@@ -652,8 +624,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if (Value == null) {
             this.wasnull = true;
             return null;
-        }
-        else {
+        } else {
             this.wasnull = false;
             Reader rdr = new StringReader(Value);
             return rdr;
@@ -721,8 +692,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         Long value = this.getLong(columnIndex);
         if (this.wasNull()) {
             return null;
-        }
-        else {
+        } else {
             return new java.sql.Date(value);
         }
     }
@@ -733,8 +703,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         Long value = this.getLong(columnIndex);
         if (this.wasNull()) {
             return null;
-        }
-        else {
+        } else {
             return new java.sql.Date(value + cal.getTimeZone().getRawOffset());
         }
     }
@@ -759,12 +728,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        }
-        else {
+        } else {
             try {
                 return Double.parseDouble(Value);
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -810,12 +777,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        }
-        else {
+        } else {
             try {
                 return Float.parseFloat(Value);
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -847,12 +812,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        }
-        else {
+        } else {
             try {
                 return Integer.parseInt(Value);
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -871,12 +834,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        }
-        else {
+        } else {
             try {
                 return Long.parseLong(Value);
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -1049,8 +1010,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** {@inheritDoc} */
     @Override
     public int getRow() throws SQLException {
-            throw new BQSQLException(
-                    "The Type of the Resultset is TYPE_FORWARD_ONLY");
+        throw new BQSQLException(
+                "The Type of the Resultset is TYPE_FORWARD_ONLY");
     }
 
     /**
@@ -1085,12 +1046,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        }
-        else {
+        } else {
             try {
                 return Short.parseShort(Value);
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -1144,8 +1103,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         Long value = this.getLong(columnIndex);
         if (this.wasNull()) {
             return null;
-        }
-        else {
+        } else {
             return new java.sql.Time(value);
         }
     }
@@ -1161,8 +1119,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         Long value = this.getLong(columnIndex);
         if (this.wasNull()) {
             return null;
-        }
-        else {
+        } else {
             return new java.sql.Time(cal.getTimeZone().getRawOffset() + value);
         }
     }
@@ -1187,8 +1144,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         Long value = this.getLong(columnIndex);
         if (this.wasNull()) {
             return null;
-        }
-        else {
+        } else {
             return new java.sql.Timestamp(value);
         }
     }
@@ -1200,8 +1156,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         Long value = this.getLong(columnIndex);
         if (this.wasNull()) {
             return null;
-        }
-        else {
+        } else {
             return new java.sql.Timestamp(cal.getTimeZone().getRawOffset()
                     + value);
         }
@@ -1272,12 +1227,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return null;
-        }
-        else {
+        } else {
             try {
                 return new URL(Value);
-            }
-            catch (MalformedURLException e) {
+            } catch (MalformedURLException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -1289,12 +1242,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnLabel);
         if (this.wasNull()) {
             return null;
-        }
-        else {
+        } else {
             try {
                 return new URL(Value);
-            }
-            catch (MalformedURLException e) {
+            } catch (MalformedURLException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -1342,7 +1293,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if (this.isClosed()) {
             throw new BQSQLException("This Resultset is Closed");
         }
-        if(Cursor == -1) return true;
+        if (Cursor == -1) return true;
         throw new BQSQLException("Forward_only resultset doesn't support isBeforeFirst() ");
     }
 
@@ -1360,6 +1311,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         }
         return AT_FIRST;
     }
+
     /** {@inheritDoc} */
     @Override
     public boolean isLast() throws SQLException {
@@ -1382,8 +1334,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** {@inheritDoc} */
     @Override
     public boolean last() throws SQLException {
-            throw new BQSQLException(
-                    "The Type of the Resultset is TYPE_FORWARD_ONLY");
+        throw new BQSQLException(
+                "The Type of the Resultset is TYPE_FORWARD_ONLY");
     }
 
     /**
@@ -1421,26 +1373,24 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if (this.RowsofResult == null) {
             return false;
         }
-        if(Cursor < FETCH_SIZE && Cursor < RowsofResult.length-1) {
-            if(Cursor == -1) {
+        if (Cursor < FETCH_SIZE && Cursor < RowsofResult.length - 1) {
+            if (Cursor == -1) {
                 AT_FIRST = true;
             } else AT_FIRST = false;
-           Cursor++;
-           return true;
+            Cursor++;
+            return true;
         } else {
             try {
                 this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery,
                         projectId, completedJob, FETCH_POS, FETCH_SIZE);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
             } //should not happen
             if (this.Result.getRows() == null) {
                 this.RowsofResult = null;
                 return false;
-            }
-            else {
+            } else {
                 this.RowsofResult = this.Result.getRows().toArray();
-                FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long)this.RowsofResult.length));
+                FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long) this.RowsofResult.length));
                 Cursor = 0;
                 return true;
             }
@@ -1450,8 +1400,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** {@inheritDoc} */
     @Override
     public boolean previous() throws SQLException {
-            throw new BQSQLException(
-                    "The Type of the Resultset is TYPE_FORWARD_ONLY");
+        throw new BQSQLException(
+                "The Type of the Resultset is TYPE_FORWARD_ONLY");
     }
 
     /**
@@ -1470,8 +1420,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** {@inheritDoc} */
     @Override
     public boolean relative(int rows) throws SQLException {
-            throw new BQSQLException(
-                    "The Type of the Resultset is TYPE_FORWARD_ONLY");
+        throw new BQSQLException(
+                "The Type of the Resultset is TYPE_FORWARD_ONLY");
     }
 
     /**
@@ -1770,7 +1720,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      */
     @Override
     public void updateBinaryStream(String columnLabel, InputStream x,
-            long length) throws SQLException {
+                                   long length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
 
@@ -1852,7 +1802,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      */
     @Override
     public void updateBlob(String columnLabel, InputStream inputStream,
-            long length) throws SQLException {
+                           long length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
 
@@ -2001,7 +1951,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      */
     @Override
     public void updateCharacterStream(String columnLabel, Reader reader,
-            int length) throws SQLException {
+                                      int length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
 
@@ -2015,7 +1965,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      */
     @Override
     public void updateCharacterStream(String columnLabel, Reader reader,
-            long length) throws SQLException {
+                                      long length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
 
@@ -2282,7 +2232,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      */
     @Override
     public void updateNCharacterStream(String columnLabel, Reader reader,
-            long length) throws SQLException {
+                                       long length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
     }
 

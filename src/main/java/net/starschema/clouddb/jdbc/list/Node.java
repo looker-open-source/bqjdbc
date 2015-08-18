@@ -1,20 +1,19 @@
 /**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
  */
 package net.starschema.clouddb.jdbc.list;
 
@@ -29,13 +28,13 @@ import org.apache.log4j.Logger;
  * it contains the parent, and multiple sublists in children <li>tokenname - the
  * tokens name from the antlr grammar <li>data - the tokens string the SQL-s
  * text
- * 
+ *
  * @author Attila Horvath
  * @author Balazs Gunics
- * 
+ *
  */
 public class Node implements NodeBuilder {
-    
+
     public static String newline = System.getProperty("line.separator");
     protected Logger logger = Logger.getLogger(this.getClass().toString());
     protected Node prev = null;
@@ -44,24 +43,24 @@ public class Node implements NodeBuilder {
     protected String tokenName = null;
     protected String data = null;
     protected int tokenType = 0;
-    
+
     /**
      * Makes a new Node
      * parent, tokenName, data will be set to null
-     * 
+     *
      */
     public Node() {
         this.children = new LinkedList<Node>();
     }
-    
+
     public Node(boolean endnode) {
-        
+
     }
-    
+
     /**
      * Makes a new Node
      * tokenname will be set to null
-     * 
+     *
      * @param parent
      *            - the Nodes parent
      * @param data
@@ -72,10 +71,10 @@ public class Node implements NodeBuilder {
         this.prev = parent;
         this.children = new LinkedList<Node>();
     }
-    
+
     /**
      * The constructor for the Node
-     * 
+     *
      * @param tokenname
      *            - the tokens name
      * @param data
@@ -89,7 +88,7 @@ public class Node implements NodeBuilder {
         this.prev = parent;
         this.children = new LinkedList<Node>();
     }
-    
+
     @SuppressWarnings("unchecked")
     protected <T> List<T> getAllinstancesof(Class<T> myclass, int type) {
         List<T> nodeList = null;
@@ -103,17 +102,17 @@ public class Node implements NodeBuilder {
         }
         return nodeList;
     }
-    
+
     /** Getter for the TokenName */
     public String getTokenName() {
         return this.tokenName;
     }
-    
+
     /** Getter for the TokenType */
     public int getTokenType() {
         return this.tokenType;
     }
-    
+
     /** Returns with a String that contains N tabulators
      *
      * @param howmany - how many tabs do we want
@@ -123,15 +122,14 @@ public class Node implements NodeBuilder {
         String forReturn = "";
         if (howmany <= 0) {
             return forReturn;
-        }
-        else {
+        } else {
             for (int i = 0; i < howmany; i++) {
                 forReturn += "\t";
             }
         }
         return forReturn;
     }
-    
+
     @Override
     /**
      * Returns the stored information in way we can use them to build our queries
@@ -141,7 +139,7 @@ public class Node implements NodeBuilder {
     public String toPrettyString() {
         return this.toPrettyString(-1);
     }
-    
+
     @Override
     /**
      * Returns the stored information in way we can use them to build our queries
@@ -150,5 +148,5 @@ public class Node implements NodeBuilder {
     public String toPrettyString(int level) {
         return this.data;
     }
-    
+
 }

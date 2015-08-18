@@ -11,9 +11,9 @@ import org.antlr.runtime.tree.Tree;
  * @author Attila Horvath
  */
 public class Negation extends Node {
-    
+
     public Negation(Tree t, TreeBuilder builder, Node mainnode,
-            SelectStatement selectstatement) throws TreeParsingException {
+                    SelectStatement selectstatement) throws TreeParsingException {
         this.tokenName = JdbcGrammarParser.tokenNames[t.getType()];
         this.tokenType = t.getType();
         this.logger.debug("BUILDING " + this.tokenName);
@@ -25,17 +25,16 @@ public class Negation extends Node {
                             mainnode, selectstatement));
                     break;
                 case JdbcGrammarParser.CONJUNCTION:
-                    Node built = Conjunction.buildFromConjunction(child, 
+                    Node built = Conjunction.buildFromConjunction(child,
                             builder, mainnode, selectstatement);
-                    if(built.getTokenType()==JdbcGrammarParser.CONJUNCTION) {
+                    if (built.getTokenType() == JdbcGrammarParser.CONJUNCTION) {
                         this.children.addLast(Conjunction.class.cast(built));
-                    }
-                    else {
+                    } else {
                         this.children.addLast(Disjunction.class.cast(built));
-                    }   
+                    }
                     break;
                 case JdbcGrammarParser.NEGATION:
-                    this.children.addLast(new Negation(child, builder, mainnode, 
+                    this.children.addLast(new Negation(child, builder, mainnode,
                             selectstatement));
                     break;
                 case JdbcGrammarParser.BOOLEANEXPRESSIONITEM:
@@ -47,13 +46,13 @@ public class Negation extends Node {
             }
         }
     }
-    
+
     @Override
     public String toPrettyString() {
-        String result= "NOT (";
+        String result = "NOT (";
         for (Node item : this.children) {
-            result+=item.toPrettyString();
+            result += item.toPrettyString();
         }
-        return result+")";
+        return result + ")";
     }
 }

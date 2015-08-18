@@ -1,20 +1,20 @@
 /**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * This class implements the java.sql.ResultSet interface for Object[] and
  * Object[][] types instead of
  * GetQueryResultsResponse.getrows()
@@ -33,36 +33,36 @@ import org.apache.log4j.Logger;
 /**
  * this class implements the java.sql.ResultSetMetaData interface for usage in
  * Resultsets which was made from DatabaseMetadata
- * 
- * @author Horváth Attila
- * 
+ *
+ * @author Horvï¿½th Attila
+ *
  */
 class COLResultSetMetadata implements java.sql.ResultSetMetaData {
     String[][] data = null;
     String[] labels;
-    
+
     /** Instance of logger */
     // static Logger logger = new Logger(COLResultSetMetadata.class.getName());
     static Logger logger = Logger.getLogger(COLResultSetMetadata.class
             .getName());
-    
+
     DMDResultSetType MetaDataType;
-    
+
     /**
      * Constructor initializes variables
-     * 
+     *
      * @param data
      *            The column informations
      * @param labels
      *            The name of columns
      */
     public COLResultSetMetadata(String[][] data, String[] labels,
-            DMDResultSetType type) {
+                                DMDResultSetType type) {
         this.labels = labels;
         this.data = data;
         this.MetaDataType = type;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -78,12 +78,11 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
         }
         if (this.MetaDataType == DMDResultSetType.getSchemas) {
             return this.data[column - 1][1];
-        }
-        else {
+        } else {
             return "";
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -96,7 +95,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call getColumnClassName parameter: " + column);
         return java.lang.String.class.toString();
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -108,7 +107,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
         COLResultSetMetadata.logger.debug("Function Call getColumnCount");
         return this.labels.length;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -120,7 +119,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
         COLResultSetMetadata.logger.debug("Function Call getColumnDisplaySize");
         return 64 * 1024;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -133,7 +132,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call getColumnLabel parameter: " + column);
         return this.labels[column - 1];
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -146,7 +145,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call getColumnName parameter: " + column);
         return this.labels[column - 1];
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -177,7 +176,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
          * java.sql.Types.VARCHAR;
          */
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -194,7 +193,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
          */
         return "VARCHAR";
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -207,7 +206,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call getPrecision parameter: " + column);
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -220,7 +219,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 + column);
         return 0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -236,12 +235,11 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
         }
         if (this.MetaDataType == DMDResultSetType.getSchemas) {
             return this.data[column - 1][0];
-        }
-        else {
+        } else {
             return "";
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -254,12 +252,11 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call getTableName parameter: " + column);
         if (this.MetaDataType == DMDResultSetType.getColumns) {
             return this.data[0][2];
-        }
-        else {
+        } else {
             return "";
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -272,7 +269,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call isAutoIncrement parameter: " + column);
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -285,7 +282,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call isCaseSensitive parameter: " + column);
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -298,7 +295,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call isCurrency parameter: " + column);
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -312,7 +309,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                         + column);
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -325,7 +322,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call getTableName parameter: " + column);
         return 1;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -338,7 +335,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call isReadOnly parameter: " + column);
         return true;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -351,7 +348,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call isSearchable parameter: " + column);
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -364,7 +361,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 + column);
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -375,7 +372,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
     public boolean isWrapperFor(Class<?> arg0) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -388,13 +385,13 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
                 .debug("Function Call isWritable parameter: " + column);
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always Throws SQLException
      * </p>
-     * 
+     *
      * @throws SQLException
      *             always
      */
@@ -406,53 +403,55 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
 
 /**
  * This class implements the java.sql.ResultSet interface for Object[] and
- * 
+ *
  * Object[][] types instead of GetQueryResultsResponse.getrows() for giving back
  * Resultset Data from BQDatabaseMetadata
- * 
- * @author Horváth Attila
- * 
+ *
+ * @author Horvï¿½th Attila
+ *
  */
 public class DMDResultSet extends ScrollableResultset<Object> implements
         java.sql.ResultSet {
-    
+
     /** enum declaration that manages function call identity */
     public static enum DMDResultSetType {
         getAttributes, getBestRowIdentifier, getCatalogs, getClientInfoProperties, getColumnPrivileges, getColumns, getCrossReference, getExportedKeys, getFunctionColumns, getFunctions, getImportedKeys, getIndexInfo, getPrimaryKeys, getProcedureColumns, getProcedures, getSchemas, getSuperTables, getSuperTypes, getTablePrivileges, getTables, getTableTypes, getTypeInfo, getUDTs, getVersionColumns
     }
-    
+
     /** Instance of logger */
     Logger logger;
-    
+
     /** Var to store the resultsettype */
     DMDResultSetType ResultsetType;
-    
+
     /** Variable containing column names */
     String[] Colnames = null;
-    
+
     /**
      * Constructor for initializing variables
-     * 
+     *
      * @param objects
      *            data to contain
      * @param colnames
      *            names of columns
      */
     public DMDResultSet(Object[] objects, String[] colnames,
-            DMDResultSetType type) {
+                        DMDResultSetType type) {
         this.RowsofResult = objects;
         this.Colnames = colnames;
         this.ResultsetType = type;
         this.logger = Logger.getLogger(DMDResultSet.class.getName());
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public void close() throws SQLException {
         super.close();
         this.Colnames = null;
-    };
-    
+    }
+
+    ;
+
     /** {@inheritDoc} */
     @Override
     public int findColumn(String columnLabel) throws SQLException {
@@ -462,8 +461,10 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
             }
         }
         throw new BQSQLException("No such column");
-    };
-    
+    }
+
+    ;
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -477,57 +478,51 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
             try {
                 Object[][] Containter = Object[][].class
                         .cast(this.RowsofResult);
-                
+
                 String[][] data = null;
                 if (Containter.length == 0) {
                     data = new String[0][0];
-                }
-                else {
+                } else {
                     data = new String[Containter.length][Containter[0].length];
                 }
-                
+
                 for (int i = 0; i < Containter.length; i++) {
                     for (int k = 0; k < Containter[i].length; k++) {
                         if (Containter[i][k] == null) {
                             data[i][k] = null;
-                        }
-                        else {
+                        } else {
                             data[i][k] = Containter[i][k].toString();
                         }
                     }
                 }
-                
+
                 return new COLResultSetMetadata(data, this.Colnames,
                         this.ResultsetType);
-                
-            }
-            catch (ClassCastException e) {
-                
+
+            } catch (ClassCastException e) {
+
                 String[][] data;
                 if (this.RowsofResult.length == 0) {
                     data = new String[0][0];
-                }
-                else {
+                } else {
                     data = new String[1][this.RowsofResult.length];
                 }
-                
+
                 for (int i = 0; i < this.RowsofResult.length; i++) {
                     if (this.RowsofResult[i] == null) {
                         data[0][i] = null;
-                    }
-                    else {
+                    } else {
                         data[0][i] = this.RowsofResult[i].toString();
                     }
                 }
                 return new COLResultSetMetadata(data, this.Colnames,
                         this.ResultsetType);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new BQSQLException(e);
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public Object getObject(int columnIndex) throws SQLException {
@@ -539,50 +534,44 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
         if (this.RowsofResult == null) {
             throw new BQSQLException("No Valid Rows");
         }
-        
+
         if (columnIndex < 1) {
             throw new BQSQLException("ColumnIndex is not valid");
-        }
-        else {
+        } else {
             try {
                 Object[][] Containter = Object[][].class
                         .cast(this.RowsofResult);
                 if (columnIndex > Containter[this.Cursor].length) {
                     throw new BQSQLException("ColumnIndex is not valid");
-                }
-                else {
+                } else {
                     if (Containter[this.Cursor][columnIndex - 1] == null) {
                         this.wasnull = true;
                         this.logger.debug("Returning: null");
-                    }
-                    else {
+                    } else {
                         this.wasnull = false;
                         this.logger.debug("Returning: "
                                 + Containter[this.Cursor][columnIndex - 1]
-                                        .toString());
-                    }                    
+                                .toString());
+                    }
                     return Containter[this.Cursor][columnIndex - 1];
                 }
-            }
-            catch (ClassCastException e) {
+            } catch (ClassCastException e) {
                 if (columnIndex == 1) {
                     if (this.RowsofResult[this.Cursor] == null) {
                         this.wasnull = true;
-                    }
-                    else {
+                    } else {
                         this.wasnull = false;
                     }
                     this.logger.debug("Returning: "
                             + this.RowsofResult[this.Cursor].toString());
                     return this.RowsofResult[this.Cursor];
-                }
-                else {
+                } else {
                     throw new BQSQLException(e);
                 }
             }
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public String getString(int columnIndex) throws SQLException {
@@ -590,51 +579,44 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
             throw new BQSQLException("This Resultset is Closed");
         }
         this.ThrowCursorNotValidExeption();
-        
+
         if (this.RowsofResult == null) {
             throw new BQSQLException("No Valid Rows");
         }
-        
+
         if (columnIndex < 1) {
             throw new BQSQLException("ColumnIndex is not valid");
-        }
-        else {
+        } else {
             try {
                 Object[][] Containter = Object[][].class
                         .cast(this.RowsofResult);
                 if (columnIndex > Containter[this.Cursor].length) {
                     throw new BQSQLException("ColumnIndex is not valid");
+                } else if (Containter[this.Cursor][columnIndex - 1] == null) {
+                    this.wasnull = true;
+                    this.logger.debug("Returning: Null");
+                    return null;
+                } else {
+                    this.wasnull = false;
+                    this.logger.debug("Returning: "
+                            + Containter[this.Cursor][columnIndex - 1]
+                            .toString());
+                    return Containter[this.Cursor][columnIndex - 1]
+                            .toString();
                 }
-                else
-                    if (Containter[this.Cursor][columnIndex - 1] == null) {
-                        this.wasnull = true;
-                        this.logger.debug("Returning: Null");
-                        return null;
-                    }
-                    else {
-                        this.wasnull = false;
-                        this.logger.debug("Returning: "
-                                + Containter[this.Cursor][columnIndex - 1]
-                                        .toString());
-                        return Containter[this.Cursor][columnIndex - 1]
-                                .toString();
-                    }
-            }
-            catch (ClassCastException e) {
+            } catch (ClassCastException e) {
                 if (columnIndex == 1) {
                     if (this.RowsofResult[this.Cursor] == null) {
                         this.wasnull = true;
                         this.logger.debug("Returning: Null");
                         return null;
-                    }
-                    else {
+                    } else {
                         this.wasnull = false;
                         this.logger.debug("Returning: "
                                 + this.RowsofResult[this.Cursor].toString());
                         return this.RowsofResult[this.Cursor].toString();
                     }
-                }
-                else {
+                } else {
                     throw new BQSQLException("ColumnIndex is not valid");
                 }
             }

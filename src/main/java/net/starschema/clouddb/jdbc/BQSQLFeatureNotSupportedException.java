@@ -1,17 +1,17 @@
 /**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -44,19 +44,19 @@ import org.apache.log4j.Logger;
  * <li>a chain to a next Exception. This can be used to provide additional error
  * information.
  * <li>the causal relationship, if any for this SQLException.
- * 
+ *
  * @author Balazs Gunics
- * 
+ *
  */
 public class BQSQLFeatureNotSupportedException extends
         SQLFeatureNotSupportedException {
-    
+
     private static final long serialVersionUID = 5713619285089813617L;
     // Logger logger = new
     // Logger(BQSQLFeatureNotSupportedException.class.getName());
     Logger logger = Logger.getLogger(BQSQLFeatureNotSupportedException.class
             .getName());
-    
+
     /**
      * <p>
      * Constructs a SQLFeatureNotSupportedException object.
@@ -65,7 +65,7 @@ public class BQSQLFeatureNotSupportedException extends
      * initialized to 0. The cause is not initialized, and may subsequently be
      * initialized by a call to the Throwable.initCause(java.lang.Throwable)
      * method.
-     * 
+     *
      */
     public BQSQLFeatureNotSupportedException() {
         super();
@@ -74,7 +74,7 @@ public class BQSQLFeatureNotSupportedException extends
         String stacktrace = sw.toString();
         this.logger.debug("SQLFeatureNotSupportedException " + stacktrace);
     }
-    
+
     /**
      * <p>
      * Constructs a SQLFeatureNotSupportedException object with a given reason.
@@ -82,7 +82,7 @@ public class BQSQLFeatureNotSupportedException extends
      * The SQLState is initialized to null and the vender code is initialized to
      * 0. The cause is not initialized, and may subsequently be initialized by a
      * call to the Throwable.initCause(java.lang.Throwable) method.
-     * 
+     *
      * @param reason
      *            - a description of the exception
      */
@@ -93,7 +93,7 @@ public class BQSQLFeatureNotSupportedException extends
         String stacktrace = sw.toString();
         this.logger.debug(reason + stacktrace);
     }
-    
+
     /**
      * <p>
      * Constructs a SQLFeatureNotSupportedException object with a given reason
@@ -102,7 +102,7 @@ public class BQSQLFeatureNotSupportedException extends
      * The cause is not initialized, and may subsequently be initialized by a
      * call to the Throwable.initCause(java.lang.Throwable) method. The vendor
      * code is initialized to 0.
-     * 
+     *
      * @param reason
      *            - a description of the exception
      * @param sqlState
@@ -116,7 +116,7 @@ public class BQSQLFeatureNotSupportedException extends
         this.logger.debug("SQLexception " + reason + " ;; " + sqlState + " ;; "
                 + stacktrace);
     }
-    
+
     /**
      * <p>
      * Constructs a SQLFeatureNotSupportedException object with a given reason,
@@ -124,7 +124,7 @@ public class BQSQLFeatureNotSupportedException extends
      * </p>
      * The cause is not initialized, and may subsequently be initialized by a
      * call to the Throwable.initCause(java.lang.Throwable) method.
-     * 
+     *
      * @param reason
      *            - a description of the exception
      * @param sqlState
@@ -133,7 +133,7 @@ public class BQSQLFeatureNotSupportedException extends
      *            - a database vendor-specific exception code
      */
     public BQSQLFeatureNotSupportedException(String reason, String sqlState,
-            int vendorCode) {
+                                             int vendorCode) {
         super(reason, sqlState, vendorCode);
         StringWriter sw = new StringWriter();
         super.printStackTrace(new PrintWriter(sw));
@@ -141,13 +141,13 @@ public class BQSQLFeatureNotSupportedException extends
         this.logger.debug("SQLexception " + reason + " " + sqlState + " "
                 + String.valueOf(vendorCode) + stacktrace);
     }
-    
+
     /**
      * <p>
      * Constructs a SQLFeatureNotSupportedException object with a given reason,
      * SQLState, vendorCode and cause.
      * </p>
-     * 
+     *
      * @param reason
      *            - a description of the exception
      * @param sqlState
@@ -158,18 +158,18 @@ public class BQSQLFeatureNotSupportedException extends
      *            - the underlying reason for this SQLException
      */
     public BQSQLFeatureNotSupportedException(String reason, String sqlState,
-            int vendorCode, Throwable cause) {
+                                             int vendorCode, Throwable cause) {
         super(reason, sqlState, vendorCode, cause);
         this.logger.debug("SQLexception " + reason + " " + sqlState + " "
                 + String.valueOf(vendorCode), cause);
     }
-    
+
     /**
      * <p>
      * Constructs a SQLFeatureNotSupportedException object with a given reason,
      * SQLState and cause. The vendor code is initialized to 0.
      * </p>
-     * 
+     *
      * @param reason
      *            - a description of the exception
      * @param sqlState
@@ -178,11 +178,11 @@ public class BQSQLFeatureNotSupportedException extends
      *            - the underlying reason for this SQLException
      */
     public BQSQLFeatureNotSupportedException(String reason, String sqlState,
-            Throwable cause) {
+                                             Throwable cause) {
         super(reason, sqlState, cause);
         this.logger.debug("SQLexception " + reason + " " + sqlState, cause);
     }
-    
+
     /**
      * <p>
      * Constructs a SQLFeatureNotSupportedException object with a given reason
@@ -190,7 +190,7 @@ public class BQSQLFeatureNotSupportedException extends
      * </p>
      * The SQLState is initialized to null and the vendor code is initialized to
      * 0.
-     * 
+     *
      * @param reason
      *            - a description of the exception
      * @param cause
@@ -200,7 +200,7 @@ public class BQSQLFeatureNotSupportedException extends
         super(reason, cause);
         this.logger.debug("SQLexception " + reason, cause);
     }
-    
+
     /**
      * <p>
      * Constructs a SQLFeatureNotSupportedException object with a given cause.
@@ -208,7 +208,7 @@ public class BQSQLFeatureNotSupportedException extends
      * The SQLState is initialized to null and the vendor code is initialized to
      * 0. The reason is initialized to null if cause==null or to
      * cause.toString() if cause!=null.
-     * 
+     *
      * @param cause
      *            - the underlying reason for this SQLException
      */
@@ -216,5 +216,5 @@ public class BQSQLFeatureNotSupportedException extends
         super(cause);
         this.logger.debug("SQLexception ", cause);
     }
-    
+
 }

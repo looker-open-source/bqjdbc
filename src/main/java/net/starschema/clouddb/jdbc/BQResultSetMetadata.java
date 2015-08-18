@@ -36,8 +36,7 @@ import com.google.api.services.bigquery.model.TableSchema;
 /**
  * This class implements the java.sql.ResultSetMetadata interface
  *
- * @author Horváth Attila
- *
+ * @author Horvï¿½th Attila
  */
 class BQResultsetMetaData implements ResultSetMetaData {
 
@@ -53,8 +52,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
     /**
      * Constructor that initializes variables
      *
-     * @param result
-     *            the bigquery GetQueryResultsResponse object
+     * @param result the bigquery GetQueryResultsResponse object
      */
     public BQResultsetMetaData(GetQueryResultsResponse result) {
         //logger.debug("function call getResultSetMetaData()");
@@ -92,32 +90,23 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             Columntype = this.result.getSchema().getFields().get(column - 1)
                     .getType();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException(e);
-        }
-        catch (NullPointerException e) {
+        } catch (NullPointerException e) {
             throw new BQSQLException(e);
         }
 
         if (Columntype.equals("FLOAT")) {
             return Float.class.getName();
+        } else if (Columntype.equals("BOOLEAN")) {
+            return Boolean.class.getName();
+        } else if (Columntype.equals("INTEGER")) {
+            return Integer.class.getName();
+        } else if (Columntype.equals("STRING")) {
+            return String.class.getName();
+        } else {
+            throw new BQSQLException("Unsupported Type");
         }
-        else
-            if (Columntype.equals("BOOLEAN")) {
-                return Boolean.class.getName();
-            }
-            else
-                if (Columntype.equals("INTEGER")) {
-                    return Integer.class.getName();
-                }
-                else
-                    if (Columntype.equals("STRING")) {
-                        return String.class.getName();
-                    }
-                    else {
-                        throw new BQSQLException("Unsupported Type");
-                    }
     }
 
     /** {@inheritDoc} */
@@ -127,14 +116,12 @@ class BQResultsetMetaData implements ResultSetMetaData {
         List<TableFieldSchema> schemafieldlist = null;
         if (schema != null) {
             schemafieldlist = schema.getFields();
-        }
-        else {
+        } else {
             return 0;
         }
         if (schemafieldlist != null) {
             return this.result.getSchema().getFields().size();
-        }
-        else {
+        } else {
             return 0;
         }
     }
@@ -144,7 +131,6 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * <h1>Implementation Details:</h1><br>
      * returns 64*1024
      * </p>
-     *
      */
     @Override
     public int getColumnDisplaySize(int column) throws SQLException {
@@ -163,8 +149,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             return this.result.getSchema().getFields().get(column - 1)
                     .getName();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException(e);
         }
     }
@@ -179,8 +164,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             return this.result.getSchema().getFields().get(column - 1)
                     .getName();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnName(int)", e);
         }
     }
@@ -192,7 +176,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * java.sql.Types.BOOLEAN<br>
      * java.sql.Types.INTEGER<br>
      * java.sql.Types.VARCHAR
-     * */
+     */
     @Override
     public int getColumnType(int column) throws SQLException {
         if (this.getColumnCount() == 0) {
@@ -202,29 +186,21 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             Columntype = this.result.getSchema().getFields().get(column - 1)
                     .getType();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnType(int)", e);
         }
 
         if (Columntype.equals("FLOAT")) {
             return java.sql.Types.FLOAT;
+        } else if (Columntype.equals("BOOLEAN")) {
+            return java.sql.Types.BOOLEAN;
+        } else if (Columntype.equals("INTEGER")) {
+            return java.sql.Types.INTEGER;
+        } else if (Columntype.equals("STRING")) {
+            return java.sql.Types.VARCHAR;
+        } else {
+            return 0;
         }
-        else
-            if (Columntype.equals("BOOLEAN")) {
-                return java.sql.Types.BOOLEAN;
-            }
-            else
-                if (Columntype.equals("INTEGER")) {
-                    return java.sql.Types.INTEGER;
-                }
-                else
-                    if (Columntype.equals("STRING")) {
-                        return java.sql.Types.VARCHAR;
-                    }
-                    else {
-                        return 0;
-                    }
     }
 
     /** {@inheritDoc} */
@@ -238,8 +214,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             Columntype = this.result.getSchema().getFields().get(column - 1)
                     .getType();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnTypeName(int)", e);
         }
         return Columntype;
@@ -255,30 +230,22 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             Columntype = this.result.getSchema().getFields().get(column - 1)
                     .getType();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getPrecision(int)", e);
         }
 
         if (Columntype.equals("FLOAT")) {
             return Float.MAX_EXPONENT;
+        } else if (Columntype.equals("BOOLEAN")) {
+            return 1; // A boolean is 1 bit length, but it asks for byte, so
+            // 1
+        } else if (Columntype.equals("INTEGER")) {
+            return Integer.SIZE;
+        } else if (Columntype.equals("STRING")) {
+            return 64 * 1024;
+        } else {
+            return 0;
         }
-        else
-            if (Columntype.equals("BOOLEAN")) {
-                return 1; // A boolean is 1 bit length, but it asks for byte, so
-                          // 1
-            }
-            else
-                if (Columntype.equals("INTEGER")) {
-                    return Integer.SIZE;
-                }
-                else
-                    if (Columntype.equals("STRING")) {
-                        return 64 * 1024;
-                    }
-                    else {
-                        return 0;
-                    }
     }
 
     /**
@@ -303,8 +270,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
                 }
             }
             return max;
-        }
-        else {
+        } else {
             return 0;
         }
     }
@@ -477,8 +443,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * Always throws SQLExceptionL
      * </p>
      *
-     * @throws SQLException
-     *             always
+     * @throws SQLException always
      */
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {

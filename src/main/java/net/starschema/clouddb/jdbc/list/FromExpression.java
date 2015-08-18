@@ -1,20 +1,19 @@
 /**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
  */
 package net.starschema.clouddb.jdbc.list;
 
@@ -29,13 +28,13 @@ import org.antlr.runtime.tree.Tree;
 
 /**
  * This class extends the basic Node, it contains the FromExpression with its SelectStatement
- * 
+ *
  * @author Attila Horvath, Balazs Gunics
  */
 public class FromExpression extends Node {
     TreeBuilder builder;
-    SelectStatement selectStatement =  null;
-    
+    SelectStatement selectStatement = null;
+
     /**
      * Constructor to build up a FromExpression from a sourcetable
      * @param sourceTable - to be contained in the fromExpression
@@ -47,25 +46,25 @@ public class FromExpression extends Node {
         this.builder = treeBuilder;
         this.tokenType = JdbcGrammarParser.FROMEXPRESSION;
         this.tokenName = JdbcGrammarParser.tokenNames[this.tokenType];
-        this.children.addLast(sourceTable);        
+        this.children.addLast(sourceTable);
     }
-    
+
     /**
      * Constructor to build up a FromExpression from an ANTLR tree, more info at:
      * {@link #build(Tree, TreeBuilder)}
-     * 
+     *
      * @param t - the ANTLR tree
      * @param treeBuilder - to reach the helper functions
      * @param selectStatement - which contains the fromExpression
      * @throws Exception
      */
     public FromExpression(Tree t, TreeBuilder treeBuilder,
-            SelectStatement selectStatement) throws TreeParsingException {
+                          SelectStatement selectStatement) throws TreeParsingException {
         this.selectStatement = selectStatement;
         this.builder = treeBuilder;
         this.build(t, this.builder);
     }
-    
+
     /**
      * Constructor to make an empty fromExpression
      * @param treeBuilder - to reach the helper functions
@@ -73,7 +72,7 @@ public class FromExpression extends Node {
     public FromExpression(TreeBuilder treeBuilder) {
         this.builder = treeBuilder;
     }
-    
+
     /**
      * Constructor to make a FromExpression from a JoinExpression
      * @param builder - to reach the helper functions
@@ -85,13 +84,13 @@ public class FromExpression extends Node {
         this.tokenType = JdbcGrammarParser.FROMEXPRESSION;
         this.tokenName = JdbcGrammarParser.tokenNames[JdbcGrammarParser.FROMEXPRESSION];
     }
-    
+
     /**
-     * The builder to parse out the ANTLR tree, we're making subqueries 
+     * The builder to parse out the ANTLR tree, we're making subqueries
      * from everything, because it's easier to work with only subqueries
-     * 
+     *
      * <li> Tables, <li> Joins, <li> Join-Joins will be converted into subqueries
-     * 
+     *
      * @param t - the ANTLR tree
      * @param builder - to reach the helper functions
      * @throws Exception
@@ -104,16 +103,16 @@ public class FromExpression extends Node {
                     + t.getChildCount() + " child");
             for (int i = 0; i < t.getChildCount(); i++) {
                 JoinExpression joinExpression;
-                SubQuery makeSubQueryFromJoinExpression; 
+                SubQuery makeSubQueryFromJoinExpression;
                 Tree child = t.getChild(i);
-                switch (child.getType()) {                  
+                switch (child.getType()) {
                     case JdbcGrammarParser.SOURCETABLE:
-                        
+
                         Resolver resolve = new Resolver(builder);
                         // whats the sourcetable?
                         SourceTable tablenode = new SourceTable(child, builder);
                         String alias = tablenode.getAlias();
-                        
+
                         // getting the columns for it
                         List<ColumnCall> columnlist = resolve
                                 .parseSrcTableForJokers(tablenode);
@@ -123,17 +122,16 @@ public class FromExpression extends Node {
                         tablenode.alias = null;
                         // making a fromexpression with that sourcetable
                         FromExpression fromexpression = new FromExpression(tablenode, builder);
-                        
+
                         Expression expression = new Expression(columnlist, builder);
-                        
+
                         SelectStatement mySelectStatement = new SelectStatement(expression, fromexpression, builder);
                         expression.setSelectStatement(mySelectStatement);
                         SubQuery mySubQuery = null;
                         if (alias != null) {
                             // putting the selectstatement into a subquery
                             mySubQuery = new SubQuery(alias, builder, mySelectStatement);
-                        }
-                        else {
+                        } else {
                             String newalias = "";
                             if (tablenode.getDataset() != null) {
                                 newalias += tablenode.getDataset() + ".";
@@ -142,10 +140,10 @@ public class FromExpression extends Node {
                             mySubQuery = new SubQuery(newalias, builder,
                                     mySelectStatement);
                         }
-                        
+
                         // adding the subquery to the fromexpression
                         this.children.addLast(mySubQuery);
-                        
+
                         break;
                     case JdbcGrammarParser.SUBQUERY:
                         this.children.addLast(new SubQuery(child, builder));
@@ -154,24 +152,22 @@ public class FromExpression extends Node {
                         // WE make SubQuery from a JOINEXPRESSION
                         try {
                             joinExpression = new JoinExpression(child, builder, this.selectStatement);
-                        }
-                        catch (ColumnCallException e) {
+                        } catch (ColumnCallException e) {
                             //Parsing failed throwing a ParsingException
                             throw new TreeParsingException(e);
                         }
-                        
+
                         for (int k = 0; k < child.getChildCount(); k++) {
                             Tree schild = child.getChild(k);
-                            logger.debug("SEARCHING MULTIJOINEXPRESSION");                            
+                            logger.debug("SEARCHING MULTIJOINEXPRESSION");
                             switch (schild.getType()) {
-                            case JdbcGrammarParser.MULTIJOINEXPRESSION:
-                                System.err.println("BUILDING MULTIJOINEXPRESSION");
-                                SubQuery  SubQueryFromJoinExpression = WhereExpressionJoinResolver.mkSubQFromJoinExpr(joinExpression, builder, selectStatement);
-                                
+                                case JdbcGrammarParser.MULTIJOINEXPRESSION:
+                                    System.err.println("BUILDING MULTIJOINEXPRESSION");
+                                    SubQuery SubQueryFromJoinExpression = WhereExpressionJoinResolver.mkSubQFromJoinExpr(joinExpression, builder, selectStatement);
+
                                     try {
                                         joinExpression = new JoinExpression(SubQueryFromJoinExpression, schild, builder, selectStatement);
-                                    }
-                                    catch (ColumnCallException e) {
+                                    } catch (ColumnCallException e) {
                                         //Parsing failed throwing a ParsingException
                                         throw new TreeParsingException(e);
                                     }
@@ -180,26 +176,25 @@ public class FromExpression extends Node {
                                     break;
                             }
                         }
-                        
-                        
-                        makeSubQueryFromJoinExpression = WhereExpressionJoinResolver.mkSubQFromJoinExpr(joinExpression, 
+
+
+                        makeSubQueryFromJoinExpression = WhereExpressionJoinResolver.mkSubQFromJoinExpr(joinExpression,
                                 builder, this.selectStatement);
-                        logger.debug("Printing out SubQuery:\n"+makeSubQueryFromJoinExpression.toPrettyString(1));
+                        logger.debug("Printing out SubQuery:\n" + makeSubQueryFromJoinExpression.toPrettyString(1));
                         children.addLast(makeSubQueryFromJoinExpression);
                         break;
                     default:
                         break;
                 }
             }
-        }
-        else {
+        } else {
             throw new TreeParsingException("This Tree is not a FROMEXPRESSION");
         }
     }
-    
+
     /**
      * Returns all SourceTables including SourceTables inside JoinExpressions
-     * 
+     *
      * @return
      */
     public List<SourceTable> getAllSourceTables() {
@@ -215,7 +210,7 @@ public class FromExpression extends Node {
                     }
                     sourceTables.add((SourceTable) leftItem);
                 }
-                
+
                 if (rightItem.getTokenType() == JdbcGrammarParser.SOURCETABLE) {
                     if (sourceTables == null) {
                         sourceTables = new ArrayList<SourceTable>();
@@ -226,10 +221,10 @@ public class FromExpression extends Node {
         }
         return sourceTables;
     }
-    
+
     /**
      * Returns all SubQueries including SubQueries inside JoinExpressions
-     * 
+     *
      * @return
      */
     public List<SubQuery> getAllSubQueries() {
@@ -245,19 +240,19 @@ public class FromExpression extends Node {
                     }
                     subQueries.add((SubQuery) leftItem);
                 }
-                
+
                 if (rightItem.getTokenType() == JdbcGrammarParser.SUBQUERY) {
                     if (subQueries == null) {
                         subQueries = new ArrayList<SubQuery>();
                     }
                     subQueries.add((SubQuery) rightItem);
                 }
-                
+
             }
         }
         return subQueries;
     }
-    
+
     /**
      * getter for the Joinexpressions
      */
@@ -273,7 +268,7 @@ public class FromExpression extends Node {
         return this.getAllinstancesof(SourceTable.class,
                 JdbcGrammarParser.SOURCETABLE);
     }
-    
+
     /**
      * getter for the SubQueries
      */
@@ -281,12 +276,12 @@ public class FromExpression extends Node {
         return this.getAllinstancesof(SubQuery.class,
                 JdbcGrammarParser.SUBQUERY);
     }
-    
+
     @Override
     public String toPrettyString() {
         return this.toPrettyString(-1);
     }
-    
+
     @Override
     public String toPrettyString(int level) {
         int newlevel = level < 0 ? -1 : level + 1;

@@ -10,19 +10,18 @@ import javax.swing.table.TableModel;
 
 /**
  * To be used with the database results.
- * 
- * @author Balazs Gunics
  *
+ * @author Balazs Gunics
  */
 public class DbUtils {
-	
-	/**
-	 * A converter which helps filling the JTable from the
-	 * JDBC drivers ResultSet;
-	 * 
-	 * @param rs - the ResultSet from the JDBC
-	 * @return a TableModel for the JTable
-	 */
+
+    /**
+     * A converter which helps filling the JTable from the
+     * JDBC drivers ResultSet;
+     *
+     * @param rs - the ResultSet from the JDBC
+     * @return a TableModel for the JTable
+     */
     public static TableModel resultSetToTableModel(ResultSet rs) {
         try {
             ResultSetMetaData metaData = rs.getMetaData();
