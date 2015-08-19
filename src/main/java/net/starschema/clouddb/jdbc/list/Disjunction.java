@@ -94,10 +94,6 @@ public class Disjunction extends Node {
                 }
             }
         }
-        System.err.println("PRINTING RESULT");
-        for (Node node : this.children) {
-            System.err.println(node.toPrettyString());
-        }
 
 
         //We need to delete Conjunctions with more restrictions compared to the other Conjunctions and BooleanExpressionItems since this is a Disjunction
@@ -280,7 +276,6 @@ public class Disjunction extends Node {
 
     @Override
     public String toPrettyString(int level) {
-        System.err.println("PRINTING DISJUNCTION");
         String result = "(";
 
         for (Node item : this.children) {

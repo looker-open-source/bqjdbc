@@ -68,7 +68,6 @@ public class GrammarTreeTest {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        System.err.println(build.toPrettyString(1));
     }
 
     /**
@@ -89,9 +88,9 @@ public class GrammarTreeTest {
                             .getConnection(
                                     BQSupportFuncts
                                             .constructUrlFromPropertiesFile(BQSupportFuncts
-                                                    .readFromPropFile("installedaccount.properties")),
+                                                    .readFromPropFile(GrammarTreeTest.class.getResource("/installedaccount.properties").getFile())),
                                     BQSupportFuncts
-                                            .readFromPropFile("installedaccount.properties"));
+                                            .readFromPropFile(GrammarTreeTest.class.getResource("/installedaccount1.properties").getFile()));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

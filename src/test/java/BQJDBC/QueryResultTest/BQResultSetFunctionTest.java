@@ -58,8 +58,7 @@ public class BQResultSetFunctionTest {
         try {
             BQResultSetFunctionTest.Result.beforeFirst();
             Assert.assertTrue(BQResultSetFunctionTest.Result.next());
-            Assert.assertEquals("you",
-                    BQResultSetFunctionTest.Result.getString(1));
+            Assert.assertEquals("you", BQResultSetFunctionTest.Result.getString(1));
 
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -266,8 +265,8 @@ public class BQResultSetFunctionTest {
                     Class.forName("net.starschema.clouddb.jdbc.BQDriver");
                     BQResultSetFunctionTest.con = DriverManager.getConnection(
                             BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
-                                    .readFromPropFile("installedaccount1.properties")),
-                            BQSupportFuncts.readFromPropFile("installedaccount1.properties"));
+                                    .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile())),
+                            BQSupportFuncts.readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
                 } catch (Exception e) {
                     e.printStackTrace();
                     this.logger.error("Error in connection" + e.toString());
@@ -319,7 +318,8 @@ public class BQResultSetFunctionTest {
         this.logger.info("Running query:" + sql);
 
         try {
-            Statement stmt = BQResultSetFunctionTest.con.createStatement();
+            Statement stmt = BQResultSetFunctionTest.con.createStatement(
+                    ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             stmt.setQueryTimeout(500);
             BQResultSetFunctionTest.Result = stmt.executeQuery(sql);
         } catch (SQLException e) {
