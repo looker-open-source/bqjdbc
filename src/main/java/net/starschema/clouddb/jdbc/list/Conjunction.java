@@ -51,16 +51,13 @@ public class Conjunction extends Node {
                     Disjunction disjunction = new Disjunction(child, builder,
                             mainnode, selectstatement);
                     disjunctionContainer.add(disjunction);
-                    System.err.println("ADDING DISJUNCTION TO CONJUNCTION:\n" + disjunction.toPrettyString() + "end");
                     break;
                 case JdbcGrammarParser.CONJUNCTION:
                     Node built = Conjunction.buildFromConjunction(child, builder, mainnode, selectstatement);
                     if (built.getTokenType() == JdbcGrammarParser.CONJUNCTION) {
                         conjunctionContainer.add(Conjunction.class.cast(built));
-                        System.err.println("ADDING CONJUNCTION TO CONJUNCTION");
                     } else {
                         disjunctionContainer.add(Disjunction.class.cast(built));
-                        System.err.println("ADDING DISJUNCTION TO CONJUNCTION");
                     }
                     break;
                 case JdbcGrammarParser.NEGATION:
@@ -70,7 +67,6 @@ public class Conjunction extends Node {
                 case JdbcGrammarParser.BOOLEANEXPRESSIONITEM:
                     booleanExpressionItemContainer.add(new BooleanExpressionItem(child,
                             builder, mainnode, selectstatement));
-                    System.err.println("ADDING BOOLEANEXPRESSIONITEM TO CONJUNCTION");
                     break;
                 default:
                     break;
@@ -79,11 +75,9 @@ public class Conjunction extends Node {
 
         //Now we handle Distribution
         if (disjunctionContainer.size() == 0) {
-            System.err.println("NO DISJUNCTIONS");
             //We do nothing
             return new Conjunction(conjunctionContainer, negationContainer, booleanExpressionItemContainer);
         } else {
-            System.err.println("DISJUNCTIONS FOUND");
             //We do nothing
             return new Disjunction(disjunctionContainer, conjunctionContainer, negationContainer, booleanExpressionItemContainer);
         }

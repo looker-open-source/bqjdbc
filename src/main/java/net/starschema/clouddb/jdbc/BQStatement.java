@@ -52,7 +52,6 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         logger.debug("Constructor of BQStatement is running projectid is: " + projectid);
         this.ProjectId = projectid;
         this.connection = bqConnection;
-        //this.resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;
         this.resultSetType = ResultSet.TYPE_FORWARD_ONLY;
         this.resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
     }

@@ -266,8 +266,8 @@ public class BQScrollableResultSetFunctionTest {
                     Class.forName("net.starschema.clouddb.jdbc.BQDriver");
                     BQScrollableResultSetFunctionTest.con = DriverManager.getConnection(
                             BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
-                                    .readFromPropFile("installedaccount1.properties")),
-                            BQSupportFuncts.readFromPropFile("installedaccount1.properties"));
+                                    .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile())),
+                            BQSupportFuncts.readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
                 } catch (Exception e) {
                     e.printStackTrace();
                     this.logger.error("Error in connection" + e.toString());
@@ -291,16 +291,10 @@ public class BQScrollableResultSetFunctionTest {
                 {"you", "yet", "would", "world", "without", "with", "your", "young",
                         "words", "word"},
                 {"42", "42", "42", "42", "42", "42", "41", "41", "41", "41"}};
-        /** somehow the result changed with time
-         { "you", "yet", "would", "world", "without", "with", "will",
-         "why", "whose", "whom" },
-         { "42", "42", "42", "42", "42", "42", "42", "42", "42", "42" } };
-         */
         this.logger.info("Test number: 01");
         this.logger.info("Running query:" + sql);
 
         try {
-            //Statement stmt = BQResultSetFunctionTest.con.createStatement();
             Statement stmt = BQScrollableResultSetFunctionTest.con
                     .createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             stmt.setQueryTimeout(500);

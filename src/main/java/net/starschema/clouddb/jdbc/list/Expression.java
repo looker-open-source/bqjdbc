@@ -137,7 +137,6 @@ public class Expression extends Node {
                 Tree child = t.getChild(i);
                 switch (child.getType()) {
                     case JdbcGrammarParser.COLUMN:
-                        System.err.println("BUILDING COLUMN");
                         ColumnCall columnCall2 = new ColumnCall(child,
                                 this.builder, this.fromExpression, this);
                         this.children.addLast(columnCall2);

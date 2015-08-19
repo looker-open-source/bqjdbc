@@ -155,7 +155,6 @@ public class BQQueryParser {
                                         List<String> synonyms2 = columnCall2.getSynonyms();
                                         for (String string2 : synonyms2) {
                                             if (string2.equals(string)) {
-                                                System.err.println(string2 + "  " + string);
                                                 found = true;
                                             }
                                         }
@@ -164,7 +163,6 @@ public class BQQueryParser {
                                         List<String> synonyms2 = functionCall2.getSynonyms();
                                         for (String string2 : synonyms2) {
                                             if (string2.equals(string)) {
-                                                //System.err.println(string2+"  "+string);
                                                 found = true;
                                             }
                                         }
@@ -226,7 +224,6 @@ public class BQQueryParser {
                                         List<String> synonyms2 = columnCall2.getSynonyms();
                                         for (String string2 : synonyms2) {
                                             if (string2.equals(string)) {
-                                                System.err.println(string2 + "  " + string);
                                                 found = true;
                                             }
                                         }
@@ -235,7 +232,6 @@ public class BQQueryParser {
                                         List<String> synonyms2 = functionCall2.getSynonyms();
                                         for (String string2 : synonyms2) {
                                             if (string2.equals(string)) {
-                                                System.err.println(string2 + "  " + string);
                                                 found = true;
                                             }
                                         }

@@ -62,7 +62,7 @@ public class Test {
         JdbcGrammarParser parser = new JdbcGrammarParser(tokenstream);
         Tree tree = (Tree) parser.selectstatement().getTree();
 
-        System.err.println(tree.toStringTree());
+        //System.out.println(tree.toStringTree());
     }
 
 }
