@@ -49,8 +49,9 @@ import com.google.api.services.bigquery.model.Job;
 /**
  * This class implements java.sql.PreparedStatement
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  * @author Balazs Gunics
+ * @author Johann Siess
  * 
  */
 public class BQPreparedStatement extends BQStatementRoot implements
@@ -218,17 +219,8 @@ public class BQPreparedStatement extends BQStatementRoot implements
      */
     @Override
     public boolean execute() throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("This Statement is Closed");
-        }
         this.resset = this.executeQuery();
-        this.logger.info("Executing Query: " + this.RunnableStatement);
-        if (this.resset != null) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return this.resset != null;
     }
     
     /** {@inheritDoc} */
@@ -245,6 +237,9 @@ public class BQPreparedStatement extends BQStatementRoot implements
         }
         this.starttime = System.currentTimeMillis();
         Job referencedJob;
+        
+        this.RunnableStatement = fixJdbcSyntax(this.RunnableStatement);
+        this.RunnableStatement = addLimit(this.RunnableStatement, this.maxRows);
         
         // ANTLR Parser
         BQQueryParser parser = new BQQueryParser(this.RunnableStatement,
@@ -304,6 +299,41 @@ public class BQPreparedStatement extends BQStatementRoot implements
                 "Query run took more than the specified timeout");
     }
     
+    /** Replace Jdbc escape syntax like {ts '1999-01-09 20:11:11.123455'} with a BigQuery compatible expression */
+    private String fixJdbcSyntax(final String sql0) {
+        if (sql0 == null) {
+            return null; // Nothing to fix
+        }
+        final String sql1 = sql0.replaceAll("\\{ts '(?<timestamp>[0-9- :.]{14,26})'\\}", "TIMESTAMP('${timestamp}')");
+        final String sql2 = sql1.replaceAll("\\{d '(?<date>[0-9-]{8,10})'\\}", "TIMESTAMP('${date} 00:00')");
+        final String sql3 = sql2.replaceAll("\\{t '(?<time>[0-9:.]{5,15})'\\}", "TIMESTAMP('1970-01-01 ${time}')");
+        return sql3;
+    }
+
+    /** Add a clause LIMIT at the end of the SQL */
+    private String addLimit(String sql, int maxRows) {
+        if (sql == null) {
+            return null; // Nothing to fix
+        }
+        if (maxRows <= 0) {
+            return sql; // No limit to add
+        }
+        if (sql.toUpperCase().contains("LIMIT ")) {
+            return sql; // Limit already set, directly in the query
+        }
+        return removeFinalSemicolon(sql.trim()) + " LIMIT " + maxRows;
+    }
+    
+    /** Return the input string without its final semicolon, if any */
+    private String removeFinalSemicolon(String s) {
+        char lastChar = s.charAt(s.length() - 1);
+        if (lastChar == ';') {
+            return s.substring(0, s.length() - 1);
+        }
+        return s;
+    }
+
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -331,125 +361,73 @@ public class BQPreparedStatement extends BQStatementRoot implements
     }
     
     @Override
-    public void setAsciiStream(int parameterIndex, InputStream x)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            StringWriter writer = new StringWriter();
-            
-            try {
-                org.apache.commons.io.IOUtils.copy(x, writer, "UTF-8");
-            }
-            catch (IOException e) {
-                throw new BQSQLException(e);
-            }
-            String theString = writer.toString();
-            this.SetParameter(parameterIndex, "\"" + theString + "\"");
-        }
+    public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
+        check(parameterIndex);
+
+        StringWriter writer = new StringWriter();
         
+        try {
+            org.apache.commons.io.IOUtils.copy(x, writer, "UTF-8");
+        }
+        catch (IOException e) {
+            throw new BQSQLException(e);
+        }
+        String theString = writer.toString();
+        this.SetParameter(parameterIndex, "\"" + theString + "\"");
     }
     
     @Override
-    public void setAsciiStream(int parameterIndex, InputStream x, int length)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            StringWriter writer = new StringWriter();
-            
-            try {
-                org.apache.commons.io.IOUtils.copy(x, writer, "UTF-8");
-            }
-            catch (IOException e) {
-                throw new BQSQLException(e);
-            }
-            String theString = writer.toString();
-            this.SetParameter(parameterIndex, "\"" + theString + "\"");
-        }
+    public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
+        check(parameterIndex);
+
+        StringWriter writer = new StringWriter();
         
+        try {
+            org.apache.commons.io.IOUtils.copy(x, writer, "UTF-8");
+        }
+        catch (IOException e) {
+            throw new BQSQLException(e);
+        }
+        String theString = writer.toString();
+        this.SetParameter(parameterIndex, "\"" + theString + "\"");
     }
     
     @Override
-    public void setAsciiStream(int parameterIndex, InputStream x, long length)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            StringWriter writer = new StringWriter();
-            
-            try {
-                org.apache.commons.io.IOUtils.copy(x, writer, "UTF-8");
-            }
-            catch (IOException e) {
-                throw new BQSQLException(e);
-            }
-            String theString = writer.toString();
-            this.SetParameter(parameterIndex, "\"" + theString + "\"");
-        }
+    public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
+        check(parameterIndex);
+
+        StringWriter writer = new StringWriter();
         
+        try {
+            org.apache.commons.io.IOUtils.copy(x, writer, "UTF-8");
+        }
+        catch (IOException e) {
+            throw new BQSQLException(e);
+        }
+        String theString = writer.toString();
+        this.SetParameter(parameterIndex, "\"" + theString + "\"");
     }
     
     @Override
-    public void setBigDecimal(int parameterIndex, BigDecimal x)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, x.toString());
-        }
-        
+    public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, x.toString());
     }
     
     @Override
-    public void setBinaryStream(int parameterIndex, InputStream x)
-            throws SQLException {
+    public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
         
     }
     
     @Override
-    public void setBinaryStream(int parameterIndex, InputStream x, int length)
-            throws SQLException {
+    public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
         
     }
     
     @Override
-    public void setBinaryStream(int parameterIndex, InputStream x, long length)
-            throws SQLException {
+    public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
         
     }
@@ -461,52 +439,27 @@ public class BQPreparedStatement extends BQStatementRoot implements
     }
     
     @Override
-    public void setBlob(int parameterIndex, InputStream inputStream)
-            throws SQLException {
+    public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
         
     }
     
     @Override
-    public void setBlob(int parameterIndex, InputStream inputStream, long length)
-            throws SQLException {
+    public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
         
     }
     
     @Override
     public void setBoolean(int parameterIndex, boolean x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, Boolean.toString(x));
-        }
-        
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, Boolean.toString(x));
     }
     
     @Override
     public void setByte(int parameterIndex, byte x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, Integer.toString(x & 0xff));
-        }
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, Integer.toString(x & 0xff));
     }
     
     @Override
@@ -516,38 +469,26 @@ public class BQPreparedStatement extends BQStatementRoot implements
     }
     
     @Override
-    public void setCharacterStream(int parameterIndex, Reader reader)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            char[] arr = new char[8 * 1024]; // 8K at a time
-            StringBuffer buf = new StringBuffer();
-            int numChars;
-            
-            try {
-                while ((numChars = reader.read(arr, 0, arr.length)) > 0) {
-                    buf.append(arr, 0, numChars);
-                }
+    public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
+        check(parameterIndex);
+        
+        char[] arr = new char[8 * 1024]; // 8K at a time
+        StringBuffer buf = new StringBuffer();
+        int numChars;
+        
+        try {
+            while ((numChars = reader.read(arr, 0, arr.length)) > 0) {
+                buf.append(arr, 0, numChars);
             }
-            catch (IOException e) {
-                throw new BQSQLException(e);
-            }
-            this.SetParameter(parameterIndex, "\"" + buf.toString() + "\"");
         }
+        catch (IOException e) {
+            throw new BQSQLException(e);
+        }
+        this.SetParameter(parameterIndex, "\"" + buf.toString() + "\"");
     }
     
     @Override
-    public void setCharacterStream(int parameterIndex, Reader reader, int length)
-            throws SQLException {
+    public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
         this.setCharacterStream(parameterIndex, reader);
     }
     
@@ -570,134 +511,55 @@ public class BQPreparedStatement extends BQStatementRoot implements
     }
     
     @Override
-    public void setClob(int parameterIndex, Reader reader, long length)
-            throws SQLException {
+    public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
         throw new BQSQLException(new SQLFeatureNotSupportedException());
         
     }
     
     @Override
     public void setDate(int parameterIndex, Date x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            Date s = new Date(x.getTime()
-                    + Calendar.getInstance().getTimeZone().getRawOffset());
-            this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
-        }
-        
+        setDate(parameterIndex, x, null);
     }
     
     @Override
-    public void setDate(int parameterIndex, Date x, Calendar cal)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            Date s = new Date(x.getTime()
-                    + ((cal == null) ? Calendar.getInstance().getTimeZone()
-                            .getRawOffset() : cal.getTimeZone().getRawOffset()));
-            this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
-        }
-        
+    public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
+        check(parameterIndex);
+        final Calendar cal2 = cal == null ? Calendar.getInstance() : cal;
+        Date s = new Date(x.getTime() + cal2.getTimeZone().getOffset(x.getTime()));
+        this.SetParameter(parameterIndex, "USEC_TO_TIMESTAMP(UTC_USEC_TO_DAY(" + s.getTime() + "000))");
     }
     
     @Override
     public void setDouble(int parameterIndex, double x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, Double.toString(x));
-        }
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, Double.toString(x));
     }
     
     @Override
     public void setFloat(int parameterIndex, float x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, Float.toString(x));
-        }
-        
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, Float.toString(x));
     }
     
     @Override
     public void setInt(int parameterIndex, int x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, Integer.toString(x));
-        }
-        
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, Integer.toString(x));
     }
     
     @Override
     public void setLong(int parameterIndex, long x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, Long.toString(x));
-        }
-        
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, Long.toString(x));
     }
     
     @Override
-    public void setNCharacterStream(int parameterIndex, Reader reader)
-            throws SQLException {
+    public void setNCharacterStream(int parameterIndex, Reader reader) throws SQLException {
         this.setCharacterStream(parameterIndex, reader);
     }
     
     @Override
-    public void setNCharacterStream(int parameterIndex, Reader reader,
-            long length) throws SQLException {
+    public void setNCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
         this.setCharacterStream(parameterIndex, reader);
     }
     
@@ -714,185 +576,147 @@ public class BQPreparedStatement extends BQStatementRoot implements
     }
     
     @Override
-    public void setNClob(int parameterIndex, Reader reader, long length)
-            throws SQLException {
+    public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
         throw new BQSQLException(new SQLFeatureNotSupportedException());
         
     }
     
     @Override
-    public void setNString(int parameterIndex, String value)
-            throws SQLException {
+    public void setNString(int parameterIndex, String value) throws SQLException {
         this.setString(parameterIndex, value);
     }
     
     @Override
     public void setNull(int parameterIndex, int sqlType) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, "NULL");
-        }
-        
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, "NULL");
     }
     
     @Override
-    public void setNull(int parameterIndex, int sqlType, String typeName)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, "NULL");
-        }
-        
+    public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, "NULL");
     }
     
     @Override
     public void setObject(int parameterIndex, Object x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
+        check(parameterIndex);
+        // TODO Test and implicitly expand
+        if (x.getClass().equals(Integer.class)) {
+            this.setInt(parameterIndex, Integer.class.cast(x));
         }
         else
-            // TODO Test and implicitly expand
-            if (x.getClass().equals(Integer.class)) {
-                this.setInt(parameterIndex, Integer.class.cast(x));
+            if (x.getClass().equals(String.class)) {
+                this.setString(parameterIndex, String.class.cast(x));
             }
             else
-                if (x.getClass().equals(String.class)) {
-                    this.setString(parameterIndex, String.class.cast(x));
+                if (x.getClass().equals(Reader.class)) {
+                    this.setCharacterStream(parameterIndex,
+                            Reader.class.cast(x));
                 }
                 else
-                    if (x.getClass().equals(Reader.class)) {
-                        this.setCharacterStream(parameterIndex,
-                                Reader.class.cast(x));
+                    if (x.getClass().equals(Long.class)) {
+                        this.setLong(parameterIndex, Long.class.cast(x));
                     }
                     else
-                        if (x.getClass().equals(Long.class)) {
-                            this.setLong(parameterIndex, Long.class.cast(x));
+                        if (x.getClass().equals(Float.class)) {
+                            this.setFloat(parameterIndex,
+                                    Float.class.cast(x));
                         }
                         else
-                            if (x.getClass().equals(Float.class)) {
-                                this.setFloat(parameterIndex,
-                                        Float.class.cast(x));
+                            if (x.getClass().equals(Double.class)) {
+                                this.setDouble(parameterIndex,
+                                        Double.class.cast(x));
                             }
                             else
-                                if (x.getClass().equals(Double.class)) {
-                                    this.setDouble(parameterIndex,
-                                            Double.class.cast(x));
+                                if (x.getClass().equals(Date.class)) {
+                                    this.setDate(parameterIndex,
+                                            Date.class.cast(x));
                                 }
                                 else
-                                    if (x.getClass().equals(Date.class)) {
-                                        this.setDate(parameterIndex,
-                                                Date.class.cast(x));
+                                    if (x.getClass().equals(Time.class)) {
+                                        this.setTime(parameterIndex,
+                                                Time.class.cast(x));
                                     }
                                     else
-                                        if (x.getClass().equals(Time.class)) {
-                                            this.setTime(parameterIndex,
-                                                    Time.class.cast(x));
+                                        if (x.getClass().equals(
+                                                Timestamp.class)) {
+                                            this.setTimestamp(
+                                                    parameterIndex,
+                                                    Timestamp.class.cast(x));
                                         }
                                         else
                                             if (x.getClass().equals(
-                                                    Timestamp.class)) {
-                                                this.setTimestamp(
+                                                    Byte.class)) {
+                                                this.setByte(
                                                         parameterIndex,
-                                                        Timestamp.class.cast(x));
+                                                        Byte.class.cast(x));
                                             }
                                             else
                                                 if (x.getClass().equals(
-                                                        Byte.class)) {
-                                                    this.setByte(
+                                                        BigDecimal.class)) {
+                                                    this.setBigDecimal(
                                                             parameterIndex,
-                                                            Byte.class.cast(x));
+                                                            BigDecimal.class
+                                                            .cast(x));
                                                 }
                                                 else
-                                                    if (x.getClass().equals(
-                                                            BigDecimal.class)) {
-                                                        this.setBigDecimal(
+                                                    if (x.getClass()
+                                                            .equals(RowId.class)) {
+                                                        this.setRowId(
                                                                 parameterIndex,
-                                                                BigDecimal.class
-                                                                        .cast(x));
+                                                                RowId.class
+                                                                .cast(x));
                                                     }
                                                     else
                                                         if (x.getClass()
-                                                                .equals(RowId.class)) {
-                                                            this.setRowId(
+                                                                .equals(Short.class)) {
+                                                            this.setShort(
                                                                     parameterIndex,
-                                                                    RowId.class
-                                                                            .cast(x));
+                                                                    Short.class
+                                                                    .cast(x));
                                                         }
                                                         else
                                                             if (x.getClass()
-                                                                    .equals(Short.class)) {
-                                                                this.setShort(
+                                                                    .equals(SQLXML.class)) {
+                                                                this.setSQLXML(
                                                                         parameterIndex,
-                                                                        Short.class
-                                                                                .cast(x));
+                                                                        SQLXML.class
+                                                                        .cast(x));
                                                             }
                                                             else
                                                                 if (x.getClass()
-                                                                        .equals(SQLXML.class)) {
-                                                                    this.setSQLXML(
+                                                                        .equals(URL.class)) {
+                                                                    this.setURL(
                                                                             parameterIndex,
-                                                                            SQLXML.class
-                                                                                    .cast(x));
+                                                                            URL.class
+                                                                            .cast(x));
                                                                 }
                                                                 else
                                                                     if (x.getClass()
-                                                                            .equals(URL.class)) {
-                                                                        this.setURL(
+                                                                            .equals(Boolean.class)) {
+                                                                        this.setBoolean(
                                                                                 parameterIndex,
-                                                                                URL.class
-                                                                                        .cast(x));
+                                                                                Boolean.class
+                                                                                .cast(x));
                                                                     }
                                                                     else
                                                                         if (x.getClass()
-                                                                                .equals(Boolean.class)) {
-                                                                            this.setBoolean(
+                                                                                .equals(InputStream.class)) {
+                                                                            this.setAsciiStream(
                                                                                     parameterIndex,
-                                                                                    Boolean.class
-                                                                                            .cast(x));
+                                                                                    InputStream.class
+                                                                                    .cast(x));
                                                                         }
-                                                                        else
-                                                                            if (x.getClass()
-                                                                                    .equals(InputStream.class)) {
-                                                                                this.setAsciiStream(
-                                                                                        parameterIndex,
-                                                                                        InputStream.class
-                                                                                                .cast(x));
-                                                                            }
-                                                                            else {
-                                                                                throw new BQSQLException(
-                                                                                        new SQLFeatureNotSupportedException());
-                                                                            }
+                                                                        else {
+                                                                            throw new BQSQLException(
+                                                                                    new SQLFeatureNotSupportedException());
+                                                                        }
         
     }
     
     @Override
-    public void setObject(int parameterIndex, Object x, int targetSqlType)
-            throws SQLException {
+    public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
         // setObject(parameterIndex, x);
         // TODO Implement
         throw new BQSQLException(new SQLFeatureNotSupportedException());
@@ -900,8 +724,7 @@ public class BQPreparedStatement extends BQStatementRoot implements
     }
     
     @Override
-    public void setObject(int parameterIndex, Object x, int targetSqlType,
-            int scaleOrLength) throws SQLException {
+    public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
         // setObject(parameterIndex, x);
         // TODO Implement
         throw new BQSQLException(new SQLFeatureNotSupportedException());
@@ -923,20 +746,8 @@ public class BQPreparedStatement extends BQStatementRoot implements
     
     @Override
     public void setRowId(int parameterIndex, RowId x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, "\"" + x.toString() + "\"");
-        }
-        
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, "\"" + x.toString() + "\"");
     }
     
     @Override
@@ -946,171 +757,79 @@ public class BQPreparedStatement extends BQStatementRoot implements
     }
     
     @Override
-    public void setSQLXML(int parameterIndex, SQLXML xmlObject)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, "\"" + xmlObject.getString()
-                    + "\"");
-            // TODO Check conversion
-        }
-        
+    public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, "\"" + xmlObject.getString() + "\""); // TODO Check conversion
     }
     
     @Override
     public void setString(int parameterIndex, String x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            this.SetParameter(parameterIndex, "\"" + x + "\"");
-        }
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, "\"" + x + "\"");
     }
     
     @Override
     public void setTime(int parameterIndex, Time x) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            Time s = new Time(x.getTime()
-                    + Calendar.getInstance().getTimeZone().getRawOffset());
-            this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
-        }
-        
+        check(parameterIndex);
+        setTime(parameterIndex, x, null);
     }
     
     @Override
-    public void setTime(int parameterIndex, Time x, Calendar cal)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            Time s = new Time(x.getTime()
-                    + ((cal == null) ? Calendar.getInstance().getTimeZone()
-                            .getRawOffset() : cal.getTimeZone().getRawOffset()));
-            this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
-        }
-        
+    public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
+        check(parameterIndex);
+        final Calendar cal2 = cal == null ? Calendar.getInstance() : cal;
+        Time s = new Time(x.getTime() +  cal2.getTimeZone().getRawOffset()); // Hazardous conversion because without date, one can not know the Daylight Saving Time (DST) status
+        this.SetParameter(parameterIndex, "MSEC_TO_TIMESTAMP(" + s.getTime() % 86400000 + ")"); // 86400000 = 1 day in milliseconds (remove date part)
     }
     
     @Override
-    public void setTimestamp(int parameterIndex, Timestamp x)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            Timestamp s = new Timestamp(x.getTime()
-                    + Calendar.getInstance().getTimeZone().getRawOffset());
-            this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
-        }
-        
+    public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
+        setTimestamp(parameterIndex, x, null);
     }
     
     @Override
-    public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
-        }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
-        }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            Timestamp s = new Timestamp(x.getTime()
-                    + ((cal == null) ? Calendar.getInstance().getTimeZone()
-                            .getRawOffset() : cal.getTimeZone().getRawOffset()));
-            this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
-        }
-        
+    public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
+        check(parameterIndex);
+        final Calendar cal2 = cal == null ? Calendar.getInstance() : cal;
+        Timestamp s = new Timestamp(x.getTime() + cal2.getTimeZone().getOffset(x.getTime()));
+        this.SetParameter(parameterIndex, "MSEC_TO_TIMESTAMP(" + s.getTime() + ")");
     }
     
     @Override
-    public void setUnicodeStream(int parameterIndex, InputStream x, int length)
-            throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("The Statement is Closed");
+    public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
+        check(parameterIndex);
+        StringWriter writer = new StringWriter();
+        
+        try {
+            org.apache.commons.io.IOUtils.copy(x, writer, "UTF-8");
         }
-        if (this.Parameters == null) {
-            throw new BQSQLException("Index is not valid");
+        catch (IOException e) {
+            throw new BQSQLException(e);
         }
-        // The First Parameter is 1
-        if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
-            throw new BQSQLException("Index is not valid");
-        }
-        else {
-            StringWriter writer = new StringWriter();
-            
-            try {
-                org.apache.commons.io.IOUtils.copy(x, writer, "UTF-8");
-            }
-            catch (IOException e) {
-                throw new BQSQLException(e);
-            }
-            String theString = writer.toString();
-            this.SetParameter(parameterIndex, "\"" + theString + "\"");
-        }
+        String theString = writer.toString();
+        this.SetParameter(parameterIndex, "\"" + theString + "\"");
         
     }
     
     @Override
     public void setURL(int parameterIndex, URL x) throws SQLException {
+        check(parameterIndex);
+        this.SetParameter(parameterIndex, "\"" + x.toString() + "\"");
+    }
+    
+    private void check(int parameterIndex) throws SQLException {
+        
         if (this.isClosed()) {
             throw new BQSQLException("The Statement is Closed");
         }
+        
         if (this.Parameters == null) {
             throw new BQSQLException("Index is not valid");
         }
+        
         // The First Parameter is 1
         if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
             throw new BQSQLException("Index is not valid");
         }
-        else {
-            this.SetParameter(parameterIndex, "\"" + x.toString() + "\"");
-        }
-        
     }
 }

@@ -23,10 +23,13 @@ package net.starschema.clouddb.jdbc;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
+import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableSchema;
@@ -36,7 +39,7 @@ import com.google.api.services.bigquery.model.TableSchema;
 /**
  * This class implements the java.sql.ResultSetMetadata interface
  *
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  *
  */
 class BQResultsetMetaData implements ResultSetMetaData {
@@ -48,7 +51,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
     ResultSet results = null;
 
     /** Logger instance */
-    Logger logger = Logger.getLogger(BQResultsetMetaData.class.getName());
+    private final Log logger = LogFactory.getLog(getClass());
 
     /**
      * Constructor that initializes variables
@@ -99,25 +102,23 @@ class BQResultsetMetaData implements ResultSetMetaData {
         catch (NullPointerException e) {
             throw new BQSQLException(e);
         }
-
+        
         if (Columntype.equals("FLOAT")) {
-            return Float.class.getName();
+            return Double.class.getName();
         }
-        else
-            if (Columntype.equals("BOOLEAN")) {
-                return Boolean.class.getName();
-            }
-            else
-                if (Columntype.equals("INTEGER")) {
-                    return Integer.class.getName();
-                }
-                else
-                    if (Columntype.equals("STRING")) {
-                        return String.class.getName();
-                    }
-                    else {
-                        throw new BQSQLException("Unsupported Type");
-                    }
+        if (Columntype.equals("BOOLEAN")) {
+            return Boolean.class.getName();
+        }
+        if (Columntype.equals("INTEGER")) {
+            return Long.class.getName();
+        }
+        if (Columntype.equals("STRING")) {
+            return String.class.getName();
+        }
+        if (Columntype.equals("TIMESTAMP")) {
+            return Timestamp.class.getName();
+        }
+        throw new BQSQLException("Unsupported Type: " + Columntype);
     }
 
     /** {@inheritDoc} */
@@ -188,10 +189,11 @@ class BQResultsetMetaData implements ResultSetMetaData {
     /**
      * {@inheritDoc} <br>
      * note: This Can only Return due to bigquery:<br>
-     * java.sql.Types.FLOAT<br>
+     * java.sql.Types.DOUBLE<br>
      * java.sql.Types.BOOLEAN<br>
-     * java.sql.Types.INTEGER<br>
-     * java.sql.Types.VARCHAR
+     * java.sql.Types.BIGINT<br>
+     * java.sql.Types.VARCHAR<br>
+     * java.sql.Types.TIMESTAMP<br>
      * */
     @Override
     public int getColumnType(int column) throws SQLException {
@@ -206,25 +208,28 @@ class BQResultsetMetaData implements ResultSetMetaData {
         catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnType(int)", e);
         }
-
+        
         if (Columntype.equals("FLOAT")) {
-            return java.sql.Types.FLOAT;
+            return java.sql.Types.DOUBLE; // Float in BigQuery maps to the DOUBLE sql type
         }
-        else
-            if (Columntype.equals("BOOLEAN")) {
-                return java.sql.Types.BOOLEAN;
-            }
-            else
-                if (Columntype.equals("INTEGER")) {
-                    return java.sql.Types.INTEGER;
-                }
-                else
-                    if (Columntype.equals("STRING")) {
-                        return java.sql.Types.VARCHAR;
-                    }
-                    else {
-                        return 0;
-                    }
+        
+        if (Columntype.equals("BOOLEAN")) {
+            return java.sql.Types.BOOLEAN;
+        }
+        
+        if (Columntype.equals("INTEGER")) {
+            return java.sql.Types.BIGINT; // INTEGER in BigQuery has 64 bits so it maps BIGINT sql type (Sql INTEGER is "only" 32 bits)
+        }
+        
+        if (Columntype.equals("STRING")) {
+            return java.sql.Types.VARCHAR;
+        }
+        
+        if (Columntype.equals("TIMESTAMP")) {
+            return java.sql.Types.TIMESTAMP;
+        }
+        
+        throw new BQSQLException("Unsupported Type: " + Columntype); // May arise if a new data type is added to BigQuery. A new release of the driver would then be needed in order to map it correctly
     }
 
     /** {@inheritDoc} */
@@ -259,26 +264,24 @@ class BQResultsetMetaData implements ResultSetMetaData {
         catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getPrecision(int)", e);
         }
-
+        
         if (Columntype.equals("FLOAT")) {
             return Float.MAX_EXPONENT;
         }
-        else
-            if (Columntype.equals("BOOLEAN")) {
-                return 1; // A boolean is 1 bit length, but it asks for byte, so
-                          // 1
-            }
-            else
-                if (Columntype.equals("INTEGER")) {
-                    return Integer.SIZE;
-                }
-                else
-                    if (Columntype.equals("STRING")) {
-                        return 64 * 1024;
-                    }
-                    else {
-                        return 0;
-                    }
+        if (Columntype.equals("BOOLEAN")) {
+            return 1; // A boolean is 1 bit length, but it asks for byte, so
+            // 1
+        }
+        if (Columntype.equals("INTEGER")) {
+            return 64; // BigQuery's Integer have 64 bits
+        }
+        if (Columntype.equals("STRING")) {
+            return 64 * 1024;
+        }
+        if (Columntype.equals("TIMESTAMP")) {
+            return 50; // TODO: better computation of the maximum length of a string representation of the date 
+        }
+        return 0;
     }
 
     /**
@@ -291,10 +294,14 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getScale(int column) throws SQLException {
-        if (this.getColumnType(column) == java.sql.Types.FLOAT) {
+        if (this.getColumnType(column) == java.sql.Types.DOUBLE) {
             int max = 0;
             for (int i = 0; i < this.result.getRows().size(); i++) {
-                String rowdata = (String) this.result.getRows().get(i).getF().get(column - 1).getV();
+                Object rowdataObject = this.result.getRows().get(i).getF().get(column - 1).getV();
+                if (Data.isNull(rowdataObject)) {
+                    return 0;
+                }
+                String rowdata = (String) rowdataObject;
                 if (rowdata.contains(".")) {
                     int pointback = rowdata.length() - rowdata.indexOf(".");
                     if (pointback > max) {

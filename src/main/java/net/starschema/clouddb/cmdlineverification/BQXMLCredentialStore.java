@@ -49,7 +49,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -66,14 +67,12 @@ import com.google.api.client.auth.oauth2.CredentialStore;
  * Implements CredentialStore to use XML file to store Refresh Tokens encrypted
  * with AES
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  * 
  */
 public class BQXMLCredentialStore implements CredentialStore {
     
-    // static Logger logger = new Logger(BQXMLCredentialStore.class.getName());
-    static Logger logger = Logger.getLogger(BQXMLCredentialStore.class
-            .getName());
+    private final Log logger = LogFactory.getLog(BQXMLCredentialStore.class);
     
     /**
      * Decrypts AES encrypted byte array

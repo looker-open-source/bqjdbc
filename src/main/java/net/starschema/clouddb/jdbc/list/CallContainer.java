@@ -4,7 +4,9 @@ import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.util.HashSet;
 import java.util.List;
-import org.apache.log4j.Logger;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Class that contains a functioncall of databasemetadata and stores the result
@@ -15,7 +17,7 @@ import org.apache.log4j.Logger;
  */
 public class CallContainer {
     HashSet<ContainerResult> list;
-    Logger logger = Logger.getLogger(CallContainer.class.getName());
+    private final Log logger = LogFactory.getLog(getClass());
     
     /**
      * Constructor which makes an empty list

@@ -23,11 +23,12 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import net.starschema.clouddb.jdbc.JdbcGrammarParser;
 import net.starschema.clouddb.jdbc.antlr.sqlparse.ColumnCallException;
 import net.starschema.clouddb.jdbc.antlr.sqlparse.TreeParsingException;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * The class where we store the resolvers, we need 
@@ -37,7 +38,7 @@ import net.starschema.clouddb.jdbc.antlr.sqlparse.TreeParsingException;
  *
  */
 public class WhereExpressionJoinResolver {
-    static Logger logger = Logger.getLogger("net.starschema.clouddb.jdjbc.list.WhereExpressionJoinResolver");
+    private static final Log logger = LogFactory.getLog(WhereExpressionJoinResolver.class);
     /**
      * Creates a SubQuery from a JoinExpression
      * @param joinExpression - the join expression to be contained in the subquery
@@ -751,7 +752,7 @@ public class WhereExpressionJoinResolver {
  * This Class implements a chain of JoinElements with the possibility to add 
  * new JoinElement to it, and it nest it properly inside the chain
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  */
 class JoinChain
 {

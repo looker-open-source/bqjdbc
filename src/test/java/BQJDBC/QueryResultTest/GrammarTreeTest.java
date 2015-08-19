@@ -33,12 +33,11 @@ import net.starschema.clouddb.jdbc.list.SelectStatement;
 import net.starschema.clouddb.jdbc.list.TreeBuilder;
 
 import org.antlr.runtime.RecognitionException;
-import org.apache.log4j.BasicConfigurator;
 
 public class GrammarTreeTest {
     
     //Not working for public datasets since bigquery api functions don't treat public datasets as the users own it doesn't list them with its getdatasets function
-    //PUBLICDATARA NEM MÛKÖDIK, MERT A GETCOLUMNS FUNCIÓ NEM KERES A PUBLIC DATASETEKBEN, MERT AZ APIBAN LÉVÕ HÍVÁSOK NEM VESZIK SAJÁT A PROJECTHEZ TARTOZÓ TÁBLÁNAK
+    //PUBLICDATARA NEM Mï¿½Kï¿½DIK, MERT A GETCOLUMNS FUNCIï¿½ NEM KERES A PUBLIC DATASETEKBEN, MERT AZ APIBAN Lï¿½Vï¿½ Hï¿½Vï¿½SOK NEM VESZIK SAJï¿½T A PROJECTHEZ TARTOZï¿½ Tï¿½BLï¿½NAK
     static String string =
             //"select ARTICLE_LOOKUP.ARTICLE_CODE from ARTICLE_LOOKUP";
     		//SELECT ARTICLE_CODE,  `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE,`efashion`.ARTICLE_LOOKUP.ARTICLE_LABEL, `efashion`.ARTICLE_LOOKUP_CRITERIA.ARTICLE_CODE, `efashion`.ARTICLE_LOOKUP_CRITERIA.ID FROM `efashion`.ARTICLE_LOOKUP_CRITERIA, `efashion`.ARTICLE_COLOR_LOOKUP JOIN `efashion`.ARTICLE_LOOKUP ON `efashion`.ARTICLE_COLOR_LOOKUP.ARTICLE_CODE = `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE";
@@ -52,7 +51,7 @@ public class GrammarTreeTest {
      * @throws RecognitionException 
      */   
     public static void main(String[] args) throws BQSQLException, RecognitionException {
-        BasicConfigurator.configure();
+        // TODO: provide a logging implementation at runtime to have the log of the tests (the logging implementation is provided by the application that uses the driver in the regular use case)
         
         NewConnection();
         

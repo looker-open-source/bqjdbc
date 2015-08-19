@@ -35,7 +35,8 @@ import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.Tree;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * This is the initializer for the SQL transformer
@@ -64,7 +65,8 @@ public class TreeBuilder {
     int nextIdPosition = -1;
     /** the connection to the JDBC driver */
     Connection connection;
-    Logger logger = Logger.getLogger(this.getClass());
+    
+    private final Log logger = LogFactory.getLog(getClass());
     
     /**
      * Constructor for the TreeBuilder, after its built, use the

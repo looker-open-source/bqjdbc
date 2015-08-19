@@ -22,13 +22,9 @@ package net.starschema.clouddb.cmdlineverification;
 
 import java.awt.Desktop;
 import java.awt.Desktop.Action;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.PrintWriter;
-
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -37,7 +33,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
@@ -47,7 +44,6 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryScopes;
@@ -59,10 +55,10 @@ public class Oauth2Bigquery {
     private static String servicepath = null;
 
     /**
-     * Log4j logger, for debugging.
+     * Logger, for debugging.
      */
-    // static Logger logger = new Logger(Oauth2Bigquery.class.getName());
-    static Logger logger = Logger.getLogger(Oauth2Bigquery.class.getName());
+    private static final Log logger = LogFactory.getLog(Oauth2Bigquery.class);
+    
     /**
      * Browsers to try:
      */

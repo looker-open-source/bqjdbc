@@ -22,7 +22,8 @@ import java.io.StringWriter;
 
 import net.starschema.clouddb.jdbc.JdbcGrammarParser;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -41,8 +42,8 @@ public class TreeParsingException extends Exception {
      * Generated Serial
      */
     private static final long serialVersionUID = 1951923923275407604L;
-    // Logger logger = new Logger(TreeParsingException.class.getName());
-    Logger logger = Logger.getLogger(TreeParsingException.class.getName());
+    
+    private final Log logger = LogFactory.getLog(getClass());
     
     /**
      * <p>

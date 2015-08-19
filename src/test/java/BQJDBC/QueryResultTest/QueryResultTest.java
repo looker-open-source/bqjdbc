@@ -17,7 +17,7 @@
  * This Junit test runs queries throught the jdbc driver and checks their
  * results
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  * @author Gunics Balazs
  */
 package BQJDBC.QueryResultTest;
@@ -32,7 +32,8 @@ import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.BQSupportMethods;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
 import org.junit.Test;
 //import net.starschema.clouddb.bqjdbc.logging.Logger;
@@ -40,14 +41,14 @@ import org.junit.Test;
 /**
  * This Junit tests if the query results return as expected
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  * @author Gunics Balazs
  */
 public class QueryResultTest {
     
     private static java.sql.Connection con = null;
-    //Logger logger = new Logger(QueryResultTest.class.getName());
-    Logger logger = Logger.getLogger(QueryResultTest.class.getName());
+
+    private final Log logger = LogFactory.getLog(getClass());
     
     /**
      * Compares two String[][]

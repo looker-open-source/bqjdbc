@@ -17,7 +17,7 @@
  * This Junit test runs queries throught the jdbc driver and checks their
  * results
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  */
 package BQJDBC.QueryResultTest;
 
@@ -31,15 +31,16 @@ import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.BQSupportMethods;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
 import org.junit.Test;
 
 public class Timeouttest {
     
     private static java.sql.Connection con = null;
-    //Logger logger = new Logger(Timeouttest.class.getName());
-    Logger logger = Logger.getLogger(Timeouttest.class.getName());
+    
+    private final Log logger = LogFactory.getLog(getClass());
     
     /**
      * Compares two String[][]

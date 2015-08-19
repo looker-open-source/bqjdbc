@@ -47,7 +47,8 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -55,15 +56,15 @@ import org.apache.log4j.Logger;
  * This class implements the java.sql.ResultSet interface's Cursor and is a
  * Superclass for BQResultset and DMDResultSet
  * 
- * @author Horváth Attila
+ * @author Horvï¿½th Attila
  * 
  * @param <T>
  *            Type of Array that cursor operates with
  */
 abstract class ScrollableResultset<T> implements java.sql.ResultSet {
     
-    // Logger logger = new Logger(ScrollableResultset.class.getName());
-    Logger logger = Logger.getLogger(ScrollableResultset.class.getName());
+    protected final Log logger = LogFactory.getLog(getClass());
+    
     /** Reference for holding the current InputStream given back by get methods */
     protected InputStream Strm = null;
     

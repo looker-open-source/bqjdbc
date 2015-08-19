@@ -4,13 +4,14 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class Resolver {
     Connection connection;
     TreeBuilder builder;
     CallContainer container;
-    protected Logger logger = Logger.getLogger(this.getClass());
+    protected final Log logger = LogFactory.getLog(getClass());
     
     public Resolver(TreeBuilder builder) {
         

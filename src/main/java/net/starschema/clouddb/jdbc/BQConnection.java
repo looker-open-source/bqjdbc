@@ -46,7 +46,8 @@ import java.util.Properties;
 
 import net.starschema.clouddb.cmdlineverification.Oauth2Bigquery;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.google.api.services.bigquery.Bigquery;
 
@@ -56,15 +57,16 @@ import com.google.api.services.bigquery.Bigquery;
  * The connection class which builds the connection between BigQuery and the
  * Driver
  * 
- * @author Gunics Balázs, Horváth Attila
+ * @author Gunics Balï¿½zs, Horvï¿½th Attila
  * 
  */
 public class BQConnection implements Connection {
     /** Variable to store auto commit mode */
     private boolean autoCommitEnabled = false;
     
-    /** Instance log4j.Logger */
-    Logger logger;
+    /** Instance of the logger */
+    private final Log logger = LogFactory.getLog(getClass());
+    
     /**
      * The bigquery client to access the service.
      */
@@ -104,7 +106,6 @@ public class BQConnection implements Connection {
      */
     public BQConnection(String url, Properties loginProp) throws SQLException {
         
-        this.logger = Logger.getLogger(this.getClass());
         this.URLPART = url;
         this.isclosed = false;
         
