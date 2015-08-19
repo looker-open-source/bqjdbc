@@ -62,7 +62,7 @@ import com.google.api.services.bigquery.Bigquery;
  * The connection class which builds the connection between BigQuery and the
  * Driver
  *
- * @author Gunics Bal�zs, Horv�th Attila
+ * @author Gunics Balázs, Horváth Attila
  *
  */
 public class BQConnection implements Connection {

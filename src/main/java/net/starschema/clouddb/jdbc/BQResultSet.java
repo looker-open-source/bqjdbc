@@ -42,7 +42,7 @@ import com.google.api.client.util.Data;
  * This class implements the java.sql.ResultSet interface its superclass is
  * ScrollableResultset
  *
- * @author Attila Horv�th
+ * @author Attila Horváth
  */
 public class BQResultSet extends ScrollableResultset<Object> implements
         java.sql.ResultSet {

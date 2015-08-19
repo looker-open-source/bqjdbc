@@ -40,7 +40,7 @@ import org.junit.Test;
 /**
  * This Junit test tests functions in BQResultset
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  * @author Gunics Balazs
  */
 public class BQForwardOnlyResultSetFunctionTest {

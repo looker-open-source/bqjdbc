@@ -73,7 +73,7 @@ import com.google.api.client.auth.oauth2.CredentialStore;
  * Implements CredentialStore to use XML file to store Refresh Tokens encrypted
  * with AES
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  *
  */
 public class BQXMLCredentialStore implements CredentialStore {

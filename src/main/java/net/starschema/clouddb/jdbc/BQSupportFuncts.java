@@ -59,7 +59,7 @@ import com.google.api.services.bigquery.model.TableCell;
 /**
  * This class contains static methods for interacting with BigQuery
  *
- * @author Gunics Bal�zs, Horv�th Attila
+ * @author Gunics Balázs, Horváth Attila
  */
 public class BQSupportFuncts {
     /** log4j.Logger instance */

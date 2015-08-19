@@ -57,7 +57,7 @@ import org.xml.sax.SAXException;
 /**
  * This class implements the java.sql.SQLXML interface
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  */
 class BQSQLXML implements java.sql.SQLXML {
 

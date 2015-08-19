@@ -46,7 +46,7 @@ import com.google.api.services.bigquery.model.Job;
  * This class partially implements java.sql.Statement, and
  * java.sql.PreparedStatement
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  * @author Balazs Gunics
  *
  */

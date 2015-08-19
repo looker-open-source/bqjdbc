@@ -41,7 +41,7 @@ import com.google.api.services.bigquery.model.TableSchema;
 /**
  * This class implements the java.sql.ResultSetMetadata interface
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  */
 class BQResultsetMetaData implements ResultSetMetaData {
 

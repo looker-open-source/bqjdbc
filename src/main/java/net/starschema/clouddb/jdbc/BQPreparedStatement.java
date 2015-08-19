@@ -56,7 +56,7 @@ import com.google.api.services.bigquery.model.Job;
 /**
  * This class implements java.sql.PreparedStatement
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  * @author Balazs Gunics
  *
  */
