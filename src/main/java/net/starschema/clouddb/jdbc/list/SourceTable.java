@@ -1,20 +1,26 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package net.starschema.clouddb.jdbc.list;
 
@@ -34,14 +40,14 @@ import com.google.api.services.bigquery.model.Table;
 
 /**
  * This class extends the basic Node
- * we store the following inside 
- * <li> name 
- * <li> dataset 
+ * we store the following inside
+ * <li> name
+ * <li> dataset
  * <li> project
  * <li> alias
  * which made from:
  * "project:dataset.name (AS) alias"
- * 
+ *
  * @author Balazs Gunics, Attila Horvath
  */
 public class SourceTable extends Node {
@@ -53,16 +59,16 @@ public class SourceTable extends Node {
     String project = null;
     /** the Alias for the Table */
     String alias = null;
-    
+
     TreeBuilder builder;
-    
+
     private String uniqueId;
-    
+
     /**
      * Constructor which builds up the SourceTable from the ANTLR tree
      * @param t - the ANTLR tree
      * @param treeBuilder - the TreeBuilder for the helper functions
-     * @throws TreeParsingException 
+     * @throws TreeParsingException
      */
     public SourceTable(Tree t, TreeBuilder treeBuilder)
             throws TreeParsingException {
@@ -70,7 +76,7 @@ public class SourceTable extends Node {
         this.uniqueId = this.builder.getuniqueid();
         this.build(t, this.builder);
     }
-    
+
     /**
      * Builder to parse out the ANTLR tree
      * @param t - the ANTLR tree
@@ -96,29 +102,29 @@ public class SourceTable extends Node {
                         for (int k = 0; k < child.getChildCount(); k++) {
                             this.project += child.getChild(k).getChild(0)
                                     .getText();
-                        }                     
+                        }
                         break;
                     case JdbcGrammarParser.ALIAS:
-                        
+
                         this.alias = child.getChild(0).getText();
-                        if(this.alias.equals("\"") || this.alias.equals("\'") ){
+                        if (this.alias.equals("\"") || this.alias.equals("\'")) {
                             this.alias = child.getChild(1).getText();
                         }
-                        
+
                         this.logger.debug("SOURCETABLE ALIAS: " + this.alias);
                         break;
                     default:
                         break;
                 }
             }
-            // if we don't have a dataset, we can't make querys            
+            // if we don't have a dataset, we can't make querys
             if (this.dataset == null) {
                 try {
                     // first we get the schemas
                     ResultSet schemas = builder.connection.getMetaData()
                             .getSchemas();
                     schemas.first();
-                    while (!schemas.isAfterLast()) {                        
+                    while (!schemas.isAfterLast()) {
                         try {
                             // we do a look up in the schemas, for our table
                             List<Table> tables = BQSupportFuncts.getTables(
@@ -130,73 +136,70 @@ public class SourceTable extends Node {
                                 this.dataset = schemas.getString(1);
                                 return;
                             }
-                        }
-                        catch (IOException e) {
+                        } catch (IOException e) {
                             // something went wrong
                         }
                         // it doesn't contains we look for the next schema
                         schemas.next();
-                        
+
                     }
-                }
-                catch (SQLException e) {
+                } catch (SQLException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
-            logger.debug("Built up the sourcetable: " +this.name +
+            logger.debug("Built up the sourcetable: " + this.name +
                     " tables dataset is: " + this.dataset +
                     " project is: " + (project != null ? project : "missing"));
-        }
-        else {
+        } else {
             throw new TreeParsingException("This Tree is not a SOURCETABLE");
         }
     }
-    
+
     /** Getter for the Alias */
     public String getAlias() {
         return this.alias;
     }
-    
+
     /** Getter for the Dataset */
     public String getDataset() {
         return this.dataset;
     }
-    
+
     /** Getter for the Name */
     public String getName() {
         return this.name;
     }
-    
+
     /** Getter for the Project please note: this is URLEncoded,
-     * to decode use: <br> URLDecoder.decode(this result, "UTF-8") 
+     * to decode use: <br> URLDecoder.decode(this result, "UTF-8")
      */
     public String getProject() {
         return this.project;
     }
 
     /** Getter for the Project please note: this is URLEncoded,
-     * to decode use: <br> URLDecoder.decode(this result, "UTF-8") 
+     * to decode use: <br> URLDecoder.decode(this result, "UTF-8")
      */
     public String getProjectDecoded() {
-        return this.project.replace("__", ":").replace("_", ".") ;
+        return this.project.replace("__", ":").replace("_", ".");
     }
-    
+
     /** Getter for the UniqueId */
     public String getUniqueId() {
         return this.uniqueId;
     }
-    
+
     @Override
     public String toPrettyString() {
         return this.toPrettyString(-1);
     }
-    
+
     @Override
     public String toPrettyString(int level) {
         String result = "";
         result += this.tab(level);
-        if (this.project != null) {            
+        if (this.project != null) {
             result += getProjectDecoded() + ":";
         }
         if (this.dataset != null) {

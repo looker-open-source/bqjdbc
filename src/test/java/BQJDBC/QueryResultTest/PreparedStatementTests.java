@@ -1,25 +1,27 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
- * This Junit test runs query with preparedstatement after changing parameters
- * 
- * @author Horv·th Attila
- */
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package BQJDBC.QueryResultTest;
 
 import java.io.StringReader;
@@ -43,19 +45,19 @@ import org.junit.Test;
 /**
  * This Junit test runs query with preparedstatement, while changing the number
  * of results
- * 
- * @author Horv·th Attila
+ *
+ * @author Horv√°th Attila
  * @author Balazs Gunics
- * 
+ *
  */
 public class PreparedStatementTests {
-    
+
     /** Static reference to the connection object */
     static Connection con = null;
-    
+
     /**
      * Compares two String[][]
-     * 
+     *
      * @param expected
      * @param reality
      * @return true if they are equal false if not
@@ -68,10 +70,10 @@ public class PreparedStatementTests {
                 }
             }
         }
-        
+
         return true;
     }
-    
+
     /**
      * Makes a new Bigquery Connection to Hardcoded URL and gives back the
      * Connection to static con member.
@@ -87,13 +89,12 @@ public class PreparedStatementTests {
                                             .readFromPropFile("installedaccount1.properties")),
                             BQSupportFuncts
                                     .readFromPropFile("installedaccount1.properties"));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            
+
         }
     }
-    
+
     /**
      * out of range test
      */
@@ -102,7 +103,7 @@ public class PreparedStatementTests {
         final String sql = "SELECT corpus, COUNT(word) as wc FROM publicdata:samples.shakespeare WHERE corpus = ? GROUP BY corpus ORDER BY wc DESC LIMIT ?";
         System.out.println("Test number: 01");
         System.out.println("Running query:" + sql);
-        
+
         final String first = "othello";
         final String second = "macbeth";
         final int limit = 10;
@@ -112,19 +113,17 @@ public class PreparedStatementTests {
             stm.setString(1, second);
             stm.setBigDecimal(2, BigDecimal.valueOf((double) limit));
             stm.setString(3, first);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.assertTrue(true);
         }
         try {
             con.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         con = null;
     }
-    
+
     /**
      * This test run a Query without parameters as a preparedstatement
      */
@@ -138,12 +137,11 @@ public class PreparedStatementTests {
                     .prepareStatement(sql);
             java.sql.ResultSet theResult = stm.executeQuery();
             Assert.assertNotNull(theResult);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
     }
-    
+
     /**
      * setBigDecimal test
      */
@@ -152,12 +150,12 @@ public class PreparedStatementTests {
         final String sql = "SELECT corpus, COUNT(word) as wc FROM publicdata:samples.shakespeare WHERE corpus = ? GROUP BY corpus ORDER BY wc DESC LIMIT ?";
         System.out.println("Test number: 01");
         System.out.println("Running query:" + sql);
-        
+
         // final String first = "othello";
         final String second = "macbeth";
         final int limit = 10;
         int actual = 0;
-        
+
         java.sql.ResultSet theResult = null;
         try {
             PreparedStatement stm = PreparedStatementTests.con
@@ -165,11 +163,10 @@ public class PreparedStatementTests {
             stm.setString(1, second);
             stm.setBigDecimal(2, BigDecimal.valueOf((double) limit));
             theResult = stm.executeQuery();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
-        try { 
+        try {
             ResultSetMetaData metadata = theResult.getMetaData();
             int ColumnCount = metadata.getColumnCount();
             // Print Out Column Names
@@ -178,9 +175,9 @@ public class PreparedStatementTests {
                 Line += String.format("%-32s", metadata.getColumnName(i + 1));
             }
             System.out.println(Line + "\n");
-            
+
             // Print out Column Values
-            while(theResult.next()) {
+            while (theResult.next()) {
                 Line = "";
                 for (int i = 0; i < ColumnCount; i++) {
                     if (i == 0) {
@@ -190,29 +187,27 @@ public class PreparedStatementTests {
                 }
                 System.out.println(Line);
                 actual++;
-            } 
-            
-        }
-        catch (SQLException e) {
+            }
+
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             con.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         con = null;
         Assert.assertTrue(limit >= actual);
-        
+
     }
-    
+
     @Test
     public void SetByteTest() {
         final String sql = "SELECT TOP(word, ?), COUNT(*) FROM publicdata:samples.shakespeare";
         System.out.println("Test SetByteTest");
         System.out.println("Running query:" + sql);
-        
+
         // SET HOW MANY RESULT YOU WISH
         Byte COUNT = new Byte("3");
         int Actual = 0;
@@ -222,38 +217,35 @@ public class PreparedStatementTests {
                     .prepareStatement(sql);
             stm.setByte(1, COUNT);
             theResult = stm.executeQuery();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             // Count Column Values
             while (theResult.next()) {
                 Actual++;
-            }   
-        }
-        catch (SQLException e) {
+            }
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             con.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         con = null;
-        
+
         Byte Act = Byte.parseByte(Integer.toString(Actual));
         Assert.assertEquals(COUNT, Act);
     }
-    
+
     @Test
     public void SetCharacterStreamTest() {
         String input = "lord";
         java.io.StringReader reader = new StringReader(input);
         final String sql = "SELECT corpus FROM publicdata:samples.shakespeare WHERE LOWER(word)=? GROUP BY corpus ORDER BY corpus DESC LIMIT 5;";
-        String[][] expectation = new String[][] { { "winterstale", "various",
-                "twogentlemenofverona", "twelfthnight", "troilusandcressida" } };
+        String[][] expectation = new String[][]{{"winterstale", "various",
+                "twogentlemenofverona", "twelfthnight", "troilusandcressida"}};
         System.out.println("Test SetCharacterStreamTest");
         System.out.println("Running query:" + sql);
         java.sql.ResultSet Result = null;
@@ -263,8 +255,7 @@ public class PreparedStatementTests {
             stm.setCharacterStream(1, reader);
             Result = stm.executeQuery();
             Assert.assertNotNull(Result);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
@@ -272,19 +263,17 @@ public class PreparedStatementTests {
                     "Comparing failed in the String[][] array",
                     this.comparer(expectation,
                             BQSupportMethods.GetQueryResult(Result)));
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             con.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         con = null;
     }
-    
+
     /**
      * setDate test
      */
@@ -294,7 +283,7 @@ public class PreparedStatementTests {
                 + " WHERE year = INTEGER(LEFT( ? ,4)) AND month = ? AND is_male = ? ORDER BY weight_pounds DESC LIMIT 1000";
         System.out.println("Test setDateTest");
         System.out.println("Running query:" + sql);
-        
+
         final String first = "1989-05-01";
         final boolean istrue = true;
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
@@ -302,8 +291,7 @@ public class PreparedStatementTests {
         // System.out.println(String.valueOf(date.getTime()));
         try {
             date = formatter.parse(first);
-        }
-        catch (ParseException e2) {
+        } catch (ParseException e2) {
             Assert.fail();
             e2.printStackTrace();
         }
@@ -318,8 +306,7 @@ public class PreparedStatementTests {
             stm.setInt(2, 5);
             stm.setBoolean(3, istrue);
             theResult = stm.executeQuery();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
@@ -331,7 +318,7 @@ public class PreparedStatementTests {
                 Line += String.format("%-32s", metadata.getColumnName(i + 1));
             }
             System.out.println(Line + "\n");
-            
+
             // Print out Column Values
             while (theResult.next()) {
                 Line = "";
@@ -345,27 +332,25 @@ public class PreparedStatementTests {
                     Line += String.format("%-15s", theResult.getString(i + 1));
                 }
                 System.out.println(Line);
-            }  
-        }
-        catch (SQLException e) {
+            }
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             con.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         con = null;
         Assert.assertTrue(true);
-        
+
     }
-    
+
     @Test
     public void SetDoubleTest() {
         final String sql = "SELECT corpus,COUNT(word)/? as countn FROM publicdata:samples.shakespeare Group by corpus having countn=?";
         double number = 1849.5;
-        
+
         System.out.println("Test SetDoubleTest");
         System.out.println("Running query:" + sql);
         java.sql.ResultSet Result = null;
@@ -376,42 +361,38 @@ public class PreparedStatementTests {
             stm.setDouble(2, number);
             Result = stm.executeQuery();
             Assert.assertNotNull(Result);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             Result.first();
-        }
-        catch (SQLException e) {
-            try{
+        } catch (SQLException e) {
+            try {
                 Result.next();
             } catch (Exception ef) {
-                
+
             }
         }
         try {
             Assert.assertTrue(
                     "The result was not as expected: " + Result.getString(1),
                     Result.getString(1).equals("tamingoftheshrew"));
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             con.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         con = null;
     }
-    
+
     @Test
     public void SetFloatTest() {
         final String sql = "SELECT corpus,COUNT(word)/? as countn FROM publicdata:samples.shakespeare Group by corpus having countn=?";
         float number = 1849.5f;
-        
+
         System.out.println("Test SetFloatTest");
         System.out.println("Running query:" + sql);
         java.sql.ResultSet Result = null;
@@ -422,37 +403,32 @@ public class PreparedStatementTests {
             stm.setFloat(2, number);
             Result = stm.executeQuery();
             Assert.assertNotNull(Result);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             Result.first();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             try {
                 Result.next();
-            }
-            catch (SQLException e1) {
+            } catch (SQLException e1) {
             }
         }
         try {
             Assert.assertTrue(
                     "The result was not as expected: " + Result.getString(1),
                     Result.getString(1).equals("tamingoftheshrew"));
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             con.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         con = null;
     }
-    
+
     /**
      * This test sets the first parameter of the preparedstatement to 3, which
      * mainly limits the rows we get back with the query
@@ -462,7 +438,7 @@ public class PreparedStatementTests {
         final String sql = "SELECT TOP(word, ?), COUNT(*) FROM publicdata:samples.shakespeare";
         System.out.println("Test number: 01");
         System.out.println("Running query:" + sql);
-        
+
         // SET HOW MANY RESULT YOU WISH
         int COUNT = 3;
         int Actual = 0;
@@ -472,8 +448,7 @@ public class PreparedStatementTests {
                     .prepareStatement(sql);
             stm.setInt(1, COUNT);
             theResult = stm.executeQuery();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
@@ -485,7 +460,7 @@ public class PreparedStatementTests {
                 Line += String.format("%-32s", metadata.getColumnName(i + 1));
             }
             System.out.println(Line + "\n");
-            
+
             // Print out Column Values
             while (theResult.next()) {
                 Line = "";
@@ -494,26 +469,24 @@ public class PreparedStatementTests {
                 }
                 System.out.println(Line);
                 Actual++;
-            } 
-        }
-        catch (SQLException e) {
+            }
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             con.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         con = null;
         Assert.assertEquals(COUNT, Actual);
     }
-    
+
     @Test
     public void SetLongTest() {
         final String sql = "SELECT corpus,COUNT(word) as countn FROM publicdata:samples.shakespeare Group by corpus having countn>? limit 10";
         long number = 5200;
-        
+
         System.out.println("Test SetLongTest");
         System.out.println("Running query:" + sql);
         java.sql.ResultSet Result = null;
@@ -523,31 +496,29 @@ public class PreparedStatementTests {
             stm.setLong(1, number);
             Result = stm.executeQuery();
             Assert.assertNotNull(Result);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             // BIGQUERY Can only store long as a string
             Assert.assertTrue(e.toString().contains(
                     "Argument type mismatch in function GREATER"));
         }
         try {
             con.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         con = null;
     }
-    
+
     @Test
     public void SetObjectTest() {
         // TODO SetBooleanTest
     }
-    
+
     @Test
     public void SetSQLXMLTest() {
         // TODO SetBooleanTest
     }
-    
+
     /**
      * First parameter will be a string, second an int
      */
@@ -556,12 +527,12 @@ public class PreparedStatementTests {
         final String sql = "SELECT corpus, COUNT(word) as wc FROM publicdata:samples.shakespeare WHERE corpus = ? GROUP BY corpus ORDER BY wc DESC LIMIT ?";
         System.out.println("Test number: 01");
         System.out.println("Running query:" + sql);
-        
+
         final String first = "othello";
         final String second = "macbeth";
         final int limit = 10;
         int actual = 0;
-        
+
         java.sql.ResultSet theResult = null;
         try {
             PreparedStatement stm = PreparedStatementTests.con
@@ -570,8 +541,7 @@ public class PreparedStatementTests {
             stm.setString(1, second);
             stm.setInt(2, limit);
             theResult = stm.executeQuery();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
@@ -583,7 +553,7 @@ public class PreparedStatementTests {
                 Line += String.format("%-32s", metadata.getColumnName(i + 1));
             }
             System.out.println(Line + "\n");
-            
+
             // Print out Column Values
             while (theResult.next()) {
                 Line = "";
@@ -595,40 +565,38 @@ public class PreparedStatementTests {
                 }
                 System.out.println(Line);
                 actual++;
-            } 
-        }
-        catch (SQLException e) {
+            }
+        } catch (SQLException e) {
             Assert.fail(e.toString());
         }
         try {
             con.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         con = null;
         Assert.assertTrue(limit >= actual);
-        
+
     }
-    
+
     @Test
     public void SetTimeStampTest() {
         // TODO SetBooleanTest
     }
-    
+
     @Test
     public void SetTimeTest() {
         // TODO SetBooleanTest
     }
-    
+
     @Test
     public void SetUnicodeStreamTest() {
         // TODO SetBooleanTest
     }
-    
+
     @Test
     public void SetURLTest() {
         // TODO SetBooleanTest
     }
-    
+
 }

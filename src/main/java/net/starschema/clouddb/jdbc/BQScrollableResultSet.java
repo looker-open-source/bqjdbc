@@ -1,19 +1,26 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * This class implements the java.sql.Resultset interface
  */
@@ -35,7 +42,7 @@ import com.google.api.client.util.Data;
  * This class implements the java.sql.ResultSet interface its superclass is
  * ScrollableResultset
  *
- * @author Attila Horv·th
+ * @author Attila Horv√°th
  */
 public class BQScrollableResultSet extends ScrollableResultset<Object> implements
         java.sql.ResultSet {
@@ -57,29 +64,26 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
     private BQStatement Statementreference = null;
 
     public BQScrollableResultSet(GetQueryResultsResponse bigQueryGetQueryResultResponse,
-            BQPreparedStatement bqPreparedStatement) {
+                                 BQPreparedStatement bqPreparedStatement) {
         logger.debug("Created Scrollable resultset TYPE_SCROLL_INSENSITIVE");
         this.Result = bigQueryGetQueryResultResponse;
         BigInteger maxrow;
         try {
             maxrow = BigInteger.valueOf(bqPreparedStatement.getMaxRows());
             this.Result.setTotalRows(maxrow);
-        }
-        catch (SQLException e) {
-         // Should not happen.
+        } catch (SQLException e) {
+            // Should not happen.
         }
 
         try {
             maxFieldSize = bqPreparedStatement.getMaxFieldSize();
-        }
-        catch (SQLException e) {
-         // Should not happen.
+        } catch (SQLException e) {
+            // Should not happen.
         }
 
         if (this.Result.getRows() == null) {
             this.RowsofResult = null;
-        }
-        else {
+        } else {
             this.RowsofResult = this.Result.getRows().toArray();
         }
     }
@@ -87,34 +91,29 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
     /**
      * Constructor of BQResultset, that initializes all private variables
      *
-     * @param bigQueryGetQueryResultResponse
-     *            BigQueryGetQueryResultResponse from Bigquery
-     * @param bqStatementRoot
-     *            Reference of the Statement that creates this Resultset
+     * @param bigQueryGetQueryResultResponse BigQueryGetQueryResultResponse from Bigquery
+     * @param bqStatementRoot                Reference of the Statement that creates this Resultset
      */
     public BQScrollableResultSet(GetQueryResultsResponse bigQueryGetQueryResultResponse,
-            BQStatementRoot bqStatementRoot) {
+                                 BQStatementRoot bqStatementRoot) {
         logger.debug("Created Scrollable resultset TYPE_SCROLL_INSENSITIVE");
         this.Result = bigQueryGetQueryResultResponse;
         BigInteger maxrow;
         try {
             maxrow = BigInteger.valueOf(bqStatementRoot.getMaxRows());
             this.Result.setTotalRows(maxrow);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
         } // Should not happen.
 
         try {
             maxFieldSize = bqStatementRoot.getMaxFieldSize();
-        }
-        catch (SQLException e) {
-         // Should not happen.
+        } catch (SQLException e) {
+            // Should not happen.
         }
 
         if (this.Result.getRows() == null) {
             this.RowsofResult = null;
-        }
-        else {
+        } else {
             this.RowsofResult = this.Result.getRows().toArray();
         }
         if (bqStatementRoot instanceof BQStatement) {
@@ -171,21 +170,18 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
         if (Data.isNull(field.getV())) {
             this.wasnull = true;
             return null;
-        }
-        else {
+        } else {
             String result = field.getV().toString();
             this.wasnull = false;
             try {
                 if (Columntype.equals("STRING")) {
-                  //removing the excess byte by the setmaxFiledSize
-                    if(maxFieldSize == 0 || maxFieldSize == Integer.MAX_VALUE){
+                    //removing the excess byte by the setmaxFiledSize
+                    if (maxFieldSize == 0 || maxFieldSize == Integer.MAX_VALUE) {
                         return result;
-                    }
-                    else {
-                        try{ //lets try to remove the excess bytes
+                    } else {
+                        try { //lets try to remove the excess bytes
                             return result.substring(0, maxFieldSize);
-                        }
-                        catch (IndexOutOfBoundsException iout){
+                        } catch (IndexOutOfBoundsException iout) {
                             //we don't need to remove any excess byte
                             return result;
                         }
@@ -205,8 +201,7 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
                     return new Timestamp(val);
                 }
                 throw new BQSQLException("Unsupported Type");
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new BQSQLException(e);
             }
         }
@@ -232,19 +227,16 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
                 .get(columnIndex - 1).getV();
         if (result == null) {
             this.wasnull = true;
-        }
-        else {
+        } else {
             this.wasnull = false;
         }
         //removing the excess byte by the setmaxFiledSize
-        if(maxFieldSize == 0 || maxFieldSize == Integer.MAX_VALUE){
+        if (maxFieldSize == 0 || maxFieldSize == Integer.MAX_VALUE) {
             return result;
-        }
-        else {
-            try{ //lets try to remove the excess bytes
+        } else {
+            try { //lets try to remove the excess bytes
                 return result.substring(0, maxFieldSize);
-            }
-            catch (IndexOutOfBoundsException iout){
+            } catch (IndexOutOfBoundsException iout) {
                 //we don't need to remove any excess byte
                 return result;
             }

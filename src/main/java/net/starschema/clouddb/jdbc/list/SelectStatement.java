@@ -1,20 +1,26 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package net.starschema.clouddb.jdbc.list;
 
@@ -29,23 +35,23 @@ import org.antlr.runtime.tree.Tree;
 
 /**
  * This class extends the basic Node
- * the childrens will be 
- * <li> EXPRESSION 
- * <li> WHEREEXPRESSION 
+ * the childrens will be
+ * <li> EXPRESSION
+ * <li> WHEREEXPRESSION
  * <li> FROMEXPRESSION
- * <li> ORDERBYEXPRESSION 
- * <li> HAVINGEXPRESSION 
+ * <li> ORDERBYEXPRESSION
+ * <li> HAVINGEXPRESSION
  * <li> LIMITEXPRESSION
- * 
+ *
  * @author Balazs Gunics, Attila Horvath
  */
 public class SelectStatement extends Node {
-    
+
     TreeBuilder builder;
     Expression expression = null;
     /** the From Expression of this Select */
     FromExpression fromExpression = null;
-    /** the Where Expression of this Select */ 
+    /** the Where Expression of this Select */
     WhereExpression whereExpression = null;
     /** the Group By Expression of this Select */
     GroupByExpression groupByExpression = null;
@@ -55,26 +61,26 @@ public class SelectStatement extends Node {
     OrderbyExpression orderByExpression = null;
     /** the Limit Expression of this Select */
     LimitExpression limitExpression = null;
-    /** if this Select Statement is in a SubQuery 
+    /** if this Select Statement is in a SubQuery
      * we store its parent as a Subquery*/
     SubQuery parent = null;
-    
+
     /** Returns a SubQuery if this selectStatement
-     *  is in a SubQuery, or null if it isn't 
+     *  is in a SubQuery, or null if it isn't
      * @return SubQuery or null
      */
     public SubQuery getParent() {
         return parent;
     }
-    
+
     /** Setter for the Parent, if this Select is part
-     * of a SubQuery we'll set that as parent 
+     * of a SubQuery we'll set that as parent
      * @param parent - the SubQuery containing this Select
      */
     public void setParent(SubQuery parent) {
         this.parent = parent;
     }
-    
+
     /**
      * Creates a SelectStatement with Expression and FromExpression
      * also adds them as childrens towards the expression, and fromExpression
@@ -83,7 +89,7 @@ public class SelectStatement extends Node {
      * @param treeBuilder - the TreeBuilder for the helper functions
      */
     public SelectStatement(Expression expression,
-            FromExpression fromExpression, TreeBuilder treeBuilder) {
+                           FromExpression fromExpression, TreeBuilder treeBuilder) {
         this.builder = treeBuilder;
         this.tokenType = JdbcGrammarParser.SELECTSTATEMENT;
         this.tokenName = JdbcGrammarParser.tokenNames[this.tokenType];
@@ -92,7 +98,7 @@ public class SelectStatement extends Node {
         this.children.addLast(expression);
         this.children.addLast(fromExpression);
     }
-    
+
     /**
      * Constructor for the selectStatement which builds it up from the ANTLR tree
      * @param t - the ANTLR tree
@@ -100,12 +106,12 @@ public class SelectStatement extends Node {
      * @throws TreeParsingException - if we fail to parse the tree
      * @throws ColumnCallException - if Ambiguous columns found
      */
-    public SelectStatement(Tree t, TreeBuilder treeBuilder) 
+    public SelectStatement(Tree t, TreeBuilder treeBuilder)
             throws TreeParsingException, ColumnCallException {
         this.builder = treeBuilder;
         this.build(t, this.builder);
     }
-    
+
     /**
      * Creates a SelectStatement with Expression and FromExpression
      * to be used with the WhereExpressionResolver
@@ -114,7 +120,7 @@ public class SelectStatement extends Node {
      * @param fromExpression - the fromExpression for this select
      */
     public SelectStatement(TreeBuilder builder, Expression expression,
-            FromExpression fromExpression) {
+                           FromExpression fromExpression) {
 
         this.builder = builder;
         this.expression = expression;
@@ -122,7 +128,7 @@ public class SelectStatement extends Node {
         this.tokenType = JdbcGrammarParser.SELECTSTATEMENT;
         this.tokenName = JdbcGrammarParser.tokenNames[JdbcGrammarParser.SELECTKEYWORD];
     }
-    
+
     /**
      * the Builder to Parse out the ANTLR tree
      * @param t - the ANTLR tree
@@ -130,7 +136,7 @@ public class SelectStatement extends Node {
      * @throws TreeParsingException - if we fail to Parse out the tree
      * @throws ColumnCallException - if ambiguous columns found
      */
-    public void build(Tree t, TreeBuilder builder) 
+    public void build(Tree t, TreeBuilder builder)
             throws TreeParsingException, ColumnCallException {
         if (t.getType() == JdbcGrammarParser.SELECTSTATEMENT) {
             this.tokenName = JdbcGrammarParser.tokenNames[t.getType()];
@@ -150,7 +156,7 @@ public class SelectStatement extends Node {
                         break;
                 }
             }
-            
+
             for (int i = 0; i < t.getChildCount(); i++) {
                 Tree child = t.getChild(i);
                 switch (child.getType()) {
@@ -158,79 +164,74 @@ public class SelectStatement extends Node {
                         this.whereExpression = new WhereExpression(child,
                                 builder, this);
                         break;
-                } 
+                }
             }
 
-            if(this.whereExpression==null && this.fromExpression.children.size()>1) {
+            if (this.whereExpression == null && this.fromExpression.children.size() > 1) {
                 logger.debug("WHEREEXPRESSION WAS NULL");
 
-                    LinkedList<Node> linkedList = this.fromExpression.children;
-                    SubQuery left = null;
-                    for (Node node : linkedList) {
-                        if(left==null) {
-                            left = (SubQuery)node;
-                        }
-                        else {
-                            JoinExpression twoSubQIntoJoin = 
-                                    WhereExpressionJoinResolver.mkJoinExprFrmTwoSubQ(
-                                            left, (SubQuery)node);
-                            left = WhereExpressionJoinResolver.mkSubQFromJoinExpr(
-                                    twoSubQIntoJoin, builder, this); 
-                        }
+                LinkedList<Node> linkedList = this.fromExpression.children;
+                SubQuery left = null;
+                for (Node node : linkedList) {
+                    if (left == null) {
+                        left = (SubQuery) node;
+                    } else {
+                        JoinExpression twoSubQIntoJoin =
+                                WhereExpressionJoinResolver.mkJoinExprFrmTwoSubQ(
+                                        left, (SubQuery) node);
+                        left = WhereExpressionJoinResolver.mkSubQFromJoinExpr(
+                                twoSubQIntoJoin, builder, this);
                     }
-                    this.fromExpression.children = new LinkedList<Node>();
-                    this.fromExpression.children.addLast(left);
-            }
-            else if(whereExpression!=null)
-            {
+                }
+                this.fromExpression.children = new LinkedList<Node>();
+                this.fromExpression.children.addLast(left);
+            } else if (whereExpression != null) {
                 logger.debug(whereExpression.toPrettyString());
                 Boolean keepWhere = false;
                 switch (this.whereExpression.getExpression().getTokenType()) {
-                        case JdbcGrammarParser.CONJUNCTION:
-                            SubQuery conjunctionAsJoinExpr = 
+                    case JdbcGrammarParser.CONJUNCTION:
+                        SubQuery conjunctionAsJoinExpr =
                                 WhereExpressionJoinResolver.mkJoinExprFrmConjunction(
-                                        (Conjunction)whereExpression.getExpression(), this);
-                            if(conjunctionAsJoinExpr != null){
-                                this.fromExpression.children = new LinkedList<Node>();
-                                this.fromExpression.children.add(conjunctionAsJoinExpr);
-                            }
-                            else {
-                                //since we failed to build a Subquery from the conjunction,
-                                //we should keep the Where
-                                keepWhere = true;
-                            }
+                                        (Conjunction) whereExpression.getExpression(), this);
+                        if (conjunctionAsJoinExpr != null) {
+                            this.fromExpression.children = new LinkedList<Node>();
+                            this.fromExpression.children.add(conjunctionAsJoinExpr);
+                        } else {
+                            //since we failed to build a Subquery from the conjunction,
+                            //we should keep the Where
+                            keepWhere = true;
+                        }
                         break;
-                        case JdbcGrammarParser.BOOLEANEXPRESSIONITEM:
-                            SubQuery booleanExprAsJoin = 
+                    case JdbcGrammarParser.BOOLEANEXPRESSIONITEM:
+                        SubQuery booleanExprAsJoin =
                                 WhereExpressionJoinResolver.mkJoinExprFrmBooleanExprItem(
-                                        (BooleanExpressionItem)whereExpression.getExpression(), this);
-                            if(booleanExprAsJoin == null){
-                                //since we failed to build a Subquery from the conjunction,
-                                //we should keep the Where
-                                keepWhere = true;
-                            }
-                            else{                               
+                                        (BooleanExpressionItem) whereExpression.getExpression(), this);
+                        if (booleanExprAsJoin == null) {
+                            //since we failed to build a Subquery from the conjunction,
+                            //we should keep the Where
+                            keepWhere = true;
+                        } else {
                             this.fromExpression.children = new LinkedList<Node>();
                             this.fromExpression.children.add(booleanExprAsJoin);
-                            }
+                        }
                         break;
-                        case JdbcGrammarParser.DISJUNCTION:
-                            List<SubQuery> disjunctionAsJoin = 
+                    case JdbcGrammarParser.DISJUNCTION:
+                        List<SubQuery> disjunctionAsJoin =
                                 WhereExpressionJoinResolver.mkJoinExprFrmDisjunction(
-                                        (Disjunction)whereExpression.getExpression(), this);
-                            this.fromExpression.children = new LinkedList<Node>();
-                            for (SubQuery subQuery : disjunctionAsJoin) {
-                                this.fromExpression.children.add(subQuery);
-                            }
+                                        (Disjunction) whereExpression.getExpression(), this);
+                        this.fromExpression.children = new LinkedList<Node>();
+                        for (SubQuery subQuery : disjunctionAsJoin) {
+                            this.fromExpression.children.add(subQuery);
+                        }
                         break;
                     default:
                         break;
                 }
-                if(!keepWhere) {
-                this.whereExpression = null;
+                if (!keepWhere) {
+                    this.whereExpression = null;
                 }
             }
-            
+
             // After we take care for EXPRESSION
             for (int i = 0; i < t.getChildCount(); i++) {
                 Tree child = t.getChild(i);
@@ -245,7 +246,7 @@ public class SelectStatement extends Node {
                         break;
                 }
             }
-            
+
             // After we take care for others
             for (int i = 0; i < t.getChildCount(); i++) {
                 Tree child = t.getChild(i);
@@ -274,57 +275,56 @@ public class SelectStatement extends Node {
                         break;
                 }
             }
-        }
-        else {
+        } else {
             throw new TreeParsingException("This Tree is not a SELECTSTATEMENT");
         }
     }
-    
+
     /** Getter for the TreeBuilder */
     public TreeBuilder getBuilder() {
         return this.builder;
     }
-    
+
     /** Getter for the Expression */
     public Expression getExpression() {
         return this.expression;
     }
-    
+
     /** Getter for the From Expression*/
     public FromExpression getFromExpression() {
         return this.fromExpression;
     }
-    
+
     /** Getter for the Group By Expression*/
     public GroupByExpression getGroupByExpression() {
         return this.groupByExpression;
     }
-    
-    /** Getter for the Having Expression*/    
+
+    /** Getter for the Having Expression*/
     public HavingExpression getHavingExpression() {
         return this.havingExpression;
     }
-    
+
     /** Getter for the Limit Expression*/
     public LimitExpression getLimitExpression() {
         return this.limitExpression;
     }
-    
+
     /** Getter for the Order By Expression*/
     public OrderbyExpression getOrderbyExpression() {
         return this.orderByExpression;
     }
-    
+
     /** Getter for the Where Expression*/
     public WhereExpression getWhereExpression() {
         return this.whereExpression;
     }
-    
+
     @Override
     public String toPrettyString() {
         return this.toPrettyString(-1);
     }
-    
+
     @Override
     public String toPrettyString(int level) {
         String result = "SELECT " + newline + this.tab(level)
@@ -345,7 +345,7 @@ public class SelectStatement extends Node {
         if (this.limitExpression != null) {
             result += newline + this.limitExpression.toPrettyString(level);
         }
-        
+
         return result;
     }
 }

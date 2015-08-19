@@ -1,3 +1,27 @@
+/**
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package BQJDBC.QueryResultTest;
 
 import java.sql.Connection;
@@ -24,7 +48,7 @@ public class GrammarTestRunningForLong {
      * Logger initialization
      */
     Logger logger = Logger.getLogger(this.toString());
-    
+
     /**
      * Creates a new Connection to bigquery with the jdbc driver
      */
@@ -38,39 +62,37 @@ public class GrammarTestRunningForLong {
                             BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
                                     .readFromPropFile("installedaccount.properties")),
                             BQSupportFuncts.readFromPropFile("installedaccount.properties"));
-                }
-                catch (Exception e) {
-                    logger.debug("Failed to make connection trough the JDBC driver",e);
+                } catch (Exception e) {
+                    logger.debug("Failed to make connection trough the JDBC driver", e);
                 }
             }
             logger.debug("Running the next test");
-        }
-        catch (SQLException e) {
-            logger.fatal("Something went wrong",e);
+        } catch (SQLException e) {
+            logger.fatal("Something went wrong", e);
         }
     }
-    
-    
-    static String input;    
+
+
+    static String input;
     /**
      * to Test the columnresolver from 2 subqueries
      */
-    
+
     /**
      * to test the Grammars MultiJoin
      */
     @Test
     public void fourJoin() {
-        
-        input = "SELECT \r\n" + 
-                "    `efashion`.ARTICLE_COLOR_LOOKUP.ARTICLE_CODE, \r\n" + 
-                "    `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE,\r\n" + 
-                "    `efashion`.ARTICLE_LOOKUP.ARTICLE_LABEL, \r\n" + 
-                "FROM \r\n" + 
-                "    `efashion`.ARTICLE_COLOR_LOOKUP \r\n" + 
-                "        JOIN \r\n" + 
-                "    `efashion`.ARTICLE_LOOKUP \r\n" + 
-                "        ON \r\n" + 
+
+        input = "SELECT \r\n" +
+                "    `efashion`.ARTICLE_COLOR_LOOKUP.ARTICLE_CODE, \r\n" +
+                "    `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE,\r\n" +
+                "    `efashion`.ARTICLE_LOOKUP.ARTICLE_LABEL, \r\n" +
+                "FROM \r\n" +
+                "    `efashion`.ARTICLE_COLOR_LOOKUP \r\n" +
+                "        JOIN \r\n" +
+                "    `efashion`.ARTICLE_LOOKUP \r\n" +
+                "        ON \r\n" +
                 "    `efashion`.ARTICLE_COLOR_LOOKUP.ARTICLE_CODE = `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE" +
                 "       JOIN \r\n" +
                 "   efashion.ARTICLE_LOOKUP_CRITERIA" +
@@ -81,83 +103,80 @@ public class GrammarTestRunningForLong {
                 "       ON" +
                 "   efashion.SHOP_FACTS.ARTICLE_CODE = `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE" +
                 " LIMIT 2";
-        logger.info("Running test: fourJoin \r\n" + input );
-        
+        logger.info("Running test: fourJoin \r\n" + input);
+
         ResultSet queryResult = null;
         try {
             queryResult = con.createStatement().executeQuery(input);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
         HelperFunctions.printer(queryResult);
-    }    
-        
-    
-    /** 
+    }
+
+
+    /**
      * A simple query with count(*)
      * from Quartezian joined tables
      */
     @Test
     public void countJokerFromTwoTables() {
-        
+
         input = "select COUNT(*) from efashion.ARTICLE_COLOR_LOOKUP, efashion.ARTICLE_LOOKUP";
 
-        logger.info("Running test: test_countjoker" + input );
-        
-        ResultSet queryResult = null;
-        try {
-            queryResult = con.createStatement().executeQuery(input);
-        }
-        catch (SQLException e) {
-            this.logger.error("SQLexception" + e.toString());
-            Assert.fail("SQLException" + e.toString());
-        }
-        Assert.assertNotNull(queryResult);
-        HelperFunctions.printer(queryResult);
-    }
-    
-    
-    /** To test the joinresolver */
-   @Test
-    public void selectFromDuplicateTableWithoutAlias() {
-        input = "SELECT efashion.ARTICLE_LOOKUP.ARTICLE_CODE as ARTICLE_CODE1, efashion.ARTICLE_LOOKUP_CRITERIA.ARTICLE_CODE as ARTICLE_CODE2 FROM efashion.ARTICLE_LOOKUP, efashion.ARTICLE_LOOKUP_CRITERIA limit 10";       
-        logger.info("Running test: selectFromDuplicateTableWithoutAlias" + input );
+        logger.info("Running test: test_countjoker" + input);
 
         ResultSet queryResult = null;
         try {
             queryResult = con.createStatement().executeQuery(input);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
         HelperFunctions.printer(queryResult);
     }
-            
+
+
+    /** To test the joinresolver */
+    @Test
+    public void selectFromDuplicateTableWithoutAlias() {
+        input = "SELECT efashion.ARTICLE_LOOKUP.ARTICLE_CODE as ARTICLE_CODE1, efashion.ARTICLE_LOOKUP_CRITERIA.ARTICLE_CODE as ARTICLE_CODE2 FROM efashion.ARTICLE_LOOKUP, efashion.ARTICLE_LOOKUP_CRITERIA limit 10";
+        logger.info("Running test: selectFromDuplicateTableWithoutAlias" + input);
+
+        ResultSet queryResult = null;
+        try {
+            queryResult = con.createStatement().executeQuery(input);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(queryResult);
+        HelperFunctions.printer(queryResult);
+    }
+
     @Test
     public void selectJokerFromFourJoin() {
-        
-        input = "SELECT * FROM \r\n" + 
-        		"    efashion.ARTICLE_COLOR_LOOKUP\r\n" + 
-        		"        JOIN \r\n" + 
-        		"    efashion.ARTICLE_LOOKUP \r\n" + 
-        		"        ON \r\n" + 
-        		"    efashion.ARTICLE_COLOR_LOOKUP.ARTICLE_CODE = efashion.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" + 
-        		"       JOIN\r\n" + 
-        		"   efashion.ARTICLE_LOOKUP_CRITERIA\r\n" + 
-        		"       ON\r\n" + 
-        		"   efashion.ARTICLE_LOOKUP_CRITERIA.ARTICLE_CODE = efashion.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" + 
-        		"       JOIN\r\n" + 
-        		"   efashion.SHOP_FACTS\r\n" + 
-        		"       ON\r\n" + 
-        		"   efashion.SHOP_FACTS.ARTICLE_CODE = `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" + 
-        		"LIMIT 1000000";
-        logger.info("Running test: selectJokerFromFourJoin \r\n" + input );
-        
+
+        input = "SELECT * FROM \r\n" +
+                "    efashion.ARTICLE_COLOR_LOOKUP\r\n" +
+                "        JOIN \r\n" +
+                "    efashion.ARTICLE_LOOKUP \r\n" +
+                "        ON \r\n" +
+                "    efashion.ARTICLE_COLOR_LOOKUP.ARTICLE_CODE = efashion.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" +
+                "       JOIN\r\n" +
+                "   efashion.ARTICLE_LOOKUP_CRITERIA\r\n" +
+                "       ON\r\n" +
+                "   efashion.ARTICLE_LOOKUP_CRITERIA.ARTICLE_CODE = efashion.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" +
+                "       JOIN\r\n" +
+                "   efashion.SHOP_FACTS\r\n" +
+                "       ON\r\n" +
+                "   efashion.SHOP_FACTS.ARTICLE_CODE = `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" +
+                "LIMIT 1000000";
+        logger.info("Running test: selectJokerFromFourJoin \r\n" + input);
+
         ResultSet queryResult = null;
         try {
             /*
@@ -165,173 +184,170 @@ public class GrammarTestRunningForLong {
                     ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);*/
             Statement stm = con.createStatement();
             queryResult = stm.executeQuery(input);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
         HelperFunctions.printer(queryResult);
-    }    
-    
+    }
+
     @Test
     public void selectJokerFromFourJoinWithWhere() {
-        
+
         input = "SELECT " +
-        		"     efashion.ARTICLE_LOOKUP.ARTICLE_CODE, \r\n" +
+                "     efashion.ARTICLE_LOOKUP.ARTICLE_CODE, \r\n" +
                 "     efashion.ARTICLE_LOOKUP.ARTICLE_LABEL, \r\n" +
-                "     efashion.ARTICLE_LOOKUP.CATEGORY, \r\n" + 
-                "     efashion.ARTICLE_COLOR_LOOKUP.COLOR_CODE, \r\n" + 
-        		"     efashion.ARTICLE_COLOR_LOOKUP.COLOR_LABEL, \r\n" + 
-                "     CRITERIA_TYPE, \r\n" + 
-                "     CRITERIA, \r\n" + 
-                "     CRITERIA_TYPE_LABEL, \r\n" + 
+                "     efashion.ARTICLE_LOOKUP.CATEGORY, \r\n" +
+                "     efashion.ARTICLE_COLOR_LOOKUP.COLOR_CODE, \r\n" +
+                "     efashion.ARTICLE_COLOR_LOOKUP.COLOR_LABEL, \r\n" +
+                "     CRITERIA_TYPE, \r\n" +
+                "     CRITERIA, \r\n" +
+                "     CRITERIA_TYPE_LABEL, \r\n" +
                 "     CRITERIA_LABEL, \r\n" +
-        		"     efashion.ARTICLE_LOOKUP.FAMILY_NAME, \r\n" + 
-        		"     efashion.ARTICLE_LOOKUP.FAMILY_CODE, \r\n" + 
-        		"     efashion.ARTICLE_LOOKUP.SALE_PRICE, \r\n" + 
-                "     MARGIN, \r\n" + 
+                "     efashion.ARTICLE_LOOKUP.FAMILY_NAME, \r\n" +
+                "     efashion.ARTICLE_LOOKUP.FAMILY_CODE, \r\n" +
+                "     efashion.ARTICLE_LOOKUP.SALE_PRICE, \r\n" +
+                "     MARGIN, \r\n" +
                 "     QUANTITY_SOLD, " +
-        		"     AMOUNT_SOLD, \r\n" + 
+                "     AMOUNT_SOLD, \r\n" +
                 "     WEEK_KEY \r\n" +
-        		" FROM \r\n" + 
-                "    efashion.ARTICLE_COLOR_LOOKUP\r\n" + 
-                "        JOIN \r\n" + 
-                "    efashion.ARTICLE_LOOKUP \r\n" + 
-                "        ON \r\n" + 
-                "    efashion.ARTICLE_COLOR_LOOKUP.ARTICLE_CODE = efashion.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" + 
-                "       JOIN\r\n" + 
-                "   efashion.ARTICLE_LOOKUP_CRITERIA\r\n" + 
-                "       ON\r\n" + 
-                "   efashion.ARTICLE_LOOKUP_CRITERIA.ARTICLE_CODE = efashion.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" + 
-                "       JOIN\r\n" + 
-                "   efashion.SHOP_FACTS\r\n" + 
-                "       ON\r\n" + 
+                " FROM \r\n" +
+                "    efashion.ARTICLE_COLOR_LOOKUP\r\n" +
+                "        JOIN \r\n" +
+                "    efashion.ARTICLE_LOOKUP \r\n" +
+                "        ON \r\n" +
+                "    efashion.ARTICLE_COLOR_LOOKUP.ARTICLE_CODE = efashion.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" +
+                "       JOIN\r\n" +
+                "   efashion.ARTICLE_LOOKUP_CRITERIA\r\n" +
+                "       ON\r\n" +
+                "   efashion.ARTICLE_LOOKUP_CRITERIA.ARTICLE_CODE = efashion.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" +
+                "       JOIN\r\n" +
+                "   efashion.SHOP_FACTS\r\n" +
+                "       ON\r\n" +
                 "   efashion.SHOP_FACTS.ARTICLE_CODE = `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE\r\n" +
                 "WHERE" +
-                " efashion.ARTICLE_LOOKUP.SALE_PRICE <= '100'" + 
+                " efashion.ARTICLE_LOOKUP.SALE_PRICE <= '100'" +
                 "LIMIT 10";
-        logger.info("Running test: selectJokerFromFourJoin \r\n" + input );
-        
+        logger.info("Running test: selectJokerFromFourJoin \r\n" + input);
+
         ResultSet queryResult = null;
         try {
             queryResult = con.createStatement().executeQuery(input);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
         Assert.assertNotNull(queryResult);
         HelperFunctions.printer(queryResult);
-    }    
-         
+    }
+
     @Test
     public void birtQueryBuilderOne() {
-        
-        input = "SELECT `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE, `efashion`.ARTICLE_LOOKUP.ARTICLE_LABEL,\r\n" + 
-        		"  `efashion`.ARTICLE_LOOKUP.SALE_PRICE, `efashion`.ARTICLE_LOOKUP.FAMILY_NAME,\r\n" + 
-        		"  `efashion`.PRODUCT_PROMOTION_FACTS.WEEK_KEY, `efashion`.PRODUCT_PROMOTION_FACTS.DURATION,\r\n" + 
-        		"  `efashion`.PRODUCT_PROMOTION_FACTS.PROMOTION_KEY, `efashion`.CALENDAR_YEAR_LOOKUP.YEAR,\r\n" + 
-        		"  `efashion`.CALENDAR_YEAR_LOOKUP.WEEK_IN_YEAR, `efashion`.PROMOTION_LOOKUP.PROMOTION,\r\n" + 
-        		"  `efashion`.PROMOTION_LOOKUP.PRINT_FLAG, `efashion`.PROMOTION_LOOKUP.RADIO_FLAG,\r\n" + 
-        		"  `efashion`.PROMOTION_LOOKUP.TELEVISION_FLAG, `efashion`.PROMOTION_LOOKUP.DIRECT_MAIL_FLAG,\r\n" + 
-        		"  `efashion`.SHOP_FACTS.COLOR_CODE, `efashion`.SHOP_FACTS.SHOP_CODE,\r\n" + 
-        		"  `efashion`.SHOP_FACTS.AMOUNT_SOLD, `efashion`.SHOP_FACTS.QUANTITY_SOLD\r\n" + 
-        		"  FROM\r\n" + 
-        		"       `efashion`.SHOP_FACTS " +
-        		"     JOIN `efashion`.PRODUCT_PROMOTION_FACTS " +
+
+        input = "SELECT `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE, `efashion`.ARTICLE_LOOKUP.ARTICLE_LABEL,\r\n" +
+                "  `efashion`.ARTICLE_LOOKUP.SALE_PRICE, `efashion`.ARTICLE_LOOKUP.FAMILY_NAME,\r\n" +
+                "  `efashion`.PRODUCT_PROMOTION_FACTS.WEEK_KEY, `efashion`.PRODUCT_PROMOTION_FACTS.DURATION,\r\n" +
+                "  `efashion`.PRODUCT_PROMOTION_FACTS.PROMOTION_KEY, `efashion`.CALENDAR_YEAR_LOOKUP.YEAR,\r\n" +
+                "  `efashion`.CALENDAR_YEAR_LOOKUP.WEEK_IN_YEAR, `efashion`.PROMOTION_LOOKUP.PROMOTION,\r\n" +
+                "  `efashion`.PROMOTION_LOOKUP.PRINT_FLAG, `efashion`.PROMOTION_LOOKUP.RADIO_FLAG,\r\n" +
+                "  `efashion`.PROMOTION_LOOKUP.TELEVISION_FLAG, `efashion`.PROMOTION_LOOKUP.DIRECT_MAIL_FLAG,\r\n" +
+                "  `efashion`.SHOP_FACTS.COLOR_CODE, `efashion`.SHOP_FACTS.SHOP_CODE,\r\n" +
+                "  `efashion`.SHOP_FACTS.AMOUNT_SOLD, `efashion`.SHOP_FACTS.QUANTITY_SOLD\r\n" +
+                "  FROM\r\n" +
+                "       `efashion`.SHOP_FACTS " +
+                "     JOIN `efashion`.PRODUCT_PROMOTION_FACTS " +
                 "             ON `efashion`.SHOP_FACTS.ARTICLE_CODE = `efashion`.PRODUCT_PROMOTION_FACTS.ARTICLE_CODE\r\n" +
-        		"     JOIN `efashion`.ARTICLE_LOOKUP " +
-        		"     ON `efashion`.PRODUCT_PROMOTION_FACTS.ARTICLE_CODE = `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE " +
-        		"         JOIN `efashion`.CALENDAR_YEAR_LOOKUP " +
-        		"         ON `efashion`.PRODUCT_PROMOTION_FACTS.WEEK_KEY = `efashion`.CALENDAR_YEAR_LOOKUP.WEEK_KEY " +
-        		"             JOIN `efashion`.PROMOTION_LOOKUP " +
-        		"             ON `efashion`.PRODUCT_PROMOTION_FACTS.PROMOTION_KEY = `efashion`.PROMOTION_LOOKUP.PROMOTION_KEY " + 
-        		"";
-        
-    logger.info("Running test: selectJokerFromFourJoin \r\n" + input );
-        
-    ResultSet queryResult = null;
-    try {
-        queryResult = con.createStatement().executeQuery(input);
+                "     JOIN `efashion`.ARTICLE_LOOKUP " +
+                "     ON `efashion`.PRODUCT_PROMOTION_FACTS.ARTICLE_CODE = `efashion`.ARTICLE_LOOKUP.ARTICLE_CODE " +
+                "         JOIN `efashion`.CALENDAR_YEAR_LOOKUP " +
+                "         ON `efashion`.PRODUCT_PROMOTION_FACTS.WEEK_KEY = `efashion`.CALENDAR_YEAR_LOOKUP.WEEK_KEY " +
+                "             JOIN `efashion`.PROMOTION_LOOKUP " +
+                "             ON `efashion`.PRODUCT_PROMOTION_FACTS.PROMOTION_KEY = `efashion`.PROMOTION_LOOKUP.PROMOTION_KEY " +
+                "";
+
+        logger.info("Running test: selectJokerFromFourJoin \r\n" + input);
+
+        ResultSet queryResult = null;
+        try {
+            queryResult = con.createStatement().executeQuery(input);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(queryResult);
+        HelperFunctions.printer(queryResult);
     }
-    catch (SQLException e) {
-        this.logger.error("SQLexception" + e.toString());
-        Assert.fail("SQLException" + e.toString());
-    }
-    Assert.assertNotNull(queryResult);
-    HelperFunctions.printer(queryResult);
-}      
+
     @Test
     public void inetClearReports() {
-        
+
         input = " SELECT PROMOTION_LOOKUP.DIRECT_MAIL_FLAG," +
-        		"     PROMOTION_LOOKUP.PRINT_FLAG," +
-        		"     PROMOTION_LOOKUP.PROMOTION," +
-        		"     PROMOTION_LOOKUP.PROMOTION_KEY," +
-        		"     PROMOTION_LOOKUP.RADIO_FLAG," +
-        		"     PROMOTION_LOOKUP.TELEVISION_FLAG," +
-        		"     TICLE_COLOR_LOOKUP.ARTICLE_CODE," +
-        		"     TICLE_COLOR_LOOKUP.ARTICLE_LABEL," +
-        		"     TICLE_COLOR_LOOKUP.CATEGORY," +
-        		"     TICLE_COLOR_LOOKUP.COLOR_CODE," +
-        		"     TICLE_COLOR_LOOKUP.COLOR_LABEL," +
-        		"     TICLE_COLOR_LOOKUP.FAMILY_CODE," +
-        		"     TICLE_COLOR_LOOKUP.FAMILY_NAME," +
-        		"     TICLE_COLOR_LOOKUP.SALE_PRICE," +
-        	    "      QT_RN_ST_LN_CA_SR.CATEGORY," +
-        		"     QT_RN_ST_LN_CA_SR.ID," +
-        		"     QT_RN_ST_LN_CA_SR.LINE," +
-        		"     QT_RN_ST_LN_CA_SR.QUARTER," +
-        		"     QT_RN_ST_LN_CA_SR.SALES_REVENUE," +
-        		"     QT_RN_ST_LN_CA_SR.STATE," +
-        		"     QT_RN_ST_LN_CA_SR.\"YEAR\"," +
-        		"     CT_PROMOTION_FACTS.ARTICLE_CODE," +
-        		"     CT_PROMOTION_FACTS.DURATION," +
-        		"     CT_PROMOTION_FACTS.ID," +
-        		"     CT_PROMOTION_FACTS.PROMOTION_COST," +
-        		"     CT_PROMOTION_FACTS.PROMOTION_KEY," +
-        		"     CT_PROMOTION_FACTS.WEEK_KEY," +
-        		"     LE_LOOKUP_CRITERIA.ARTICLE_CODE," +
-        		"     LE_LOOKUP_CRITERIA.CRITERIA," +
-        		"     LE_LOOKUP_CRITERIA.CRITERIA_LABEL," +
-        		"     LE_LOOKUP_CRITERIA.CRITERIA_TYPE," +
-        		"     LE_LOOKUP_CRITERIA.CRITERIA_TYPE_LABEL," +
-        		"     LE_LOOKUP_CRITERIA.ID " +
-        		"FROM    efashion.ARTICLE_COLOR_LOOKUP TICLE_COLOR_LOOKUP " +
-        		"INNER JOIN " +
-        		"     efashion.AGG_YR_QT_RN_ST_LN_CA_SR QT_RN_ST_LN_CA_SR " +
-        		"ON   " +
-        		"     TICLE_COLOR_LOOKUP.CATEGORY=QT_RN_ST_LN_CA_SR.CATEGORY  " +
-        		"     INNER JOIN " +
-        		"         efashion.ARTICLE_LOOKUP_CRITERIA LE_LOOKUP_CRITERIA " +
-        		"     ON TICLE_COLOR_LOOKUP.ARTICLE_CODE=LE_LOOKUP_CRITERIA.ARTICLE_CODE  " +
-        		"         INNER JOIN " +
-        		"             efashion.PRODUCT_PROMOTION_FACTS CT_PROMOTION_FACTS " +
-        		"         ON TICLE_COLOR_LOOKUP.ARTICLE_CODE=CT_PROMOTION_FACTS.ARTICLE_CODE  " +
-        		"             INNER JOIN efashion.PROMOTION_LOOKUP PROMOTION_LOOKUP " +
-        		"                 ON CT_PROMOTION_FACTS.PROMOTION_KEY=PROMOTION_LOOKUP.PROMOTION_KEY " +
-        		"WHERE 1=0";
-        
-    logger.info("Running test: inetClearReports \r\n" + input );
-        
-    ResultSet queryResult = null;
-    try {
-        queryResult = con.createStatement().executeQuery(input);
+                "     PROMOTION_LOOKUP.PRINT_FLAG," +
+                "     PROMOTION_LOOKUP.PROMOTION," +
+                "     PROMOTION_LOOKUP.PROMOTION_KEY," +
+                "     PROMOTION_LOOKUP.RADIO_FLAG," +
+                "     PROMOTION_LOOKUP.TELEVISION_FLAG," +
+                "     TICLE_COLOR_LOOKUP.ARTICLE_CODE," +
+                "     TICLE_COLOR_LOOKUP.ARTICLE_LABEL," +
+                "     TICLE_COLOR_LOOKUP.CATEGORY," +
+                "     TICLE_COLOR_LOOKUP.COLOR_CODE," +
+                "     TICLE_COLOR_LOOKUP.COLOR_LABEL," +
+                "     TICLE_COLOR_LOOKUP.FAMILY_CODE," +
+                "     TICLE_COLOR_LOOKUP.FAMILY_NAME," +
+                "     TICLE_COLOR_LOOKUP.SALE_PRICE," +
+                "      QT_RN_ST_LN_CA_SR.CATEGORY," +
+                "     QT_RN_ST_LN_CA_SR.ID," +
+                "     QT_RN_ST_LN_CA_SR.LINE," +
+                "     QT_RN_ST_LN_CA_SR.QUARTER," +
+                "     QT_RN_ST_LN_CA_SR.SALES_REVENUE," +
+                "     QT_RN_ST_LN_CA_SR.STATE," +
+                "     QT_RN_ST_LN_CA_SR.\"YEAR\"," +
+                "     CT_PROMOTION_FACTS.ARTICLE_CODE," +
+                "     CT_PROMOTION_FACTS.DURATION," +
+                "     CT_PROMOTION_FACTS.ID," +
+                "     CT_PROMOTION_FACTS.PROMOTION_COST," +
+                "     CT_PROMOTION_FACTS.PROMOTION_KEY," +
+                "     CT_PROMOTION_FACTS.WEEK_KEY," +
+                "     LE_LOOKUP_CRITERIA.ARTICLE_CODE," +
+                "     LE_LOOKUP_CRITERIA.CRITERIA," +
+                "     LE_LOOKUP_CRITERIA.CRITERIA_LABEL," +
+                "     LE_LOOKUP_CRITERIA.CRITERIA_TYPE," +
+                "     LE_LOOKUP_CRITERIA.CRITERIA_TYPE_LABEL," +
+                "     LE_LOOKUP_CRITERIA.ID " +
+                "FROM    efashion.ARTICLE_COLOR_LOOKUP TICLE_COLOR_LOOKUP " +
+                "INNER JOIN " +
+                "     efashion.AGG_YR_QT_RN_ST_LN_CA_SR QT_RN_ST_LN_CA_SR " +
+                "ON   " +
+                "     TICLE_COLOR_LOOKUP.CATEGORY=QT_RN_ST_LN_CA_SR.CATEGORY  " +
+                "     INNER JOIN " +
+                "         efashion.ARTICLE_LOOKUP_CRITERIA LE_LOOKUP_CRITERIA " +
+                "     ON TICLE_COLOR_LOOKUP.ARTICLE_CODE=LE_LOOKUP_CRITERIA.ARTICLE_CODE  " +
+                "         INNER JOIN " +
+                "             efashion.PRODUCT_PROMOTION_FACTS CT_PROMOTION_FACTS " +
+                "         ON TICLE_COLOR_LOOKUP.ARTICLE_CODE=CT_PROMOTION_FACTS.ARTICLE_CODE  " +
+                "             INNER JOIN efashion.PROMOTION_LOOKUP PROMOTION_LOOKUP " +
+                "                 ON CT_PROMOTION_FACTS.PROMOTION_KEY=PROMOTION_LOOKUP.PROMOTION_KEY " +
+                "WHERE 1=0";
+
+        logger.info("Running test: inetClearReports \r\n" + input);
+
+        ResultSet queryResult = null;
+        try {
+            queryResult = con.createStatement().executeQuery(input);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(queryResult);
+        HelperFunctions.printer(queryResult);
     }
-    catch (SQLException e) {
-        this.logger.error("SQLexception" + e.toString());
-        Assert.fail("SQLException" + e.toString());
-    }
-    Assert.assertNotNull(queryResult);
-    HelperFunctions.printer(queryResult);
-}   
-    
+
     //---------------------------------------------------
     //---------------------------------------------------
     //---------------------------------------------------
     //---------------------------------------------------
     //---------------------------------------------------
     //---------------------------------------------------
-        
+
 }

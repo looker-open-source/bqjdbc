@@ -1,19 +1,26 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * This class implements functions to Authorize bigquery client
  */
@@ -66,9 +73,9 @@ public class Oauth2Bigquery {
     /**
      * Browsers to try:
      */
-    static final String[] browsers = { "google-chrome", "firefox", "opera",
+    static final String[] browsers = {"google-chrome", "firefox", "opera",
             "epiphany", "konqueror", "conkeror", "midori", "kazehakase",
-            "mozilla" };
+            "mozilla"};
     /**
      * Google client secrets or {@code null} before initialized in
      * {@link #authorize}.
@@ -93,18 +100,14 @@ public class Oauth2Bigquery {
      * Authorizes the installed application to access user's protected data. if
      * possible, gets the credential from xml file at PathForXmlStore
      *
-     * @param transport
-     *            HTTP transport
-     * @param jsonFactory
-     *            JSON factory
-     * @param receiver
-     *            verification code receiver
-     * @param scopes
-     *            OAuth 2.0 scopes
+     * @param transport   HTTP transport
+     * @param jsonFactory JSON factory
+     * @param receiver    verification code receiver
+     * @param scopes      OAuth 2.0 scopes
      */
     public static Credential authorize(HttpTransport transport,
-            JsonFactory jsonFactory, VerificationCodeReceiver receiver,
-            List<String> scopes, String clientid, String clientsecret)
+                                       JsonFactory jsonFactory, VerificationCodeReceiver receiver,
+                                       List<String> scopes, String clientid, String clientsecret)
             throws Exception {
 
         BQXMLCredentialStore Store = new BQXMLCredentialStore(
@@ -145,8 +148,7 @@ public class Oauth2Bigquery {
             // automatically refreshed.
             return Oauth2Bigquery.codeflow.createAndStoreCredential(response,
                     clientid + ":" + clientsecret);
-        }
-        finally {
+        } finally {
             receiver.stop();
         }
     }
@@ -161,7 +163,7 @@ public class Oauth2Bigquery {
      * @throws SQLException
      */
     public static Bigquery authorizeviainstalled(String clientid,
-            String clientsecret) throws SQLException {
+                                                 String clientsecret) throws SQLException {
         LocalServerReceiver rcvr = new LocalServerReceiver();
         List<String> Scopes = new ArrayList<String>();
         Scopes.add(BigqueryScopes.BIGQUERY);
@@ -172,8 +174,7 @@ public class Oauth2Bigquery {
                     CmdlineUtils.getHttpTransport(),
                     CmdlineUtils.getJsonFactory(), rcvr, Scopes, clientid,
                     clientsecret);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new SQLException(e);
         }
         logger.debug("Creating a new bigquery client.");
@@ -194,7 +195,7 @@ public class Oauth2Bigquery {
      * @throws IOException
      */
     public static Bigquery authorizeviaservice(String serviceaccountemail,
-            String keypath) throws GeneralSecurityException, IOException {
+                                               String keypath) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
 
         List<String> scopes = new ArrayList<String>();
@@ -203,10 +204,10 @@ public class Oauth2Bigquery {
                 .setTransport(CmdlineUtils.getHttpTransport())
                 .setJsonFactory(CmdlineUtils.getJsonFactory())
                 .setServiceAccountId(serviceaccountemail)
-                // e-mail ADDRESS!!!!
+                        // e-mail ADDRESS!!!!
                 .setServiceAccountScopes(scopes)
-                // Currently we only want to access bigquery, but it's possible
-                // to name more than one service too
+                        // Currently we only want to access bigquery, but it's possible
+                        // to name more than one service too
                 .setServiceAccountPrivateKeyFromP12File(new File(keypath))
                 .build();
         logger.debug("Authorizied?");
@@ -234,8 +235,7 @@ public class Oauth2Bigquery {
                     desktop.browse(URI.create(url));
                     logger.debug("success");
                     return;
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     logger.debug("Failed with desktop.browse", e);
                     // handled below
                 }
@@ -252,32 +252,28 @@ public class Oauth2Bigquery {
                 logger.debug("Mac OS com.apple.eio.FileManager should handle the URL");
                 Class.forName("com.apple.eio.FileManager")
                         .getDeclaredMethod("openURL",
-                                new Class[] { String.class })
-                        .invoke(null, new Object[] { url });
+                                new Class[]{String.class})
+                        .invoke(null, new Object[]{url});
                 return;
-            }
-            else
-                if (osName.startsWith("Windows")) {
-                    logger.debug("Let's run internet suxplorer! with the URL: " + url);
-                    Runtime.getRuntime().exec(
-                            "cmd.exe /c start iexplore.exe \"" + url + "\"");
-                    return;
-                }
-                else { // assume Unix or Linux-
-                    logger.debug("Unix or Linux, we'll open a browser");
-                    String browser = null;
-                    for (String b : browsers) {
-                        if (browser == null
-                                && Runtime.getRuntime()
-                                        .exec(new String[] { "which", b })
-                                        .getInputStream().read() != -1) {
-                            Runtime.getRuntime().exec(
-                                    new String[] { browser = b, url });
-                        }
+            } else if (osName.startsWith("Windows")) {
+                logger.debug("Let's run internet suxplorer! with the URL: " + url);
+                Runtime.getRuntime().exec(
+                        "cmd.exe /c start iexplore.exe \"" + url + "\"");
+                return;
+            } else { // assume Unix or Linux-
+                logger.debug("Unix or Linux, we'll open a browser");
+                String browser = null;
+                for (String b : browsers) {
+                    if (browser == null
+                            && Runtime.getRuntime()
+                            .exec(new String[]{"which", b})
+                            .getInputStream().read() != -1) {
+                        Runtime.getRuntime().exec(
+                                new String[]{browser = b, url});
                     }
                 }
-        }
-        catch (Exception e) {
+            }
+        } catch (Exception e) {
             logger.debug("Failed", e);
             // handled below
         }
@@ -289,8 +285,7 @@ public class Oauth2Bigquery {
             myURLConnection.connect();
             logger.debug("success");
             return;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.debug(null, e);
             // handled below
         }

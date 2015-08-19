@@ -1,20 +1,27 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  * This class implements functions to store credentials in an xml file encrypted
  */
 
@@ -65,19 +72,19 @@ import com.google.api.client.auth.oauth2.CredentialStore;
 /**
  * Implements CredentialStore to use XML file to store Refresh Tokens encrypted
  * with AES
- * 
- * @author Horv·th Attila
- * 
+ *
+ * @author Horv√°th Attila
+ *
  */
 public class BQXMLCredentialStore implements CredentialStore {
-    
+
     // static Logger logger = new Logger(BQXMLCredentialStore.class.getName());
     static Logger logger = Logger.getLogger(BQXMLCredentialStore.class
             .getName());
-    
+
     /**
      * Decrypts AES encrypted byte array
-     * 
+     *
      * @param clientSecret
      *            The base for the key
      * @param argument
@@ -89,15 +96,13 @@ public class BQXMLCredentialStore implements CredentialStore {
         byte[] key = null;
         try {
             key = clientSecret.getBytes("UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             return null;
         }
         MessageDigest sha = null;
         try {
             sha = MessageDigest.getInstance("SHA-1");
-        }
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             return null;
         }
         key = sha.digest(key);
@@ -106,34 +111,29 @@ public class BQXMLCredentialStore implements CredentialStore {
         Cipher cipher = null;
         try {
             cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        }
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             return null;
-        }
-        catch (NoSuchPaddingException e) {
+        } catch (NoSuchPaddingException e) {
             return null;
         }
         try {
             cipher.init(Cipher.DECRYPT_MODE, secret);
-        }
-        catch (InvalidKeyException e) {
+        } catch (InvalidKeyException e) {
             return null;
         }
         try {
             ciphertext = cipher.doFinal(ciphertext);
-        }
-        catch (IllegalBlockSizeException e) {
+        } catch (IllegalBlockSizeException e) {
             return null;
-        }
-        catch (BadPaddingException e) {
+        } catch (BadPaddingException e) {
             return null;
         }
         return ciphertext;
     }
-    
+
     /**
      * Encrypts a String argument with AES
-     * 
+     *
      * @param clientSecret
      *            the base for the key
      * @param argument
@@ -144,55 +144,47 @@ public class BQXMLCredentialStore implements CredentialStore {
         byte[] key = null;
         try {
             key = clientSecret.getBytes("UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             return null;
         }
         MessageDigest sha = null;
         try {
             sha = MessageDigest.getInstance("SHA-1");
-        }
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             return null;
         }
         key = sha.digest(key);
         key = Arrays.copyOf(key, 16); // using only first 128 bit
         SecretKey secret = new SecretKeySpec(key, "AES");
-        
+
         /* encrypt the message. */
         Cipher cipher = null;
         try {
             cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        }
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             return null;
-        }
-        catch (NoSuchPaddingException e) {
+        } catch (NoSuchPaddingException e) {
             return null;
         }
         try {
             cipher.init(Cipher.ENCRYPT_MODE, secret);
-        }
-        catch (InvalidKeyException e) {
+        } catch (InvalidKeyException e) {
             return null;
         }
         try {
             return cipher.doFinal(argument.getBytes("UTF-8"));
-        }
-        catch (IllegalBlockSizeException e) {
+        } catch (IllegalBlockSizeException e) {
             return null;
-        }
-        catch (BadPaddingException e) {
+        } catch (BadPaddingException e) {
             return null;
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             return null;
         }
     }
-    
+
     /**
      * Converts a String to its md5 hashed representation String
-     * 
+     *
      * @param md5
      * @return
      */
@@ -207,18 +199,17 @@ public class BQXMLCredentialStore implements CredentialStore {
                         .substring(1, 3));
             }
             return sb.toString();
-        }
-        catch (java.security.NoSuchAlgorithmException e) {
+        } catch (java.security.NoSuchAlgorithmException e) {
         }
         return null;
     }
-    
+
     String documentpath = null;
-    
+
     /**
      * Constructor for the class, it just initializes the path to xml file from
      * the given properties file;
-     * 
+     *
      * @param Path
      * @throws IOException
      */
@@ -228,8 +219,7 @@ public class BQXMLCredentialStore implements CredentialStore {
             properties.load(new FileInputStream(System.getProperty("user.home")
                     + File.separator + ".bqjdbc" + File.separator
                     + "xmllocation.properties"));
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.debug("Property file not found for credential store location setting default location for credentials");
             this.documentpath = System.getProperty("user.home")
                     + File.separator + ".bqjdbc" + File.separator
@@ -241,16 +231,14 @@ public class BQXMLCredentialStore implements CredentialStore {
             this.documentpath = System.getProperty("user.home")
                     + File.separator + ".bqjdbc" + File.separator
                     + "credentials.xml";
-        }
-        else {
+        } else {
             logger.debug(properties.getProperty("xmlpath"));
             if (properties.getProperty("xmlpath").contains("${user.home}")) {
                 this.documentpath = System.getProperty("user.home")
                         + properties.getProperty("xmlpath").substring(
-                                properties.getProperty("xmlpath").lastIndexOf(
-                                        "}") + 1);
-            }
-            else {
+                        properties.getProperty("xmlpath").lastIndexOf(
+                                "}") + 1);
+            } else {
                 this.documentpath = properties.getProperty("xmlpath");
             }
             logger.info("Document path for the credentials is: "
@@ -263,14 +251,14 @@ public class BQXMLCredentialStore implements CredentialStore {
             pathofdocumentpath.mkdirs();
         }
     }
-    
+
     @Override
     public void delete(String userId, Credential credential) throws IOException {
         Document doc = null;
         doc = this.loadDocument(this.documentpath);
-        
+
         if (doc != null) {
-            
+
             NodeList elements = doc.getElementsByTagName("Credential");
             Element loadelement = null;
             for (int i = 0; i < elements.getLength(); i++) {
@@ -278,7 +266,7 @@ public class BQXMLCredentialStore implements CredentialStore {
                         .getNamedItem("ID");
                 if (mynode != null
                         && mynode.getNodeValue().equals(
-                                BQXMLCredentialStore.MD5(userId))) {
+                        BQXMLCredentialStore.MD5(userId))) {
                     loadelement = (Element) elements.item(i);
                 }
             }
@@ -290,21 +278,19 @@ public class BQXMLCredentialStore implements CredentialStore {
             Transformer transformer = null;
             try {
                 transformer = transformerFactory.newTransformer();
-            }
-            catch (TransformerConfigurationException e) {
+            } catch (TransformerConfigurationException e) {
                 throw new IOException(e);
             }
             DOMSource source = new DOMSource(doc);
             StreamResult result = new StreamResult(new File(this.documentpath));
             try {
                 transformer.transform(source, result);
-            }
-            catch (TransformerException e) {
+            } catch (TransformerException e) {
                 throw new IOException(e);
             }
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -317,9 +303,9 @@ public class BQXMLCredentialStore implements CredentialStore {
             throws IOException {
         Document doc = null;
         doc = this.loadOrCreateDocument(this.documentpath);
-        
+
         String ClientSecret = userId.substring(userId.indexOf(":") + 1);
-        
+
         NodeList elements = doc.getElementsByTagName("Credential");
         Element loadelement = null;
         String EncodedRefreshToken = null;
@@ -327,7 +313,7 @@ public class BQXMLCredentialStore implements CredentialStore {
             Node mynode = elements.item(i).getAttributes().getNamedItem("ID");
             if (mynode != null
                     && mynode.getNodeValue().equals(
-                            BQXMLCredentialStore.MD5(userId))) {
+                    BQXMLCredentialStore.MD5(userId))) {
                 loadelement = (Element) elements.item(i);
                 EncodedRefreshToken = loadelement.getAttribute("Token");
             }
@@ -335,7 +321,7 @@ public class BQXMLCredentialStore implements CredentialStore {
         if (loadelement == null) {
             return false;
         }
-        
+
         byte[] EncodedRefreshTokenBytes = EncodedRefreshToken.getBytes("UTF-8");
         byte[] Base64DecodedTokenBytes = org.apache.commons.codec.binary.Base64
                 .decodeBase64(EncodedRefreshTokenBytes);
@@ -344,7 +330,7 @@ public class BQXMLCredentialStore implements CredentialStore {
         if (decryptedRefreshTokenBytes == null) {
             throw new IOException("Failed to decode RefreshToken");
         }
-        
+
         credential.setExpiresInSeconds(null);
         credential.setExpirationTimeMilliseconds(null);
         credential.setRefreshToken(new String(decryptedRefreshTokenBytes,
@@ -352,10 +338,10 @@ public class BQXMLCredentialStore implements CredentialStore {
         credential.setAccessToken(null);
         return true;
     }
-    
+
     /**
      * Tries to load an XML document from path
-     * 
+     *
      * @param path
      * @return
      * @throws IOException
@@ -364,8 +350,7 @@ public class BQXMLCredentialStore implements CredentialStore {
         InputStream file = null;
         try {
             file = new FileInputStream(path);
-        }
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             return null;
         }
         DocumentBuilderFactory docFactory = DocumentBuilderFactory
@@ -374,32 +359,27 @@ public class BQXMLCredentialStore implements CredentialStore {
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             Document doc = docBuilder.parse(file);
             return doc;
-        }
-        catch (ParserConfigurationException e1) {
+        } catch (ParserConfigurationException e1) {
             return null;
-        }
-        catch (SAXException e) {
+        } catch (SAXException e) {
             return null;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             return null;
-        }
-        finally {
+        } finally {
             try {
                 file.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 logger.warn("Failed to close the credential store xml file.");
                 return null;
             }
         }
     }
-    
+
     /**
      * Either loads the xml document on the specified path, or if it does not
      * exists creates a new file with default infrastructure for storing
      * clientcredentials
-     * 
+     *
      * @param path
      * @return
      * @throws IOException
@@ -413,38 +393,35 @@ public class BQXMLCredentialStore implements CredentialStore {
             DocumentBuilder docBuilder = null;
             try {
                 docBuilder = docFactory.newDocumentBuilder();
-           
+
                 // root elements
                 doc = docBuilder.newDocument();
                 Element rootElement = doc.createElement("ClientCredentials");
                 doc.appendChild(rootElement);
-                
+
                 TransformerFactory transformerFactory = TransformerFactory
-                    .newInstance();
+                        .newInstance();
                 Transformer transformer = null;
                 transformer = transformerFactory.newTransformer();
-                
+
                 DOMSource source = new DOMSource(doc);
                 StreamResult result = new StreamResult(new File(path));
-                
+
                 transformer.transform(source, result);
-            }
-            catch (ParserConfigurationException e1) {
-                logger.warn("",e1);
-                throw new IOException("Failed to load",e1);
-            }
-            catch (TransformerConfigurationException e) {
-                logger.warn("",e);
-                throw new IOException("Failed to load",e);
-            }
-            catch (TransformerException e) {
-                logger.warn("",e);
-                throw new IOException("Failed to load",e);
+            } catch (ParserConfigurationException e1) {
+                logger.warn("", e1);
+                throw new IOException("Failed to load", e1);
+            } catch (TransformerConfigurationException e) {
+                logger.warn("", e);
+                throw new IOException("Failed to load", e);
+            } catch (TransformerException e) {
+                logger.warn("", e);
+                throw new IOException("Failed to load", e);
             }
         }
         return doc;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -459,14 +436,14 @@ public class BQXMLCredentialStore implements CredentialStore {
         Document doc = null;
         logger.debug(this.documentpath);
         doc = this.loadOrCreateDocument(this.documentpath);
-        
+
         NodeList elements = doc.getElementsByTagName("Credential");
         Element loadelement = null;
         for (int i = 0; i < elements.getLength(); i++) {
             Node mynode = elements.item(i).getAttributes().getNamedItem("ID");
             if (mynode != null
                     && mynode.getNodeValue().equals(
-                            BQXMLCredentialStore.MD5(userId))) {
+                    BQXMLCredentialStore.MD5(userId))) {
                 loadelement = (Element) elements.item(i);
             }
         }
@@ -482,22 +459,20 @@ public class BQXMLCredentialStore implements CredentialStore {
             String encryptedRefreshToken = new String(base64encodedtoken,
                     "UTF-8");
             loadelement.setAttribute("Token", encryptedRefreshToken);
-        }
-        else {
+        } else {
             Element rootElement = (Element) doc.getElementsByTagName(
                     "ClientCredentials").item(0);
             Element ClientCredential = doc.createElement("Credential");
             String ClientSecret = userId.substring(userId.indexOf(":") + 1);
-            
+
             try {
                 ClientCredential.setAttribute("ID",
                         BQXMLCredentialStore.MD5(userId));
                 // ClientCredential.setIdAttribute("ID", true);
-            }
-            catch (DOMException e) {
+            } catch (DOMException e) {
                 throw new IOException(e);
             }
-            
+
             byte[] RefreshTokenBytes = BQXMLCredentialStore.encrypt(
                     ClientSecret, credential.getRefreshToken());
             if (RefreshTokenBytes == null) {
@@ -522,13 +497,11 @@ public class BQXMLCredentialStore implements CredentialStore {
             StreamResult result = new StreamResult(new File(this.documentpath));
 
             transformer.transform(source, result);
-        }
-        catch (TransformerConfigurationException e) {
+        } catch (TransformerConfigurationException e) {
             throw new IOException(e);
-        }
-        catch (TransformerException e) {
+        } catch (TransformerException e) {
             throw new IOException(e);
         }
     }
-    
+
 }

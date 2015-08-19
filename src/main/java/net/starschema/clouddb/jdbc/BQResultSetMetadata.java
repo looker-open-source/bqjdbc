@@ -1,19 +1,26 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * This class implements the java.sql.ResultSetMetaData interface
  */
@@ -31,13 +38,10 @@ import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableSchema;
 
-// import net.starschema.clouddb.bqjdbc.logging.Logger;
-
 /**
  * This class implements the java.sql.ResultSetMetadata interface
  *
- * @author Horv·th Attila
- *
+ * @author Horv√°th Attila
  */
 class BQResultsetMetaData implements ResultSetMetaData {
 
@@ -53,8 +57,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
     /**
      * Constructor that initializes variables
      *
-     * @param result
-     *            the bigquery GetQueryResultsResponse object
+     * @param result the bigquery GetQueryResultsResponse object
      */
     public BQResultsetMetaData(GetQueryResultsResponse result) {
         //logger.debug("function call getResultSetMetaData()");
@@ -92,32 +95,23 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             Columntype = this.result.getSchema().getFields().get(column - 1)
                     .getType();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException(e);
-        }
-        catch (NullPointerException e) {
+        } catch (NullPointerException e) {
             throw new BQSQLException(e);
         }
 
         if (Columntype.equals("FLOAT")) {
             return Float.class.getName();
+        } else if (Columntype.equals("BOOLEAN")) {
+            return Boolean.class.getName();
+        } else if (Columntype.equals("INTEGER")) {
+            return Integer.class.getName();
+        } else if (Columntype.equals("STRING")) {
+            return String.class.getName();
+        } else {
+            throw new BQSQLException("Unsupported Type");
         }
-        else
-            if (Columntype.equals("BOOLEAN")) {
-                return Boolean.class.getName();
-            }
-            else
-                if (Columntype.equals("INTEGER")) {
-                    return Integer.class.getName();
-                }
-                else
-                    if (Columntype.equals("STRING")) {
-                        return String.class.getName();
-                    }
-                    else {
-                        throw new BQSQLException("Unsupported Type");
-                    }
     }
 
     /** {@inheritDoc} */
@@ -127,14 +121,12 @@ class BQResultsetMetaData implements ResultSetMetaData {
         List<TableFieldSchema> schemafieldlist = null;
         if (schema != null) {
             schemafieldlist = schema.getFields();
-        }
-        else {
+        } else {
             return 0;
         }
         if (schemafieldlist != null) {
             return this.result.getSchema().getFields().size();
-        }
-        else {
+        } else {
             return 0;
         }
     }
@@ -144,7 +136,6 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * <h1>Implementation Details:</h1><br>
      * returns 64*1024
      * </p>
-     *
      */
     @Override
     public int getColumnDisplaySize(int column) throws SQLException {
@@ -163,8 +154,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             return this.result.getSchema().getFields().get(column - 1)
                     .getName();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException(e);
         }
     }
@@ -179,8 +169,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             return this.result.getSchema().getFields().get(column - 1)
                     .getName();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnName(int)", e);
         }
     }
@@ -192,7 +181,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * java.sql.Types.BOOLEAN<br>
      * java.sql.Types.INTEGER<br>
      * java.sql.Types.VARCHAR
-     * */
+     */
     @Override
     public int getColumnType(int column) throws SQLException {
         if (this.getColumnCount() == 0) {
@@ -202,29 +191,21 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             Columntype = this.result.getSchema().getFields().get(column - 1)
                     .getType();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnType(int)", e);
         }
 
         if (Columntype.equals("FLOAT")) {
             return java.sql.Types.FLOAT;
+        } else if (Columntype.equals("BOOLEAN")) {
+            return java.sql.Types.BOOLEAN;
+        } else if (Columntype.equals("INTEGER")) {
+            return java.sql.Types.INTEGER;
+        } else if (Columntype.equals("STRING")) {
+            return java.sql.Types.VARCHAR;
+        } else {
+            return 0;
         }
-        else
-            if (Columntype.equals("BOOLEAN")) {
-                return java.sql.Types.BOOLEAN;
-            }
-            else
-                if (Columntype.equals("INTEGER")) {
-                    return java.sql.Types.INTEGER;
-                }
-                else
-                    if (Columntype.equals("STRING")) {
-                        return java.sql.Types.VARCHAR;
-                    }
-                    else {
-                        return 0;
-                    }
     }
 
     /** {@inheritDoc} */
@@ -238,8 +219,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             Columntype = this.result.getSchema().getFields().get(column - 1)
                     .getType();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnTypeName(int)", e);
         }
         return Columntype;
@@ -255,30 +235,22 @@ class BQResultsetMetaData implements ResultSetMetaData {
         try {
             Columntype = this.result.getSchema().getFields().get(column - 1)
                     .getType();
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getPrecision(int)", e);
         }
 
         if (Columntype.equals("FLOAT")) {
             return Float.MAX_EXPONENT;
+        } else if (Columntype.equals("BOOLEAN")) {
+            return 1; // A boolean is 1 bit length, but it asks for byte, so
+            // 1
+        } else if (Columntype.equals("INTEGER")) {
+            return Integer.SIZE;
+        } else if (Columntype.equals("STRING")) {
+            return 64 * 1024;
+        } else {
+            return 0;
         }
-        else
-            if (Columntype.equals("BOOLEAN")) {
-                return 1; // A boolean is 1 bit length, but it asks for byte, so
-                          // 1
-            }
-            else
-                if (Columntype.equals("INTEGER")) {
-                    return Integer.SIZE;
-                }
-                else
-                    if (Columntype.equals("STRING")) {
-                        return 64 * 1024;
-                    }
-                    else {
-                        return 0;
-                    }
     }
 
     /**
@@ -303,8 +275,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
                 }
             }
             return max;
-        }
-        else {
+        } else {
             return 0;
         }
     }
@@ -477,8 +448,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * Always throws SQLExceptionL
      * </p>
      *
-     * @throws SQLException
-     *             always
+     * @throws SQLException always
      */
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {

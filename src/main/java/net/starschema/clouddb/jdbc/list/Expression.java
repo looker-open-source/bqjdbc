@@ -1,20 +1,26 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package net.starschema.clouddb.jdbc.list;
 
@@ -28,26 +34,25 @@ import org.antlr.runtime.tree.Tree;
 
 /**
  * This class extends the basic Node
- * 
+ *
  * @author Attila Horvath, Balazs Gunics
  */
 public class Expression extends Node {
     TreeBuilder builder;
     SelectStatement selectStatement;
-    
-    public LinkedList<Node> getChildren()
-    {
+
+    public LinkedList<Node> getChildren() {
         return this.children;
     }
-    
-    
+
+
     /**
      * getter for the selectStatement
      */
     public SelectStatement getSelectStatement() {
         return selectStatement;
     }
-    
+
     /** pointer to the Fromexpression that this expression queries from */
     FromExpression fromExpression;
 
@@ -56,11 +61,11 @@ public class Expression extends Node {
      * @param columns - to contain in the expression
      * @param treeBuilder - The TreeBuilder for the helper functions
      */
-    public Expression(List<ColumnCall> columns, TreeBuilder treeBuilder){
+    public Expression(List<ColumnCall> columns, TreeBuilder treeBuilder) {
         this.builder = treeBuilder;
         this.build(columns);
     }
-    
+
     /**
      * Setter for the selectStatement
      * the fromExpression will be overrided too
@@ -70,10 +75,10 @@ public class Expression extends Node {
         this.selectStatement = selectStatement;
         this.fromExpression = selectStatement.getFromExpression();
     }
-    
+
     /**
      * Constructor for builduing expressions from the ANTLR tree
-     * 
+     *
      * @param t - the ANTLR tree
      * @param treeBuilder - The TreeBuilder for the helper functions
      * @param fromExpression - which contains the Expression
@@ -81,27 +86,27 @@ public class Expression extends Node {
      * @throws Exception
      */
     public Expression(Tree t, TreeBuilder treeBuilder,
-            FromExpression fromExpression, SelectStatement selectStatement)
+                      FromExpression fromExpression, SelectStatement selectStatement)
             throws TreeParsingException {
         this.builder = treeBuilder;
         this.selectStatement = selectStatement;
         this.fromExpression = fromExpression;
         this.build(t);
     }
-    
+
     /**
      * Adds a columnCall to the Expression
-     * 
+     *
      * @param columnCall
      */
     public void addColumnCall(ColumnCall columnCall) {
         columnCall.setParentNode(this);
         this.children.addLast(columnCall);
     }
-    
+
     /**
      * Builder for the Expression which builds up an expression from ColumnCalls
-     * 
+     *
      * @param columns - to be contained in the Expression
      * @throws TreeParsingException
      */
@@ -119,7 +124,7 @@ public class Expression extends Node {
 
     /**
      * Builder for the Expression which builds up an expression from the ANTLR tree
-     * 
+     *
      * @param t - the ANTLR tree
      * @throws TreeParsingException
      */
@@ -134,7 +139,7 @@ public class Expression extends Node {
                     case JdbcGrammarParser.COLUMN:
                         System.err.println("BUILDING COLUMN");
                         ColumnCall columnCall2 = new ColumnCall(child,
-                                this.builder, this.fromExpression,this);
+                                this.builder, this.fromExpression, this);
                         this.children.addLast(columnCall2);
                         break;
                     case JdbcGrammarParser.FUNCTIONCALL:
@@ -147,9 +152,9 @@ public class Expression extends Node {
                     case JdbcGrammarParser.JOKERCALL:
                         // We don't add jokercalls, we substitute them!!!!!!!
                         Resolver resolver = new Resolver(builder);
-                        List<ColumnCall> parseSubQueryForJokerCalls = resolver.parseSubQForJokers((SubQuery)selectStatement.getFromExpression().children.get(0));
+                        List<ColumnCall> parseSubQueryForJokerCalls = resolver.parseSubQForJokers((SubQuery) selectStatement.getFromExpression().children.get(0));
                         for (int j = 0; j < parseSubQueryForJokerCalls.size(); j++) {
-                            
+
                             ColumnCall columnCall = parseSubQueryForJokerCalls.get(j);
                             columnCall.setParentNode(this);
                             this.children.addLast(columnCall);
@@ -173,19 +178,18 @@ public class Expression extends Node {
                         break;
                 }
             }
-        }
-        else {
+        } else {
             throw new TreeParsingException("This Tree is not an EXPRESSION");
         }
     }
-    
+
     /**
      * removes all children from the expression
      */
     public void deleteAllChildren() {
         this.children = new LinkedList<Node>();
     }
-    
+
     /**
      * Getter for the Columns
      * @return - the Columns of this expression
@@ -194,7 +198,7 @@ public class Expression extends Node {
         this.logger.debug("CALLED GETCOLUMNS");
         return this.getAllinstancesof(ColumnCall.class, JdbcGrammarParser.COLUMN);
     }
-    
+
     /**
      * Getter for the functioncalls
      * @return - the Functions of this expression
@@ -203,7 +207,7 @@ public class Expression extends Node {
         this.logger.debug("CALLED GETFUNCTIONCALLS");
         return this.getAllinstancesof(FunctionCall.class, JdbcGrammarParser.FUNCTIONCALL);
     }
-    
+
     /**
      * Getter for the JokerCall
      * @return - the JokerCall of this expression
@@ -216,7 +220,7 @@ public class Expression extends Node {
         }
         return null;
     }
-    
+
     /**
      * Getter for the MultiCalls
      * @return
@@ -224,17 +228,17 @@ public class Expression extends Node {
     public List<MultiCall> getMultiCalls() {
         return this.getAllinstancesof(MultiCall.class, JdbcGrammarParser.MULTIPLECALL);
     }
-    
+
     @Override
     public String toPrettyString() {
         return this.toPrettyString(-1);
     }
-    
+
     @Override
     public String toPrettyString(int level) {
         String result = "";
         for (Node node : this.children) {
-            
+
             result += node.toPrettyString() + ",";
         }
         String newLine = System.getProperty("line.separator");

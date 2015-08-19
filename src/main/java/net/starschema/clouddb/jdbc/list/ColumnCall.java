@@ -1,3 +1,27 @@
+/**
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package net.starschema.clouddb.jdbc.list;
 
 import java.util.ArrayList;
@@ -11,10 +35,7 @@ import net.starschema.clouddb.jdbc.antlr.sqlparse.TreeParsingException;
 import org.antlr.runtime.tree.Tree;
 
 /**
- * 
- * 
  * @author Attila Horvath, Balazs Gunics
- *
  */
 public class ColumnCall extends Node implements UniQueIdContainer {
     private String name = null;
@@ -26,233 +47,218 @@ public class ColumnCall extends Node implements UniQueIdContainer {
     private boolean equivalentCol = false;
     Expression parentNode = null;
     private List<UniQueIdContainer> nodesPointingtoThis = null;
-    
+
     public List<UniQueIdContainer> getNodesPointingtoThis() {
         return nodesPointingtoThis;
     }
-    
+
     /**
      * This sets pointed nodes for the sql cleaner when disjunctive where expression join resolving is made
+     *
      * @param uniQueIdContainer
      */
-    public void addExtraPointedNode(UniQueIdContainer uniQueIdContainer)
-    {
-        if(this.extraPointedNodes==null)
-        {
+    public void addExtraPointedNode(UniQueIdContainer uniQueIdContainer) {
+        if (this.extraPointedNodes == null) {
             this.extraPointedNodes = new ArrayList<UniQueIdContainer>();
         }
-        
+
         extraPointedNodes.add(uniQueIdContainer);
-        
-        if(Node.class.cast(uniQueIdContainer).tokenType==JdbcGrammarParser.COLUMN){
+
+        if (Node.class.cast(uniQueIdContainer).tokenType == JdbcGrammarParser.COLUMN) {
             ColumnCall columnCall = ColumnCall.class.cast(uniQueIdContainer);
             columnCall.addNodePointingToThis(this);
         }
     }
-    
-    TreeBuilder builder;    
+
+    TreeBuilder builder;
     FromExpression fromExpression = null;
-    
+
     public void setPointedNode(UniQueIdContainer pointedNode) {
-        if(this.pointedNode!=null) {
-            if(this.pointedNode.getTokenType()==JdbcGrammarParser.COLUMN) {
+        if (this.pointedNode != null) {
+            if (this.pointedNode.getTokenType() == JdbcGrammarParser.COLUMN) {
                 ColumnCall columnCall = ColumnCall.class.cast(this.pointedNode);
                 columnCall.removeNodePointingToThis(this);
             }
         }
         this.pointedNode = pointedNode;
-        if(this.pointedNode!=null)
-        {
-            if(this.pointedNode.getTokenType()==JdbcGrammarParser.COLUMN) {
+        if (this.pointedNode != null) {
+            if (this.pointedNode.getTokenType() == JdbcGrammarParser.COLUMN) {
                 ColumnCall columnCall = ColumnCall.class.cast(this.pointedNode);
                 columnCall.addNodePointingToThis(this);
             }
         }
     }
-    
+
     public boolean isPointedTo() {
-        if(nodesPointingtoThis==null || nodesPointingtoThis.size()==0) {
+        if (nodesPointingtoThis == null || nodesPointingtoThis.size() == 0) {
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     }
-    
+
     public void addNodePointingToThis(UniQueIdContainer node) {
-        if(node!=null) {
+        if (node != null) {
             boolean found = false;
             for (UniQueIdContainer uniQueIdContainer : nodesPointingtoThis) {
-                if(node.getUniqueid().equals(uniQueIdContainer.getUniqueid())) {
+                if (node.getUniqueid().equals(uniQueIdContainer.getUniqueid())) {
                     found = true;
                     break;
                 }
             }
-            if(!found) {
+            if (!found) {
                 nodesPointingtoThis.add(node);
             }
         }
-            
+
     }
-    
+
     public void removeNodePointingToThis(UniQueIdContainer node) {
-        if(node!=null) {
+        if (node != null) {
             boolean found = false;
             int i = 0;
             int location = 0;
             for (UniQueIdContainer uniQueIdContainer : nodesPointingtoThis) {
-                if(node.getUniqueid().equals(uniQueIdContainer.getUniqueid())) {
+                if (node.getUniqueid().equals(uniQueIdContainer.getUniqueid())) {
                     found = true;
                     location = i;
                     break;
                 }
                 i++;
             }
-            if(found) {
+            if (found) {
                 nodesPointingtoThis.remove(location);
             }
         }
     }
-    
+
     /** Getter for the Columns parent Node */
     public Expression getParentNode() {
         return parentNode;
     }
-    
-    /** Setter for the Columns parent Node */    
+
+    /** Setter for the Columns parent Node */
     public void setParentNode(Expression parentNode) {
         this.parentNode = parentNode;
     }
-    
+
     /** Getter for the equivalentCol */
     public boolean getEquivalentCol() {
         return equivalentCol;
     }
-    
+
     /** Getter for the equivalentCol */
     public void setEquivalentCol(boolean equivalentCol) {
         this.equivalentCol = equivalentCol;
     }
-    
-    /** returns the synonyms a.k.a Alias of this Column
+
+    /**
+     * returns the synonyms a.k.a Alias of this Column
      * if there's a parent with an alias we also return
      * the alias with its parents alias
-     * 
+     *
      * @return A Stringlist that contains the aliases, or null
      */
     public List<String> getSynonyms() {
-        
+
         List<String> returnList = new ArrayList<String>();
         if (this.getAlias() != null) {
-            SubQuery parent = this.parentNode.selectStatement.parent;            
+            SubQuery parent = this.parentNode.selectStatement.parent;
             if (parent != null) {
                 if (parent.getAlias() != null) {
                     returnList.add(parent.getAlias() + "." + this.getAlias());
                     returnList.add(this.getAlias());
-                }
-                else {
+                } else {
                     returnList.add(this.getAlias());
                 }
-            }
-            else {
+            } else {
                 returnList.add(this.getAlias());
             }
-        }
-        else {
+        } else {
             if (pointedNode != null) {
                 if (pointedNode.getTokenType() == JdbcGrammarParser.COLUMN) {
                     SubQuery parent = this.parentNode.selectStatement.parent;
                     ColumnCall columnCall = ColumnCall.class.cast(pointedNode);
                     List<String> synonyms = columnCall.getSynonyms();
-                    
+
                     if (synonyms != null) {
-                        for (String string : synonyms) {                            
+                        for (String string : synonyms) {
                             if (parent != null && parent.getAlias() != null) {
                                 returnList.add(parent.getAlias() + "." + string);
                                 returnList.add(string);
-                            }
-                            else {
+                            } else {
                                 returnList.add(string);
                             }
                         }
                     }
-                    
-                }
-                else
-                    if (pointedNode.getTokenType() == JdbcGrammarParser.FUNCTIONCALL) {
-                        FunctionCall functionCall = FunctionCall.class
-                                .cast(pointedNode);
-                        
-                        SubQuery parent = this.parentNode.selectStatement.parent;
-                        
-                        if (this.getAlias() != null) {
-                            if (parent != null) {
-                                if (parent.getAlias() != null) {
-                                    returnList.add(parent.getAlias() + "."
-                                            + this.getAlias());
-                                    returnList.add(this.getAlias());
-                                }
-                            }
-                            else {
+
+                } else if (pointedNode.getTokenType() == JdbcGrammarParser.FUNCTIONCALL) {
+                    FunctionCall functionCall = FunctionCall.class
+                            .cast(pointedNode);
+
+                    SubQuery parent = this.parentNode.selectStatement.parent;
+
+                    if (this.getAlias() != null) {
+                        if (parent != null) {
+                            if (parent.getAlias() != null) {
+                                returnList.add(parent.getAlias() + "."
+                                        + this.getAlias());
                                 returnList.add(this.getAlias());
                             }
+                        } else {
+                            returnList.add(this.getAlias());
                         }
-                        else {
-                            List<String> synonyms = functionCall.getSynonyms();
-                            
-                            if (synonyms != null) {
-                                for (String string : synonyms) {
-                                    
-                                    if (parent != null) {
-                                        if (parent.getAlias() != null) {
-                                            returnList.add(parent.getAlias()
-                                                    + "." + string);
-                                            returnList.add(string);
-                                        }
-                                        else {
-                                            returnList.add(string);
-                                        }
-                                    }
-                                    else {
+                    } else {
+                        List<String> synonyms = functionCall.getSynonyms();
+
+                        if (synonyms != null) {
+                            for (String string : synonyms) {
+
+                                if (parent != null) {
+                                    if (parent.getAlias() != null) {
+                                        returnList.add(parent.getAlias()
+                                                + "." + string);
+                                        returnList.add(string);
+                                    } else {
                                         returnList.add(string);
                                     }
+                                } else {
+                                    returnList.add(string);
                                 }
                             }
                         }
                     }
-            }
-            else {
+                }
+            } else {
                 returnList.add(getWholeName());
                 SubQuery parent = this.parentNode.selectStatement.parent;
                 if (parent != null) {
                     if (parent.getAlias() != null) {
-                        //FIXME schema.TABLE helyett kellene egy schema.TABLE valamint egy TABLE :/                        
+                        //FIXME schema.TABLE helyett kellene egy schema.TABLE valamint egy TABLE :/
                         returnList.add(parent.getAlias() + "." + getWholeName());
                     }
                 }
             }
         }
-        
+
         if (returnList.size() != 0) {
             return returnList;
-        }
-        else {
+        } else {
             return null;
         }
     }
-    
 
-    
+
     /**
      * Makes a new ColumnCall with prefixes, and aliases
-     * 
+     *
      * @param prefixes - the prefixes for the column
-     * @param aliases - the aliases for the column
-     * @param builder - the Treebuilder, to generate uniqueids
-     * @param name - the columns name
+     * @param aliases  - the aliases for the column
+     * @param builder  - the Treebuilder, to generate uniqueids
+     * @param name     - the columns name
      */
     public ColumnCall(String[] prefixes, List<String> aliases,
-            TreeBuilder builder, String name, Expression expression) {
+                      TreeBuilder builder, String name, Expression expression) {
         nodesPointingtoThis = new ArrayList<UniQueIdContainer>();
         this.name = name;
         this.parentNode = expression;
@@ -263,27 +269,26 @@ public class ColumnCall extends Node implements UniQueIdContainer {
         this.tokenType = JdbcGrammarParser.COLUMN;
         this.tokenName = JdbcGrammarParser.tokenNames[JdbcGrammarParser.COLUMN];
     }
-    
+
     /**
      * Makes a new ColumnCall with prefixes, and aliases
-     * 
+     *
      * @param prefixes - the prefixes for the column
-     * @param aliases - the aliases for the column
-     * @param builder - the Treebuilder, to generate uniqueids
-     * @param name - the columns name
+     * @param aliases  - the aliases for the column
+     * @param builder  - the Treebuilder, to generate uniqueids
+     * @param name     - the columns name
      */
     public ColumnCall(String[] prefixes, List<String> aliases,
-            TreeBuilder builder, String name, UniQueIdContainer pointedNode,
-            Expression parent) {
+                      TreeBuilder builder, String name, UniQueIdContainer pointedNode,
+                      Expression parent) {
         this.parentNode = parent;
         if (pointedNode.getTokenType() == JdbcGrammarParser.COLUMN) {
             try {
                 ColumnCall columnCall = ColumnCall.class.cast(pointedNode);
                 if (columnCall.getEquivalentCol()) {
                     equivalentCol = true;
-                }                
-            }
-            catch (ClassCastException e) {
+                }
+            } catch (ClassCastException e) {
                 //TODO Is this normal that we don't care?
             }
         }
@@ -297,17 +302,17 @@ public class ColumnCall extends Node implements UniQueIdContainer {
         nodesPointingtoThis = new ArrayList<UniQueIdContainer>();
         setPointedNode(pointedNode);
     }
-    
+
     /**
      * Makes the columns of a fromExpression
-     * 
-     * @param t - the ANTLR tree
-     * @param treeBuilder - the builder, to make the uniqueIDs
+     *
+     * @param t              - the ANTLR tree
+     * @param treeBuilder    - the builder, to make the uniqueIDs
      * @param fromExpression - FromExpression which contains the ColumnCall
      * @throws TreeParsingException - if we can't parse out the ANTLR tree
      */
     public ColumnCall(Tree t, TreeBuilder treeBuilder,
-            FromExpression fromExpression, Expression parent) throws TreeParsingException {
+                      FromExpression fromExpression, Expression parent) throws TreeParsingException {
         nodesPointingtoThis = new ArrayList<UniQueIdContainer>();
         this.parentNode = parent;
         this.builder = treeBuilder;
@@ -315,16 +320,16 @@ public class ColumnCall extends Node implements UniQueIdContainer {
         this.fromExpression = fromExpression;
         this.build(t, this.builder);
     }
-    
+
     /**
      * Adds a String to the end of the prefixlist
+     *
      * @param prefix - the String to add
      */
     public void addPrefixToEnd(String prefix) {
         if (this.prefixes == null) {
-            this.prefixes = new String[] { prefix };
-        }
-        else {
+            this.prefixes = new String[]{prefix};
+        } else {
             String[] temp = this.prefixes;
             this.prefixes = new String[this.prefixes.length + 1];
             int i = 0;
@@ -335,16 +340,16 @@ public class ColumnCall extends Node implements UniQueIdContainer {
             this.prefixes[this.prefixes.length - 1] = prefix;
         }
     }
-    
+
     /**
      * Adds a String to the front of the prefixlist
+     *
      * @param prefix - the String to add
      */
     public void addPrefixtoFront(String prefix) {
         if (this.prefixes == null) {
-            this.prefixes = new String[] { prefix };
-        }
-        else {
+            this.prefixes = new String[]{prefix};
+        } else {
             String[] temp = this.prefixes;
             this.prefixes = new String[this.prefixes.length + 1];
             this.prefixes[0] = prefix;
@@ -355,13 +360,13 @@ public class ColumnCall extends Node implements UniQueIdContainer {
             }
         }
     }
-    
+
     /**
      * Parse out the ANTLR tree
-     * 
-     * @param t - the ANTLR tree
+     *
+     * @param t       - the ANTLR tree
      * @param builder - the TreeBuilder for the helper functions
-     * @throws TreeParsingException 
+     * @throws TreeParsingException
      */
     @SuppressWarnings("serial")
     public void build(Tree t, TreeBuilder builder) throws TreeParsingException {
@@ -370,13 +375,13 @@ public class ColumnCall extends Node implements UniQueIdContainer {
             this.tokenName = JdbcGrammarParser.tokenNames[t.getType()];
             this.tokenType = t.getType();
             this.logger.debug("BUILDING " + this.tokenName);
-            
+
             ArrayList<String> scopeList = new ArrayList<String>();
             ArrayList<String> aliasList = new ArrayList<String>();
             for (int i = 0; i < t.getChildCount(); i++) {
                 Tree child = t.getChild(i);
                 switch (child.getType()) {
-                // setting the columns name
+                    // setting the columns name
                     case JdbcGrammarParser.NAME:
                         this.name = child.getChild(0).getText();
                         break;
@@ -392,13 +397,13 @@ public class ColumnCall extends Node implements UniQueIdContainer {
                         break;
                 }
             }
-            
+
             if (aliasList.size() != 0) {
                 this.aliases = aliasList;
             }
             if (scopeList.size() != 0) {
                 this.prefixes = scopeList.toArray(new String[scopeList.size()]);
-            }            
+            }
             if (this.aliases == null) {
                 String alias = "";
                 if (this.prefixes != null) {
@@ -416,84 +421,81 @@ public class ColumnCall extends Node implements UniQueIdContainer {
             }
             logger.debug("CALLING SEARCH");
             try {
-                List<UniQueIdContainer> pointedNodesInFromExpression = 
+                List<UniQueIdContainer> pointedNodesInFromExpression =
                         this.searchPointedNodeInFromExpression(fromExpression);
-                
-                if(pointedNodesInFromExpression == null){ // we didn't find a fitting node in the fromexpression? oO
-                    //lets get some prefixes and try with that!                    
+
+                if (pointedNodesInFromExpression == null) { // we didn't find a fitting node in the fromexpression? oO
+                    //lets get some prefixes and try with that!
                     List<String> possiblePrefixes = builder.getPossiblePrefixes(name);
-                    for(int i=0; i<possiblePrefixes.size() 
-                            && pointedNodesInFromExpression == null; i++ ) {                        
-                        if(possiblePrefixes.get(i) != null){
+                    for (int i = 0; i < possiblePrefixes.size()
+                            && pointedNodesInFromExpression == null; i++) {
+                        if (possiblePrefixes.get(i) != null) {
                             logger.debug("Possible prefix for the column: " + name + "is:" + possiblePrefixes.get(i).toString());
                             String prefixString = possiblePrefixes.get(i);
                             this.prefixes = new String[1];
                             this.prefixes[0] = prefixString;
-                            pointedNodesInFromExpression = 
+                            pointedNodesInFromExpression =
                                     this.searchPointedNodeInFromExpression(fromExpression);
-                        }
-                        else {
-                            logger.debug("Possible prefix for the column: " + name + "is NULL"); 
+                        } else {
+                            logger.debug("Possible prefix for the column: " + name + "is NULL");
                         }
                     }
                 }
-                
+
                 setPointedNode(pointedNodesInFromExpression.get(0));
                 for (UniQueIdContainer uniQueIdContainer : pointedNodesInFromExpression) {
                     this.addExtraPointedNode(uniQueIdContainer);
                 }
-            }
-            catch (ColumnCallException e) {
+            } catch (ColumnCallException e) {
                 throw new TreeParsingException(e);
             }
-        }
-        else {
-            throw new TreeParsingException(JdbcGrammarLexer.COLUMN,t.getType());
+        } else {
+            throw new TreeParsingException(JdbcGrammarLexer.COLUMN, t.getType());
         }
     }
-    
+
     /**
      * Getter for alias
-     * 
+     *
      * @return null if we don't have an alias, else the aliases divided by "_"
      */
     public String getAlias() {
         String forReturn = "";
         if (this.aliases == null) {
             return null;
-        }
-        else {
+        } else {
             for (String iter : this.aliases) {
                 forReturn += iter + "_";
             }
             return forReturn.substring(0, forReturn.length() - 1);
         }
     }
-    
+
     /**
      * Getter for the aliases, <br>another way to get the Aliases is:
      * {@link #getAlias()}
+     *
      * @return List containing all of the aliases
      */
     public List<String> getAliases() {
         return this.aliases;
     }
-    
+
     /** Getter for the Columns name */
     public String getName() {
         return this.name;
     }
-    
-    /** Returns the pointed Node  */
+
+    /** Returns the pointed Node */
     public Node getPointedNode() {
         return (Node) this.pointedNode;
     }
-    
+
     /** Getter for the Scopes/Prefixes of the Column */
     public String[] getScopes() {
         return this.prefixes;
     }
-    
+
     /** Returns the Columns name with its scopes/prefixes divided by "." */
     public String getWholeName() {
         String name = "";
@@ -505,10 +507,11 @@ public class ColumnCall extends Node implements UniQueIdContainer {
         name += this.getName();
         return name;
     }
-    
+
     /**
      * Removes a prefix/scope from the prefixlist if
      * the prefixlist not empty and the prefix exists in it
+     *
      * @param prefix - the String to be removed
      */
     public void removePrefix(String prefix) {
@@ -539,10 +542,10 @@ public class ColumnCall extends Node implements UniQueIdContainer {
         }
         // no match
     }
-    
+
     /**
      * Returns the Node in the FromExpression
-     * 
+     *
      * @param fromExpression
      * @return the pointed Node / null
      * @throws ColumnCallException - when Ambiguous column found
@@ -560,7 +563,7 @@ public class ColumnCall extends Node implements UniQueIdContainer {
                         .getAvailableResources();
                 for (SynonymContainer synonymContainer : availableResources) {
                     List<String> synonyms = synonymContainer.getSynonyms();
-                    
+
                     for (String string : synonyms) {
                         if (string != null && string.equals(this.getWholeName())) {
                             this.logger.debug("ADDING NODE");
@@ -573,57 +576,49 @@ public class ColumnCall extends Node implements UniQueIdContainer {
                 boolean sameUniqueId = true;
                 String uniqueId = validPointedNodes.get(0).getUniqueid();
                 for (UniQueIdContainer uniQueIdContainer : validPointedNodes) {
-                    if(!uniQueIdContainer.getUniqueid().equals(uniqueId))
-                    {
+                    if (!uniQueIdContainer.getUniqueid().equals(uniqueId)) {
                         sameUniqueId = false;
                     }
                 }
-                if(!sameUniqueId)
-                {
+                if (!sameUniqueId) {
                     throw new ColumnCallException("AMBIGOUS COLUMNCALL: " + this.getName());
-                }
-                else
-                {
+                } else {
                     return validPointedNodes;
                 }
-            }
-            else {
+            } else {
                 if (validPointedNodes.size() == 1) {
                     return validPointedNodes;
-                }
-                else {
+                } else {
                     return null;
                 }
             }
         }
         return null;
     }
-    
+
     @Override
     public String toPrettyString() {
         return this.toPrettyString(-1);
     }
-    
+
     @Override
     public String toPrettyString(int level) {
-        
+
         if (this.getPointedNode() != null) {
             if (this.getPointedNode().tokenType == JdbcGrammarParser.COLUMN) {
                 return ColumnCall.class.cast(this.getPointedNode()).uniqueId
                         + " AS " + this.uniqueId;
-                
-            }
-            else {
+
+            } else {
                 return FunctionCall.class.cast(this.getPointedNode()).uniqueId
                         + " AS " + this.uniqueId;
             }
-        }
-        else {
+        } else {
             return this.getName() + " AS " + this.uniqueId;
         }
     }
 
-    /** Getter for the Unique Id    */
+    /** Getter for the Unique Id */
     @Override
     public String getUniqueid() {
         return uniqueId;

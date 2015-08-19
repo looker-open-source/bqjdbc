@@ -1,20 +1,26 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package net.starschema.clouddb.jdbc.list;
 
@@ -26,7 +32,7 @@ import org.antlr.runtime.tree.Tree;
 /**
  * This class extends the basic Node with the following attributes <li>left -
  * Column <li>right - Column <li>operator - String
- * 
+ *
  * @author Balazs Gunics, Attila Horvath
  */
 public class OnClauseCondition extends Node implements ColumnReferencePlace {
@@ -36,10 +42,10 @@ public class OnClauseCondition extends Node implements ColumnReferencePlace {
     public ColumnReference right;
     /** Opearter between the two columns */
     public String operator;
-    
+
     SelectStatement selectStatement;
     TreeBuilder builder;
-    
+
     /**
      * Constructor to build OnClauseConditions from the ANTLR tree
      * @param t - the ANTLR tree
@@ -48,12 +54,12 @@ public class OnClauseCondition extends Node implements ColumnReferencePlace {
      * @throws TreeParsingException
      */
     public OnClauseCondition(Tree t, TreeBuilder treeBuilder,
-            SelectStatement selectStatement) throws TreeParsingException {
+                             SelectStatement selectStatement) throws TreeParsingException {
         this.selectStatement = selectStatement;
         this.builder = treeBuilder;
         this.build(t, this.builder);
     }
-    
+
     /**
      * Constructor to build up an OnClause with the two references to the Columns
      * and the operator between them
@@ -63,7 +69,7 @@ public class OnClauseCondition extends Node implements ColumnReferencePlace {
      * @param right - Column 2
      */
     public OnClauseCondition(TreeBuilder builder, String operator,
-            ColumnReference left, ColumnReference right) {
+                             ColumnReference left, ColumnReference right) {
         this.builder = builder;
         this.operator = operator;
         this.left = left;
@@ -71,7 +77,7 @@ public class OnClauseCondition extends Node implements ColumnReferencePlace {
         this.tokenType = JdbcGrammarParser.CONDITION;
         this.tokenName = JdbcGrammarParser.tokenNames[JdbcGrammarParser.CONDITION];
     }
-    
+
     /**
      * Builder to parse out the ANTLR tree
      * @param t - the ANTLR tree
@@ -79,7 +85,7 @@ public class OnClauseCondition extends Node implements ColumnReferencePlace {
      * @throws TreeParsingException
      */
     public void build(Tree t, TreeBuilder builder) throws TreeParsingException {
-        
+
         if (t.getType() == JdbcGrammarParser.CONDITION) {
             this.tokenName = JdbcGrammarParser.tokenNames[t.getType()];
             this.tokenType = t.getType();
@@ -102,33 +108,32 @@ public class OnClauseCondition extends Node implements ColumnReferencePlace {
                         break;
                 }
             }
-        }
-        else {
+        } else {
             throw new TreeParsingException("This Tree is not a CONDITION");
         }
     }
-    
+
     /** Getter for the left Column of this OnClause */
     public ColumnReference getLeft() {
         return this.left;
     }
-    
+
     @Override
     public Node getMainNode() {
         // TODO Auto-generated method stub
         return this;
     }
-    
-    /** Getter for the right Column of this OnClause */    
+
+    /** Getter for the right Column of this OnClause */
     public ColumnReference getRight() {
         return this.right;
     }
-    
+
     @Override
     public String toPrettyString() {
         return this.toPrettyString(-1);
     }
-    
+
     @Override
     public String toPrettyString(int level) {
         String result = this.left.toPrettyString() + this.operator

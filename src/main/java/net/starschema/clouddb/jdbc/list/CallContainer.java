@@ -1,42 +1,67 @@
+/**
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package net.starschema.clouddb.jdbc.list;
 
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.util.HashSet;
 import java.util.List;
+
 import org.apache.log4j.Logger;
 
 /**
  * Class that contains a functioncall of databasemetadata and stores the result
  * for later use
- * 
+ *
  * @author Attila Horvath
- * 
  */
 public class CallContainer {
     HashSet<ContainerResult> list;
     Logger logger = Logger.getLogger(CallContainer.class.getName());
-    
+
     /**
      * Constructor which makes an empty list
      */
     public CallContainer() {
-        
+
         this.list = new HashSet<ContainerResult>();
         logger.debug("Created Callcontainer");
     }
-    
+
     /**
      * Adds a method to the list
-     * @param result -
-     * @param method - method to add
+     *
+     * @param result     -
+     * @param method     - method to add
      * @param parameters - the methods parameters
      */
     void AddCall(ResultSet result, Method method, List<Parameter> parameters) {
         this.list.add(new ContainerResult(result, method, parameters));
         logger.debug("Adding a Call to the Container");
     }
-    
+
     //TODO javadoc, rename getresult to getResult
     ResultSet getresult(Method method, List<Parameter> parameters) {
         for (ContainerResult res : this.list) {
@@ -50,13 +75,11 @@ public class CallContainer {
                         }
                         i++;
                     }
-                }
-                else {
+                } else {
                     matches = false;
                 }
-                
-            }
-            else {
+
+            } else {
                 matches = false;
             }
             if (matches) {
@@ -66,65 +89,63 @@ public class CallContainer {
         // Didn't find any matches
         return null;
     }
-    
+
 }
 
 /**
  * A class to be used with the CallContainer
- *
  */
 class ContainerResult {
     ResultSet result;
     Method method;
     List<Parameter> parameters;
-    
+
     /**
      * Constructor for ContainerResult
      */
     public ContainerResult(ResultSet result, Method method,
-            List<Parameter> parameters) {
+                           List<Parameter> parameters) {
         this.result = result;
         this.method = method;
         this.parameters = parameters;
     }
-    
+
     /** Getter for the method */
     public Method getMethod() {
         return this.method;
     }
-    
+
     /** Getter for the parameters */
     public List<Parameter> getParameters() {
         return this.parameters;
     }
-    
+
     /** Getter for the result */
     public ResultSet getResult() {
         return this.result;
     }
-    
+
 }
 
 /**
  * A class to store the parameter as an Object
  * which can be String or String[]
- * 
- * @author Attila Horvath
  *
+ * @author Attila Horvath
  */
 class Parameter {
     Object parameter;
-    
+
     /**
      * Constructor for Parameter,
-     * it's {@link #equals(Object)} function handles String[] and String too 
+     * it's {@link #equals(Object)} function handles String[] and String too
      *
-     * @param param - String or String[] or an Object 
+     * @param param - String or String[] or an Object
      */
     public Parameter(Object param) {
         this.parameter = param;
     }
-    
+
     /**
      * A comparer to compare 2 object, mainly
      * <li> String[]
@@ -140,8 +161,7 @@ class Parameter {
                 try {
                     list2 = String[].class
                             .cast(this.getClass().cast(obj).parameter);
-                }
-                catch (ClassCastException e) {
+                } catch (ClassCastException e) {
                     return false;
                 }
                 boolean matches = true;
@@ -153,17 +173,15 @@ class Parameter {
                     if (!s.equals(list2[i])) {
                         matches = false;
                     }
-                    
+
                     i++;
                 }
                 return matches;
-            }
-            else {
+            } else {
                 return this.getClass().cast(obj).parameter.toString().equals(
                         this.parameter.toString());
             }
-        }
-        else {
+        } else {
             return super.equals(obj);
         }
     }

@@ -1,20 +1,27 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  * This class is the parent of BQStatement and BQPreparedStatement
  */
 
@@ -38,27 +45,27 @@ import com.google.api.services.bigquery.model.Job;
 /**
  * This class partially implements java.sql.Statement, and
  * java.sql.PreparedStatement
- * 
- * @author Horv·th Attila
+ *
+ * @author Horv√°th Attila
  * @author Balazs Gunics
- * 
+ *
  */
 public abstract class BQStatementRoot {
-    
+
     /** Reference to store the ran Query run by Executequery or Execute */
     ResultSet resset = null;
-    
+
     /** String containing the context of the Project */
     String ProjectId = null;
     // Logger logger = new Logger(BQStatementRoot.class.getName());
     Logger logger = Logger.getLogger(BQStatementRoot.class.getName());
-    
+
     /** Variable that stores the closed state of the statement */
     boolean closed = false;
-    
+
     /** Reference for the Connection that created this Statement object */
     BQConnection connection;
-    
+
     /** Variable that stores the set query timeout */
     int querytimeout = Integer.MAX_VALUE;
     /** Instance of log4j.Logger */
@@ -71,74 +78,74 @@ public abstract class BQStatementRoot {
      * resultset
      */
     int resultMaxRowCount = Integer.MAX_VALUE - 1;
-    
+
     /** Variable to Store EscapeProc state */
     boolean EscapeProc = false;
-    
+
     /**
      * These Variables contain information about the type of resultset this
      * statement creates
      */
     int resultSetType;
     int resultSetConcurrency;
-    
+
     /**
      * to be used with setMaxFieldSize
      */
     private int maxFieldSize = 0;
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
-    
+
     public void addBatch(String arg0) throws SQLException {
         throw new BQSQLException("Not implemented." + "addBatch(string)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
-    
+
     public void cancel() throws SQLException {
         throw new BQSQLFeatureNotSupportedException("cancel()");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
-    
+
     public void clearBatch() throws SQLException {
         throw new BQSQLException("Not implemented." + "clearBatch()");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
-    
+
     public void clearWarnings() throws SQLException {
         throw new BQSQLException("Not implemented." + "clearWarnings()");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -151,7 +158,7 @@ public abstract class BQStatementRoot {
             this.resset.close();
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -159,7 +166,7 @@ public abstract class BQStatementRoot {
      * resultset). This function directly uses executeQuery function
      * </p>
      */
-    
+
     public boolean execute(String arg0) throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
@@ -168,66 +175,65 @@ public abstract class BQStatementRoot {
         this.logger.info("Executing Query: " + arg0);
         if (this.resset != null) {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
-    
+
     public boolean execute(String arg0, int arg1) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("execute(String, int)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
-    
+
     public boolean execute(String arg0, int[] arg1) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("execute(string,int[])");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
-    
+
     public boolean execute(String arg0, String[] arg1) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("execute(string,string[])");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
-    
+
     public int[] executeBatch() throws SQLException {
         throw new BQSQLException("Not implemented." + "executeBatch()");
     }
-    
+
     /** {@inheritDoc} */
-    
+
     public ResultSet executeQuery(String querySql) throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
@@ -237,28 +243,27 @@ public abstract class BQStatementRoot {
         // ANTLR Parsing
         BQQueryParser parser = new BQQueryParser(querySql, this.connection);
         querySql = parser.parse();
-        
+
         try {
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
                     this.connection.getBigquery(), this.ProjectId, querySql);
             this.logger.info("Executing Query: " + querySql);
-        }
-        catch (IOException e) {
-            throw new BQSQLException("Something went wrong with the query: " + querySql,e);
+        } catch (IOException e) {
+            throw new BQSQLException("Something went wrong with the query: " + querySql, e);
         }
         try {
             do {
                 if (BQSupportFuncts.getQueryState(referencedJob,
                         this.connection.getBigquery(), this.ProjectId).equals(
                         "DONE")) {
-                    if(resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
+                    if (resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
                         return new BQScrollableResultSet(BQSupportFuncts.getQueryResults(
                                 this.connection.getBigquery(), this.ProjectId,
                                 referencedJob), this);
                     } else {
                         return new BQForwardOnlyResultSet(
-                                this.connection.getBigquery(), 
+                                this.connection.getBigquery(),
                                 this.ProjectId.replace("__", ":").replace("_", "."),
                                 referencedJob, this);
                     }
@@ -274,11 +279,9 @@ public abstract class BQStatementRoot {
             }
             while (System.currentTimeMillis() - this.starttime <= (long) this.querytimeout * 1000);
             // it runs for a minimum of 1 time
-        }
-        catch (IOException e) {            
-            throw new BQSQLException("Something went wrong with the query: " + querySql,e);
-        }
-        catch (InterruptedException e) {
+        } catch (IOException e) {
+            throw new BQSQLException("Something went wrong with the query: " + querySql, e);
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
         // here we should kill/stop the running job, but bigquery doesn't
@@ -286,125 +289,125 @@ public abstract class BQStatementRoot {
         throw new BQSQLException(
                 "Query run took more than the specified timeout");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
-    
+
     public int executeUpdate(String arg0) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("executeUpdate(string)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
-    
+
     public int executeUpdate(String arg0, int arg1) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("executeUpdate(String,int)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
-    
+
     public int executeUpdate(String arg0, int[] arg1) throws SQLException {
         throw new BQSQLFeatureNotSupportedException(
                 "executeUpdate(string,int[])");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
-    
+
     public int executeUpdate(String arg0, String[] arg1) throws SQLException {
         throw new BQSQLFeatureNotSupportedException(
                 "execute(update(string,string[])");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Returns the connection that made the object.
      * </p>
-     * 
+     *
      * @returns connection
      */
     public Connection getConnection() throws SQLException {
         return this.connection;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Fetch direction is unknown.
      * </p>
-     * 
+     *
      * @return FETCH_UNKNOWN
      */
-    
+
     public int getFetchDirection() throws SQLException {
         return ResultSet.FETCH_UNKNOWN;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
-    
+
     public int getFetchSize() throws SQLException {
         throw new BQSQLException("Not implemented." + "getFetchSize()");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
-    
+
     public ResultSet getGeneratedKeys() throws SQLException {
         throw new BQSQLFeatureNotSupportedException("getGeneratedKeys()");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
-    
+
     public int getMaxFieldSize() throws SQLException {
         return maxFieldSize;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -412,40 +415,40 @@ public abstract class BQStatementRoot {
      * </p>
      * We could return Integer.MAX_VALUE too, but i don't think we could get
      * that much row.
-     * 
+     *
      * @return 0 -
      */
-    
+
     public int getMaxRows() throws SQLException {
         return this.resultMaxRowCount;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet, since Bigquery Does not support precompiled sql
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     public ResultSetMetaData getMetaData() throws SQLException {
         throw new BQSQLException(new SQLFeatureNotSupportedException(
                 "getMetaData()"));
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Multiple result sets are not supported currently.
      * </p>
-     * 
+     *
      * @return false;
      */
-    
+
     public boolean getMoreResults() throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -453,7 +456,7 @@ public abstract class BQStatementRoot {
      * result set is open, the parameter is acceptable, and close our current
      * resultset or throw a FeatureNotSupportedException
      * </p>
-     * 
+     *
      * @param current
      *            - one of the following Statement constants indicating what
      *            should happen to current ResultSet objects obtained using the
@@ -461,7 +464,7 @@ public abstract class BQStatementRoot {
      *            Statement.KEEP_CURRENT_RESULT, or Statement.CLOSE_ALL_RESULTS
      * @throws BQSQLException
      */
-    
+
     public boolean getMoreResults(int current) throws SQLException {
         if (this.closed) {
             throw new BQSQLException("Statement is closed.");
@@ -469,7 +472,7 @@ public abstract class BQStatementRoot {
         if (current == Statement.CLOSE_CURRENT_RESULT
                 || current == Statement.KEEP_CURRENT_RESULT
                 || current == Statement.CLOSE_ALL_RESULTS) {
-            
+
             if (BQDatabaseMetadata.multipleOpenResultsSupported
                     && (current == Statement.KEEP_CURRENT_RESULT || current == Statement.CLOSE_ALL_RESULTS)) {
                 throw new BQSQLFeatureNotSupportedException();
@@ -477,14 +480,13 @@ public abstract class BQStatementRoot {
             // Statement.CLOSE_CURRENT_RESULT
             this.close();
             return false;
-        }
-        else {
+        } else {
             throw new BQSQLException("Wrong parameter.");
         }
     }
-    
+
     /** {@inheritDoc} */
-    
+
     public int getQueryTimeout() throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
@@ -494,101 +496,99 @@ public abstract class BQStatementRoot {
         }
         if (this.querytimeout == Integer.MAX_VALUE) {
             return 0;
-        }
-        else {
+        } else {
             if (System.currentTimeMillis() - this.starttime > this.querytimeout) {
                 throw new BQSQLException("Time is over");
             }
             return this.querytimeout;
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Gives back reultset stored in resset
      * </p>
      */
-    
+
     public ResultSet getResultSet() throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
         }
         if (this.resset != null) {
             return this.resset;
-        }
-        else {
+        } else {
             return null;
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * The driver is read only currently.
      * </p>
-     * 
+     *
      * @return CONCUR_READ_ONLY
      */
-    
+
     public int getResultSetConcurrency() throws SQLException {
         return ResultSet.CONCUR_READ_ONLY;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Read only mode, no commit.
      * </p>
-     * 
+     *
      * @return CLOSE_CURSORS_AT_COMMIT
      */
-    
+
     public int getResultSetHoldability() throws SQLException {
         return ResultSet.CLOSE_CURSORS_AT_COMMIT;
         // TODO
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Updates and deletes not supported.
      * </p>
-     * 
+     *
      * @return TYPE_SCROLL_INSENSITIVE
      */
-    
+
     public int getResultSetType() throws SQLException {
         return ResultSet.TYPE_SCROLL_INSENSITIVE;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Result will be a ResultSet object.
      * </p>
-     * 
+     *
      * @return -1
      */
-    
+
     public int getUpdateCount() throws SQLException {
         return -1;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * returns null
      * </p>
-     * 
+     *
      * @return null
      */
-    
+
     public SQLWarning getWarnings() throws SQLException {
         return null;
         // TODO Implement Warning Handling
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -598,78 +598,78 @@ public abstract class BQStatementRoot {
     public boolean isClosed() throws SQLException {
         return this.closed;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
-    
+
     public boolean isPoolable() throws SQLException {
         throw new BQSQLException("Not implemented." + "isPoolable()");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @return false
      */
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * FeatureNotSupportedExceptionjpg
      * </p>
-     * 
+     *
      * @throws BQSQLFeatureNotSupportedException
      */
-    
+
     public void setCursorName(String arg0) throws SQLException {
         throw new BQSQLFeatureNotSupportedException("setCursorName(string)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Now Only setf this.EscapeProc to arg0
      * </p>
      */
-    
+
     public void setEscapeProcessing(boolean arg0) throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
         }
         this.EscapeProc = arg0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
-    
+
     public void setFetchDirection(int arg0) throws SQLException {
         throw new BQSQLException("Not implemented." + "setFetchDirection(int)");
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Does nothing
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     public void setFetchSize(int arg0) throws SQLException {
@@ -677,46 +677,46 @@ public abstract class BQStatementRoot {
             throw new BQSQLException("Statement closed");
         }
     }
-    
+
     /**
      * <p>
-     * Sets the limit for the maximum number of bytes in a ResultSet column storing 
-     * character or binary values to the given number of bytes. This limit applies only 
-     * to BINARY, VARBINARY, LONGVARBINARY, CHAR, VARCHAR, and LONGVARCHAR fields. 
-     * If the limit is exceeded, the excess data is silently discarded. For maximum 
+     * Sets the limit for the maximum number of bytes in a ResultSet column storing
+     * character or binary values to the given number of bytes. This limit applies only
+     * to BINARY, VARBINARY, LONGVARBINARY, CHAR, VARCHAR, and LONGVARCHAR fields.
+     * If the limit is exceeded, the excess data is silently discarded. For maximum
      * portability, use values greater than 256.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     public void setMaxFieldSize(int arg0) throws SQLException {
         this.maxFieldSize = arg0;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * arg0 == 0 ? arg0 : Integer.MAX_VALUE - 1
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     public void setMaxRows(int arg0) throws SQLException {
         this.resultMaxRowCount = arg0 == 0 ? arg0 : Integer.MAX_VALUE - 1;
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Not implemented yet.
      * </p>
-     * 
+     *
      * @throws BQSQLException
      */
     public void setPoolable(boolean arg0) throws SQLException {
         throw new BQSQLException("Not implemented." + "setPoolable(bool)");
     }
-    
+
     /** {@inheritDoc} */
     public void setQueryTimeout(int arg0) throws SQLException {
         if (this.isClosed()) {
@@ -724,18 +724,17 @@ public abstract class BQStatementRoot {
         }
         if (arg0 == 0) {
             this.querytimeout = Integer.MAX_VALUE;
-        }
-        else {
+        } else {
             this.querytimeout = arg0;
         }
     }
-    
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Always throws SQLException
      * </p>
-     * 
+     *
      * @throws SQLException
      */
     public <T> T unwrap(Class<T> iface) throws SQLException {

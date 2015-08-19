@@ -1,20 +1,26 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package net.starschema.clouddb.jdbc.list;
 
@@ -28,21 +34,22 @@ import org.antlr.runtime.tree.Tree;
 /**
  * This class extends the basic Node by adding a
  * BooleanExpression to it
- * 
+ *
  * @author Balazs Gunics, Attila Horvath
  */
 public class WhereExpression extends Node {
-    
+
     Node expression = null;
-    
+
     /** Getter for the Expression of the WhereExpression */
     public Node getExpression() {
         return expression;
     }
+
     SelectStatement selectStatement;
     TreeBuilder builder;
-    
-    
+
+
     /**
      * Constructor for building WhereExpressions from an ANTLR tree
      * @param t - The ANTLR tree
@@ -51,29 +58,29 @@ public class WhereExpression extends Node {
      * @throws Exception
      */
     public WhereExpression(Tree t, TreeBuilder treeBuilder,
-            SelectStatement selectStatement) throws TreeParsingException {
+                           SelectStatement selectStatement) throws TreeParsingException {
         this.selectStatement = selectStatement;
         this.builder = treeBuilder;
         this.build(t, this.builder);
     }
-    
+
     /**
      * Constructor for building WhereExpressions from BooleanExpression Nodes,
-     * When we move the BooleanExpressions from Where to JOIN's ON Clause, 
+     * When we move the BooleanExpressions from Where to JOIN's ON Clause,
      * we need to rebuild the whereexpression, from the unused nodes.
-     * 
+     *
      * @param nodeList - A Node list which contains the BooleanExpressions that needs to be added to the WhereExpression
      * @param treeBuilder - the TreeBuilder to reach the helper functions
      * @param selectStatement - the selectStatement to attach the Where
      * @throws Exception
      */
     public WhereExpression(List<Node> nodeList, TreeBuilder treeBuilder,
-            SelectStatement selectStatement) throws TreeParsingException {
+                           SelectStatement selectStatement) throws TreeParsingException {
         this.selectStatement = selectStatement;
         this.builder = treeBuilder;
         this.build(nodeList);
     }
-    
+
     /**
      * builder to use with the ANTLR tree
      * @param t
@@ -85,7 +92,7 @@ public class WhereExpression extends Node {
             this.tokenType = t.getType();
             this.tokenName = JdbcGrammarParser.tokenNames[this.tokenType];
             this.logger.debug("BUILDING " + this.tokenName);
-            
+
             for (int i = 0; i < t.getChildCount(); i++) {
                 Tree child = t.getChild(i);
                 switch (child.getType()) {
@@ -96,14 +103,13 @@ public class WhereExpression extends Node {
                     case JdbcGrammarParser.CONJUNCTION:
                         logger.debug("BUILDING CONJUNCTION OR DISJUNCTION FROM CONJUNCTION");
                         Node built = Conjunction.buildFromConjunction(child, builder, this, selectStatement);
-                        if(built.getTokenType()==JdbcGrammarParser.CONJUNCTION){
+                        if (built.getTokenType() == JdbcGrammarParser.CONJUNCTION) {
                             this.expression = (Conjunction.class.cast(built));
                             logger.debug("CONJUNCTION BUILT AND ADDED TO WHEREEXPRESSION");
-                        }
-                        else{
+                        } else {
                             this.expression = (Disjunction.class.cast(built));
                             logger.debug("DISJUNCTION BUILT AND ADDED TO WHEREEXPRESSION");
-                        }   
+                        }
                         break;
                     case JdbcGrammarParser.NEGATION:
                         this.expression = (new Negation(child, builder, this,
@@ -117,36 +123,34 @@ public class WhereExpression extends Node {
                         break;
                 }
             }
-            
-        }
-        else {
+
+        } else {
             throw new TreeParsingException("This Tree is not a WHEREEXPRESSION");
         }
     }
-    
+
     /**
      * builder to use with WhereExpression(List<Node> nodelist, treeBuilder builder)
      * @param booleanExpressionToAdd - A list which contains the expressions
      * @throws Exception
      */
-    public void build(List<Node> booleanExpressionToAdd) throws TreeParsingException {            
+    public void build(List<Node> booleanExpressionToAdd) throws TreeParsingException {
         this.tokenType = JdbcGrammarParser.WHEREEXPRESSION;
         this.tokenName = JdbcGrammarParser.tokenNames[this.tokenType];
         this.logger.debug("BUILDING " + this.tokenName + "from booleanExpressions");
-            
-        if(booleanExpressionToAdd.size() == 1 && 
-                booleanExpressionToAdd.get(0).getTokenType() == JdbcGrammarParser.BOOLEANEXPRESSIONITEM){
+
+        if (booleanExpressionToAdd.size() == 1 &&
+                booleanExpressionToAdd.get(0).getTokenType() == JdbcGrammarParser.BOOLEANEXPRESSIONITEM) {
             this.expression = booleanExpressionToAdd.get(0);
-            
+
             //Resolve new pointed Columns
             WhereExpressionJoinResolver.columnResolver(
-                    (BooleanExpressionItem)this.expression, this.selectStatement);
-        }
-        else {
+                    (BooleanExpressionItem) this.expression, this.selectStatement);
+        } else {
             this.expression = new Conjunction(booleanExpressionToAdd, selectStatement);
         }
     }
-    
+
     @Override
     public String toPrettyString(int level) {
         System.err.println(this.expression.tokenName);

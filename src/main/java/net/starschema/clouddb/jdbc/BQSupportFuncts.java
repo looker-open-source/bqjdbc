@@ -1,19 +1,26 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * <p>
  * This class implements functions such as connecting to Bigquery, Checking out
  * the results and displaying them on console
@@ -52,8 +59,7 @@ import com.google.api.services.bigquery.model.TableCell;
 /**
  * This class contains static methods for interacting with BigQuery
  *
- * @author Gunics Bal·zs, Horv·th Attila
- *
+ * @author Gunics Bal√°zs, Horv√°th Attila
  */
 public class BQSupportFuncts {
     /** log4j.Logger instance */
@@ -64,12 +70,11 @@ public class BQSupportFuncts {
      * Constructs a valid BigQuery JDBC driver URL from the specified properties
      * File
      *
-     * @param properties
-     *            Properties File most commonly read by
-     *            ReadUrlFromPropFile(String)
-     * @see #ReadUrlFromPropFile(String)
+     * @param properties Properties File most commonly read by
+     *                   ReadUrlFromPropFile(String)
      * @return a valid BigQuery JDBC driver URL or null if it fails to load
      * @throws UnsupportedEncodingException
+     * @see #ReadUrlFromPropFile(String)
      */
     public static String constructUrlFromPropertiesFile(Properties properties)
             throws UnsupportedEncodingException {
@@ -87,50 +92,40 @@ public class BQSupportFuncts {
             if (User != null && Password != null && ProjectId != null) {
                 forreturn = BQDriver.getURLPrefix()
                         + URLEncoder.encode(ProjectId, "UTF-8");
-            }
-            else {
+            } else {
                 return null;
             }
+        } else if (properties.getProperty("type").equals("service")) {
+            if (User != null && Password != null && ProjectId != null) {
+                forreturn = BQDriver.getURLPrefix()
+                        + URLEncoder.encode(ProjectId, "UTF-8")
+                        + "?withServiceAccount=true";
+            } else {
+                return null;
+            }
+        } else {
+            return null;
         }
-        else
-            if (properties.getProperty("type").equals("service")) {
-                if (User != null && Password != null && ProjectId != null) {
-                    forreturn = BQDriver.getURLPrefix()
-                            + URLEncoder.encode(ProjectId, "UTF-8")
-                            + "?withServiceAccount=true";
-                }
-                else {
-                    return null;
-                }
-            }
-            else {
-                return null;
-            }
 
-        if(transformQuery != null){
-            return forreturn + "?transformQuery="+transformQuery;
-        }
-        else return forreturn;
+        if (transformQuery != null) {
+            return forreturn + "?transformQuery=" + transformQuery;
+        } else return forreturn;
     }
 
     /**
      * Displays results of a Query on the console
      *
-     * @param bigquery
-     *            A valid authorized Bigquery instance
-     * @param projectId
-     *            The exact Id of the Project associated with the completed
-     *            BigQuery job
-     * @param completedJob
-     *            The Job reference of the completed job
-     * @throws IOException
-     *             <p>
-     *             If the request fails to get the QueryResult of the specified
-     *             job in the given ProjectId
-     *             </p>
+     * @param bigquery     A valid authorized Bigquery instance
+     * @param projectId    The exact Id of the Project associated with the completed
+     *                     BigQuery job
+     * @param completedJob The Job reference of the completed job
+     * @throws IOException <p>
+     *                     If the request fails to get the QueryResult of the specified
+     *                     job in the given ProjectId
+     *                     </p>
      */
     public static void displayQueryResults(Bigquery bigquery, String projectId,
-            Job completedJob) throws IOException {
+                                           Job completedJob) throws IOException {
         projectId = projectId.replace("__", ":").replace("_", ".");
         GetQueryResultsResponse queryResult = bigquery
                 .jobs()
@@ -149,21 +144,18 @@ public class BQSupportFuncts {
     /**
      * Return a list of Projects which contains the String catalogname
      *
-     * @param catalogName
-     *            The String which the id of the result Projects must contain
-     * @param Connection
-     *            A valid BQConnection instance
+     * @param catalogName The String which the id of the result Projects must contain
+     * @param Connection  A valid BQConnection instance
      * @return a list of Projects which contains the String catalogname
-     * @throws IOException
-     *             <p>
-     *             if the initialization of requesting the list of all Projects
-     *             (to be sorted from) fails
-     *             </p>
+     * @throws IOException <p>
+     *                     if the initialization of requesting the list of all Projects
+     *                     (to be sorted from) fails
+     *                     </p>
      */
     private static List<Projects> getCatalogs(String catalogName,
-            BQConnection Connection) throws IOException {
+                                              BQConnection Connection) throws IOException {
         logger.debug("Function call getCatalogs catalogName: " +
-            (catalogName != null ? catalogName : "null") );
+                (catalogName != null ? catalogName : "null"));
         List<Projects> projects = Connection.getBigquery().projects().list()
                 .execute().getProjects();
 
@@ -186,16 +178,13 @@ public class BQSupportFuncts {
                 }
                 if (ProjectsSearch.size() == 0) {
                     return null;
-                }
-                else {
+                } else {
                     return ProjectsSearch;
                 }
-            }
-            else {
+            } else {
                 return projects;
             }
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -204,8 +193,7 @@ public class BQSupportFuncts {
      * Parses a (instance of dataset).getId() and gives back the id only for the
      * dataset
      *
-     * @param getId
-     *            (instance of dataset).getId()
+     * @param getId (instance of dataset).getId()
      * @return the id only for the dataset
      */
     public static String getDatasetIdFromDatasetDotGetId(String getId) {
@@ -218,8 +206,7 @@ public class BQSupportFuncts {
      * Parses a (instance of table).getid() and gives back the id only for the
      * dataset
      *
-     * @param getId
-     *            (instance of table).getid()
+     * @param getId (instance of table).getid()
      * @return the id only for the dataset
      */
     public static String getDatasetIdFromTableDotGetId(String getId) {
@@ -232,25 +219,21 @@ public class BQSupportFuncts {
      * Returns a list of Datasets, which are associated with the Project which's
      * id is exactly ProjectId, and their name matches datasetnamepattern
      *
-     * @param datasetname
-     *            The String the dataset's id must contain
-     * @param projectId
-     *            The Id of the Project the dataset is preferably contained in
-     * @param connection
-     *            A valid BQConnection Instance
+     * @param datasetname The String the dataset's id must contain
+     * @param projectId   The Id of the Project the dataset is preferably contained in
+     * @param connection  A valid BQConnection Instance
      * @return a list of Datasets, which are associated with the Project which's
-     *         id is exactly ProjectId, and their name contains datasetname
-     * @throws IOException
-     *             <p>
-     *             if the request to get Projects that match the given ProjectId
-     *             fails
-     *             </p>
+     * id is exactly ProjectId, and their name contains datasetname
+     * @throws IOException <p>
+     *                     if the request to get Projects that match the given ProjectId
+     *                     fails
+     *                     </p>
      */
     private static List<Datasets> getDatasets(String datasetname,
-            String projectId, BQConnection connection) throws IOException {
+                                              String projectId, BQConnection connection) throws IOException {
         logger.debug("function call getDatasets, " +
-            "datasetName: " + (datasetname != null ? datasetname : "null") +
-            ", projectId: " + (projectId != null ? projectId : "null"));
+                "datasetName: " + (datasetname != null ? datasetname : "null") +
+                ", projectId: " + (projectId != null ? projectId : "null"));
         projectId = projectId.replace("__", ":").replace("_", ".");
         List<Datasets> datasetcontainer = connection.getBigquery().datasets()
                 .list(projectId).execute().getDatasets();
@@ -266,16 +249,13 @@ public class BQSupportFuncts {
                 }
                 if (datasetsSearch.size() == 0) {
                     return null;
-                }
-                else {
+                } else {
                     return datasetsSearch;
                 }
-            }
-            else {
+            } else {
                 return datasetcontainer;
             }
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -284,15 +264,14 @@ public class BQSupportFuncts {
      * Parses a (instance of dataset)/(instance of table).getid() and gives back
      * the id only for the Project
      *
-     * @param getId
-     *            (instance of dataset)/(instance of table).getid()
+     * @param getId (instance of dataset)/(instance of table).getid()
      * @returnthe the id only for the Project
      */
     public static String getProjectIdFromAnyGetId(String getId) {
         int pos = getId.indexOf(":");        // The first appearance of ":"
-		if (getId.indexOf(":", pos + 1) != -1) {
-         // If there's a second ":" we'll use it
-         // (there must be a second ":" !!)
+        if (getId.indexOf(":", pos + 1) != -1) {
+            // If there's a second ":" we'll use it
+            // (there must be a second ":" !!)
             pos = getId.indexOf(":", pos + 1);
         }
         String ret = getId.substring(0, pos); // Cutting out the project id
@@ -302,37 +281,33 @@ public class BQSupportFuncts {
     /**
      * Returns the result of a completed query
      *
-     * @param bigquery
-     *            Instance of authorized Bigquery client
-     * @param projectId
-     *            The id of the Project the completed job was run in
-     * @param completedJob
-     *            The Job instance of the completed job
+     * @param bigquery     Instance of authorized Bigquery client
+     * @param projectId    The id of the Project the completed job was run in
+     * @param completedJob The Job instance of the completed job
      * @return the result of a completed query specified by projectId and
-     *         completedJob
-     * @throws IOException
-     *             <p>
-     *             if the request to get QueryResults specified by the given
-     *             ProjectId and Job id fails
-     *             </p>
+     * completedJob
+     * @throws IOException <p>
+     *                     if the request to get QueryResults specified by the given
+     *                     ProjectId and Job id fails
+     *                     </p>
      */
     public static GetQueryResultsResponse getQueryResults(Bigquery bigquery,
-            String projectId, Job completedJob) throws IOException {
+                                                          String projectId, Job completedJob) throws IOException {
         GetQueryResultsResponse queryResult = bigquery.jobs()
                 .getQueryResults(projectId,
                         completedJob.getJobReference().getJobId()).execute();
         long totalRows = queryResult.getTotalRows().longValue();
-        if(totalRows == 0){
+        if (totalRows == 0) {
             return queryResult;
         }
-        while( totalRows  > (long)queryResult.getRows().size() ) {
+        while (totalRows > (long) queryResult.getRows().size()) {
             queryResult.getRows().addAll(
-                bigquery.jobs()
-                    .getQueryResults(projectId,
-                            completedJob.getJobReference().getJobId())
-                    .setStartIndex(BigInteger.valueOf((long)queryResult.getRows().size()) )
-                    .execute()
-                    .getRows());
+                    bigquery.jobs()
+                            .getQueryResults(projectId,
+                                    completedJob.getJobReference().getJobId())
+                            .setStartIndex(BigInteger.valueOf((long) queryResult.getRows().size()))
+                            .execute()
+                            .getRows());
         }
         return queryResult;
     }
@@ -340,48 +315,41 @@ public class BQSupportFuncts {
     /**
      * Returns the result of a completed query
      *
-     * @param bigquery
-     *            Instance of authorized Bigquery client
-     * @param projectId
-     *            The id of the Project the completed job was run in
-     * @param completedJob
-     *            The Job instance of the completed job
+     * @param bigquery     Instance of authorized Bigquery client
+     * @param projectId    The id of the Project the completed job was run in
+     * @param completedJob The Job instance of the completed job
      * @return the result of a completed query specified by projectId and
-     *         completedJob
-     * @throws IOException
-     *             <p>
-     *             if the request to get QueryResults specified by the given
-     *             ProjectId and Job id fails
-     *             </p>
+     * completedJob
+     * @throws IOException <p>
+     *                     if the request to get QueryResults specified by the given
+     *                     ProjectId and Job id fails
+     *                     </p>
      */
     public static GetQueryResultsResponse getQueryResultsDivided(Bigquery bigquery,
-            String projectId, Job completedJob, BigInteger startAtRow, int fetchCount) throws IOException {
+                                                                 String projectId, Job completedJob, BigInteger startAtRow, int fetchCount) throws IOException {
         GetQueryResultsResponse queryResult;
         queryResult = bigquery.jobs()
                 .getQueryResults(projectId,
                         completedJob.getJobReference().getJobId())
-                        .setStartIndex(startAtRow)
-                        .setMaxResults((long) fetchCount).execute();
+                .setStartIndex(startAtRow)
+                .setMaxResults((long) fetchCount).execute();
         return queryResult;
     }
+
     /**
      * Returns the status of a job
      *
-     * @param myjob
-     *            Instance of Job
-     * @param bigquery
-     *            Instance of authorized Bigquery client
-     * @param projectId
-     *            The id of the Project the job is contained in
+     * @param myjob     Instance of Job
+     * @param bigquery  Instance of authorized Bigquery client
+     * @param projectId The id of the Project the job is contained in
      * @return the status of the job
-     * @throws IOException
-     *             <p>
-     *             if the request to get the job specified by myjob and
-     *             projectId fails
-     *             </p>
+     * @throws IOException <p>
+     *                     if the request to get the job specified by myjob and
+     *                     projectId fails
+     *                     </p>
      */
     public static String getQueryState(Job myjob, Bigquery bigquery,
-            String projectId) throws IOException {
+                                       String projectId) throws IOException {
         projectId = projectId.replace("__", ":").replace("_", ".");
         Job pollJob = bigquery.jobs()
                 .get(projectId, myjob.getJobReference().getJobId()).execute();
@@ -391,7 +359,7 @@ public class BQSupportFuncts {
                 + pollJob.getJobReference().getJobId()
                 + " ; "
                 + (System.currentTimeMillis() - pollJob.getStatistics()
-                        .getStartTime()));
+                .getStartTime()));
         return pollJob.getStatus().getState();
     }
 
@@ -399,8 +367,7 @@ public class BQSupportFuncts {
      * Parses a (instance of table).getid() and gives back the id only for the
      * table
      *
-     * @param getId
-     *            (instance of table).getid()
+     * @param getId (instance of table).getid()
      * @return the id only for the table
      */
     public static String getTableIdFromTableDotGetId(String getId) {
@@ -411,30 +378,25 @@ public class BQSupportFuncts {
      * Returns a list of Tables which's id matches TablenamePattern and are
      * exactly in the given Project and Dataset
      *
-     * @param tablename
-     *            String that the tableid must contain
-     * @param projectId
-     *            The exact Id of the Project that the tables must be in
-     * @param datasetId
-     *            The exact Id of the Dataset that the tables must be in
-     * @param connection
-     *            Instance of a valid BQConnection
+     * @param tablename  String that the tableid must contain
+     * @param projectId  The exact Id of the Project that the tables must be in
+     * @param datasetId  The exact Id of the Dataset that the tables must be in
+     * @param connection Instance of a valid BQConnection
      * @return a list of Tables which's id contains Tablename and are exactly in
-     *         the given Project and Dataset
-     * @throws IOException
-     *             <p>
-     *             if the request to get all tables (to sort from) specified by
-     *             ProjectId, DatasetId fails
-     *             </p>
+     * the given Project and Dataset
+     * @throws IOException <p>
+     *                     if the request to get all tables (to sort from) specified by
+     *                     ProjectId, DatasetId fails
+     *                     </p>
      */
     public static List<Tables> getTables(String tableNamePattern,
-            String projectId, String datasetId, BQConnection connection)
+                                         String projectId, String datasetId, BQConnection connection)
             throws IOException {
         logger.debug("Function call getTables : " +
-            "tableNamePattern: " + (tableNamePattern != null ? tableNamePattern : "null") +
-            ", projectId: " + (projectId != null ? projectId : "null") +
-            ", datasetID:" + (datasetId != null ? datasetId : "null") +
-            "connection");
+                "tableNamePattern: " + (tableNamePattern != null ? tableNamePattern : "null") +
+                ", projectId: " + (projectId != null ? projectId : "null") +
+                ", datasetID:" + (datasetId != null ? datasetId : "null") +
+                "connection");
         projectId = projectId.replace("__", ":").replace("_", ".");
         List<Tables> tables = connection.getBigquery().tables()
                 .list(projectId, datasetId).execute().getTables();
@@ -450,16 +412,13 @@ public class BQSupportFuncts {
                 if (tablesSearch.size() == 0) {
                     logger.debug("returning null");
                     return null;
-                }
-                else {
+                } else {
                     return tablesSearch;
                 }
-            }
-            else {
+            } else {
                 return tables;
             }
-        }
-        else {
+        } else {
             logger.debug("returning null");
             return null;
         }
@@ -469,23 +428,21 @@ public class BQSupportFuncts {
      * Gets Tables information from specific projects matching catalog,
      * tablenamepattern and datasetidpatterns
      *
-     * @param connection
-     *            Valid instance of BQConnection
+     * @param connection Valid instance of BQConnection
      * @return List of Table
-     * @throws IOException
-     *             <p>
-     *             if the initialization of requesting the list of all Projects
-     *             (to be sorted from) fails<br>
-     *             if the request to get Projects that match the given ProjectId
-     *             fails<br>
-     *             if the request to get all tables (to sort from) specified by
-     *             ProjectId, DatasetId fails<br>
-     *             if the request to get table information based on ProjectId
-     *             DatasetId TableId fails
-     *             <p>
+     * @throws IOException <p>
+     *                     if the initialization of requesting the list of all Projects
+     *                     (to be sorted from) fails<br>
+     *                     if the request to get Projects that match the given ProjectId
+     *                     fails<br>
+     *                     if the request to get all tables (to sort from) specified by
+     *                     ProjectId, DatasetId fails<br>
+     *                     if the request to get table information based on ProjectId
+     *                     DatasetId TableId fails
+     *                     <p>
      */
     public static List<Table> getTables(BQConnection connection,
-            String catalog, String schema, String tablename) throws IOException {
+                                        String catalog, String schema, String tablename) throws IOException {
         List<Table> RET = new ArrayList<Table>();
         logger.debug("Function call getTables : " +
                 "catalog: " + (catalog != null ? catalog : "null") +
@@ -506,7 +463,7 @@ public class BQSupportFuncts {
                         List<Tables> tables = null;
 
                         tables = BQSupportFuncts.getTables(tablename, proj
-                                .getId(),
+                                        .getId(),
                                 BQSupportFuncts
                                         .getDatasetIdFromDatasetDotGetId(dataset
                                                 .getId()), connection);
@@ -537,12 +494,10 @@ public class BQSupportFuncts {
             }
             if (RET.size() == 0) {
                 return null;
-            }
-            else {
+            } else {
                 return RET;
             }
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -583,15 +538,13 @@ public class BQSupportFuncts {
 
             if (regexexpressionstring == null) {
                 regexexpressionstring = pattern.replace("_", ".");
-            }
-            else {
+            } else {
                 regexexpressionstring = regexexpressionstring.replace("_", ".");
             }
         }
         if (regexexpression) {
             return input.matches(regexexpressionstring);
-        }
-        else {
+        } else {
             //return input.contains(pattern);
             return input.equals(pattern);
         }
@@ -600,43 +553,31 @@ public class BQSupportFuncts {
     /**
      * Convert Bigquery field type to java.sql.Types
      *
-     * @param columntype
-     *            String of the Column type
+     * @param columntype String of the Column type
      * @return java.sql.Types value of the given Columtype
      */
     public static int parseToSqlFieldType(String columntype) {
         if (columntype.equals("FLOAT")) {
             return java.sql.Types.FLOAT;
+        } else if (columntype.equals("BOOLEAN")) {
+            return java.sql.Types.BOOLEAN;
+        } else if (columntype.equals("INTEGER")) {
+            return java.sql.Types.INTEGER;
+        } else if (columntype.equals("STRING")) {
+            return java.sql.Types.VARCHAR;
+        } else if (columntype.equals("BIGINT")) {
+            return java.sql.Types.BIGINT;
+        } else {
+            return 0;
         }
-        else
-            if (columntype.equals("BOOLEAN")) {
-                return java.sql.Types.BOOLEAN;
-            }
-            else
-                if (columntype.equals("INTEGER")) {
-                    return java.sql.Types.INTEGER;
-                }
-                else
-                    if (columntype.equals("STRING")) {
-                        return java.sql.Types.VARCHAR;
-                    }
-                    else
-                        if (columntype.equals("BIGINT")){
-                            return java.sql.Types.BIGINT;
-                        }
-                        else {
-                            return 0;
-                        }
     }
 
     /**
      * Reads Properties File from location
      *
-     * @param filePath
-     *            Location of the Properties File
+     * @param filePath Location of the Properties File
      * @return Properties The Properties object made from the Properties File
-     * @throws IOException
-     *             if the load from file fails
+     * @throws IOException if the load from file fails
      */
     public static Properties readFromPropFile(String filePath)
             throws IOException {
@@ -650,22 +591,18 @@ public class BQSupportFuncts {
     /**
      * Starts a new query in async mode.
      *
-     * @param bigquery
-     *            The bigquery instance, which is authorized
-     * @param projectId
-     *            The project's ID
-     * @param querySql
-     *            The sql query which we want to run
+     * @param bigquery  The bigquery instance, which is authorized
+     * @param projectId The project's ID
+     * @param querySql  The sql query which we want to run
      * @return A JobReference which we'll use to poll the bigquery, for its
-     *         state, then for its mined data.
-     * @throws IOException
-     *             <p>
-     *             if the request for initializing or executing job fails
-     *             </p>
+     * state, then for its mined data.
+     * @throws IOException <p>
+     *                     if the request for initializing or executing job fails
+     *                     </p>
      */
     public static Job startQuery(Bigquery bigquery, String projectId,
-            String querySql) throws IOException {
-        BQSupportFuncts.logger.info("Inserting Query Job: " + querySql.replace("\t","").replace("\n", " ").replace("\r", ""));
+                                 String querySql) throws IOException {
+        BQSupportFuncts.logger.info("Inserting Query Job: " + querySql.replace("\t", "").replace("\n", " ").replace("\r", ""));
         projectId = projectId.replace("__", ":").replace("_", ".");
         Job job = new Job();
         JobConfiguration config = new JobConfiguration();

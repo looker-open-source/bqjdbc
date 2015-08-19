@@ -1,20 +1,26 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package net.starschema.clouddb.jdbc.list;
 
@@ -25,12 +31,12 @@ import org.antlr.runtime.tree.Tree;
 
 /**
  * This class extends the basic Node
- * 
+ *
  * @author Attila Horvath, Balazs Gunics
  */
 public class BooleanExpressionItem extends Node implements ColumnReferencePlace {
-    
-    /** The type of the Expression LIKEEXPRESSION, COMPARISON 
+
+    /** The type of the Expression LIKEEXPRESSION, COMPARISON
      * #BooleanExpressionItemType*/
     BooleanExpressionItemType type = null;
     /** the BooleanExpressions right Node */
@@ -41,77 +47,77 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
     String comparisonOperator = null;
     Node mainNode;
     SelectStatement selectStatement;
-    
+
     /**
      * Checks if a BooleanExpressionItem is equivalent to an other
      * @param compareBI
      * @return
      */
     public boolean equals(BooleanExpressionItem compareBI) {
-        if( left.tokenType==compareBI.left.tokenType && 
-                right.tokenType==compareBI.right.tokenType) {
+        if (left.tokenType == compareBI.left.tokenType &&
+                right.tokenType == compareBI.right.tokenType) {
             boolean leftSideEquals = false;
             boolean rightSideEquals = false;
-            
-            if(left.tokenType==JdbcGrammarParser.COLUMN) {
+
+            if (left.tokenType == JdbcGrammarParser.COLUMN) {
                 ColumnReference columnReferenceLeft = ColumnReference.class.cast(left);
                 ColumnReference columnReferenceLeftCompare = ColumnReference.class.cast(compareBI.left);
-                
+
                 //Check if pointedNodes are the same and comparisonOperator is the same
-                if(columnReferenceLeft.getPointedNode().getUniqueid()
+                if (columnReferenceLeft.getPointedNode().getUniqueid()
                         .equals(columnReferenceLeftCompare.getPointedNode().getUniqueid())) {
-                            leftSideEquals = true;
-                  }
+                    leftSideEquals = true;
+                }
             }
-            if(right.tokenType==JdbcGrammarParser.COLUMN) {
+            if (right.tokenType == JdbcGrammarParser.COLUMN) {
                 ColumnReference columnReferenceRight = ColumnReference.class.cast(right);
                 ColumnReference columnReferenceRightCompare = ColumnReference.class.cast(compareBI.right);
-                if(columnReferenceRight.getPointedNode().getUniqueid()
+                if (columnReferenceRight.getPointedNode().getUniqueid()
                         .equals(columnReferenceRightCompare.getPointedNode().getUniqueid())) {
-                            rightSideEquals = true;
+                    rightSideEquals = true;
                 }
             }
-            if(left.tokenType==JdbcGrammarParser.SUBQUERY) {
-                if(left.toPrettyString().equals(compareBI.left.toPrettyString())) {
-                            leftSideEquals=true;
-                        }
-            }
-            if(right.tokenType==JdbcGrammarParser.SUBQUERY) {
-                if(right.toPrettyString().equals(compareBI.right.toPrettyString())) {
-                            rightSideEquals=true;
-                        }
-            }
-            if(left.tokenType==JdbcGrammarParser.STRINGLIT) {
-                if(left.toPrettyString().equals(compareBI.left.toPrettyString())) {
-                    leftSideEquals=true;
+            if (left.tokenType == JdbcGrammarParser.SUBQUERY) {
+                if (left.toPrettyString().equals(compareBI.left.toPrettyString())) {
+                    leftSideEquals = true;
                 }
             }
-            if(right.tokenType==JdbcGrammarParser.STRINGLIT) {
-                if(right.toPrettyString().equals(compareBI.right.toPrettyString())) {
-                    rightSideEquals=true;
+            if (right.tokenType == JdbcGrammarParser.SUBQUERY) {
+                if (right.toPrettyString().equals(compareBI.right.toPrettyString())) {
+                    rightSideEquals = true;
                 }
             }
-            
-            if(leftSideEquals && rightSideEquals && this.comparisonOperator!=null && 
-                    compareBI.comparisonOperator!=null && 
+            if (left.tokenType == JdbcGrammarParser.STRINGLIT) {
+                if (left.toPrettyString().equals(compareBI.left.toPrettyString())) {
+                    leftSideEquals = true;
+                }
+            }
+            if (right.tokenType == JdbcGrammarParser.STRINGLIT) {
+                if (right.toPrettyString().equals(compareBI.right.toPrettyString())) {
+                    rightSideEquals = true;
+                }
+            }
+
+            if (leftSideEquals && rightSideEquals && this.comparisonOperator != null &&
+                    compareBI.comparisonOperator != null &&
                     this.comparisonOperator.equals(compareBI.comparisonOperator)) {
                 return true;
-            }
-            else {
+            } else {
                 return false;
             }
-            
-        }
-        else {
+
+        } else {
             return false;
         }
-    };
-    
+    }
+
+    ;
+
     TreeBuilder builder;
-    
+
     /**
      * The constructor to build up from an ANTLR tree
-     * 
+     *
      * @param t - the ANTLR tree
      * @param treeBuilder - the TreeBuilder to reach the helper functions
      * @param mainNode - the Node which contains the expression
@@ -119,13 +125,13 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
      * @throws Exception
      */
     public BooleanExpressionItem(Tree t, TreeBuilder treeBuilder,
-            Node mainNode, SelectStatement selectStatement) throws TreeParsingException {
+                                 Node mainNode, SelectStatement selectStatement) throws TreeParsingException {
         this.builder = treeBuilder;
         this.selectStatement = selectStatement;
         this.mainNode = mainNode;
         this.build(t, this.builder);
     }
-    
+
     /**
      * the builder to parse out the ANTLR tree
      * @param t - the ANTLR tree
@@ -150,7 +156,7 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
                             case JdbcGrammarParser.COLUMN:
                                 this.right = new ColumnReference(
                                         child.getChild(0), builder,
-                                        this.selectStatement,this);
+                                        this.selectStatement, this);
                                 break;
                             case JdbcGrammarParser.SUBQUERY:
                                 this.right = new SubQuery(child.getChild(0),
@@ -159,14 +165,14 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
                             case JdbcGrammarParser.STRINGLIT:
                                 String stringLit = "";
                                 Tree grandChild = child.getChild(0);
-                                for(int j= 1 ; j<grandChild.getChildCount()-1; j++) {
+                                for (int j = 1; j < grandChild.getChildCount() - 1; j++) {
                                     stringLit += grandChild.getChild(j).getText();
                                     stringLit += " ";
-                                }                                
-                                this.right = new StringLiteral(stringLit.substring(0, stringLit.length()-1));
-                                
+                                }
+                                this.right = new StringLiteral(stringLit.substring(0, stringLit.length() - 1));
+
                                 break;
-                            case JdbcGrammarParser.INTEGERPARAM:                                
+                            case JdbcGrammarParser.INTEGERPARAM:
                                 this.right = new StringLiteral(child
                                         .getChild(0).getChild(0).getText());
                                 break;
@@ -179,7 +185,7 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
                             case JdbcGrammarParser.COLUMN:
                                 this.left = new ColumnReference(
                                         child.getChild(0), builder,
-                                        this.selectStatement,this);
+                                        this.selectStatement, this);
                                 break;
                             case JdbcGrammarParser.SUBQUERY:
                                 this.left = new SubQuery(child.getChild(0),
@@ -188,11 +194,11 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
                             case JdbcGrammarParser.STRINGLIT:
                                 String stringLit = "";
                                 Tree grandChild = child.getChild(0);
-                                for(int j= 1 ; j<grandChild.getChildCount()-1; j++) {
+                                for (int j = 1; j < grandChild.getChildCount() - 1; j++) {
                                     stringLit += grandChild.getChild(j).getText();
                                     stringLit += " ";
-                                }                                
-                                this.left = new StringLiteral(stringLit.substring(0, stringLit.length()-1));
+                                }
+                                this.left = new StringLiteral(stringLit.substring(0, stringLit.length() - 1));
                                 break;
                             default:
                                 break;
@@ -206,13 +212,12 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
                         break;
                 }
             }
-        }
-        else {
+        } else {
             throw new TreeParsingException(
                     "This Tree is not a BOOLEANEXPRESSIONITEM");
         }
     }
-    
+
     /**
      * getter for the Left Item
      * @return the left of the Boolean Expression
@@ -220,7 +225,7 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
     public Node getLeft() {
         return this.left;
     }
-    
+
     /**
      * getter for the mainNode
      */
@@ -235,20 +240,19 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
     public Node getRight() {
         return this.right;
     }
-    
+
     @Override
     public String toPrettyString() {
         return this.toPrettyString(-1);
     }
-    
+
     @Override
     public String toPrettyString(int level) {
         if (this.type == BooleanExpressionItemType.COMPARISON) {
             System.err.println(left.tokenName + " " + right.tokenName);
             return this.left.toPrettyString() + this.comparisonOperator
                     + this.right.toPrettyString();
-        }
-        else {
+        } else {
             return this.left.toPrettyString() + "LIKE"
                     + this.right.toPrettyString();
         }
