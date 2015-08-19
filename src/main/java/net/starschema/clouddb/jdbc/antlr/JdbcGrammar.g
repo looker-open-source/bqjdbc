@@ -1,22 +1,29 @@
 /**
- * Starschema Big Query JDBC Driver
- * Copyright (C) 2012, Starschema Ltd.
- * <p>
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- * </p><p>
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- * </p><p>
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * </p><p>
+ * Copyright (c) 2015, STARSCHEMA LTD.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  * This grammar implement the sql select statement
- * </p>
+ *
  *    @author Attila Horvath
  *    @author Balazs Gunics
  */
@@ -32,20 +39,20 @@ import JDBCTokens;
 @header {/**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * This grammar implement the sql select statement
  *    @author Horvath Attila
  *    @author Balazs Gunics
@@ -55,20 +62,20 @@ import JDBCTokens;
 @lexer::header{/**
  * Starschema Big Query JDBC Driver
  * Copyright (C) 2012, Starschema Ltd.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * This grammar implement the sql select statement
  *    @author Horvath Attila
  *    @author Balazs Gunics
@@ -81,7 +88,7 @@ Rule for entry point for the parser makes the selectstatement as the root for th
 */
 statement
 :
-  e=selectstatement^ (EOF | ';')! 
+  e=selectstatement^ (EOF | ';')!
 ;
 
 /**
@@ -90,7 +97,7 @@ Rule for parsing an sql select
 selectstatement
 :   SELECTKEYWORD DISTINCT? expression fromexpression whereexpression? groupbyexpression? havingexpression? orderbyexpression? limitexpression?
     ->^(SELECTSTATEMENT SELECTKEYWORD expression fromexpression whereexpression? groupbyexpression? havingexpression? orderbyexpression? limitexpression?)
-    
+
 ;
 
 fragment LIMITEXPRESSION:;
@@ -130,7 +137,7 @@ fromexpression
     FROMKEYWORD
     datasource
     (
-    COMMA     
+    COMMA
         datasource
     )*
     ->^(FROMEXPRESSION datasource* ^(TEXT TEXT[$fromexpression.text]))
@@ -254,14 +261,14 @@ Rule to parse a condition expression used in HAVING and WHERE, creates Tree node
 STILL NEED TO IMPLEMENT LOT
 */
 exprcondition
-: 
+:
     (
       s1=exprconditioncore
       (
           (LIKEKEYWORD likeclause)
       |   (comparisonoperator
               (s2=exprconditioncore|s3=number)
-              
+
           )
       )
   )->^(BOOLEANEXPRESSIONITEM ^(BOOLEANEXPRESSIONITEMLEFT $s1) comparisonoperator?  ^(BOOLEANEXPRESSIONITEMRIGHT likeclause? $s2? $s3?) ^(TEXT TEXT[$exprcondition.text]))
@@ -276,7 +283,7 @@ columnforexpression
   (
    (razoralias COLON)?
    (scopealias (COLON | PUNCTUATION))*
-   (name) 
+   (name)
    ( alias)?
   ) ->^(COLUMN scopealias* name alias? ^(TEXT TEXT[$columnforexpression.text]))
 ;
@@ -325,9 +332,9 @@ Rule for parsing a subselect
 subquery
 :
    (
-    LPARAM 
+    LPARAM
       selectstatement
-    RPARAM 
+    RPARAM
     (alias)?
    )
    ->^(SUBQUERY selectstatement alias? ^(TEXT TEXT[$subquery.text]))
@@ -347,7 +354,7 @@ datasource
 :
   datasourcenoparen
   |
-  //(LPARAM+ datasourceelement joinclause) => 
+  //(LPARAM+ datasourceelement joinclause) =>
   datasourceparen
 ;
 
@@ -356,14 +363,14 @@ datasource
 */
 datasourcenoparen
 @init{boolean joinexpr = false;}
-:   
+:
    (s1=datasourceelement (joinclause1=joinclause joinelement1=datasourceelement onclause1=onclause (multijoinexpression)* {joinexpr=true;})?)
-   -> {joinexpr}?  ^(JOINEXPRESSION 
-                        ^(LEFTEXPR $s1?) 
+   -> {joinexpr}?  ^(JOINEXPRESSION
+                        ^(LEFTEXPR $s1?)
                         $joinclause1?
                         ^(RIGHTEXPR $joinelement1?) $onclause1? multijoinexpression*
-                    )                    
-   -> $s1                   
+                    )
+   -> $s1
 ;
 
 /**Because of SAP crystal report */
@@ -373,51 +380,51 @@ datasourceparen
   //1-2
                 (LPARAM simplejoin RPARAM) multijoinexpression?
  |//2-3
-        (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression? 
+        (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression?
  |//3-4
-(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM) 
+(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM)
 multijoinexpression?
  |//4-5
-(LPARAM 
-(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM) 
+(LPARAM
+(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM)
 multijoinexpression RPARAM) multijoinexpression?
  |//5-6
-(LPARAM (LPARAM 
-(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM) 
+(LPARAM (LPARAM
+(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM)
 multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression?
  |//6-7
-(LPARAM (LPARAM (LPARAM 
-(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM) 
+(LPARAM (LPARAM (LPARAM
+(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM)
 multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression?
  |//7-8
-(LPARAM (LPARAM (LPARAM (LPARAM 
-(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM) 
-multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) 
+(LPARAM (LPARAM (LPARAM (LPARAM
+(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM)
+multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM)
 multijoinexpression?
  |//8-9
-(LPARAM (LPARAM (LPARAM (LPARAM (LPARAM 
-(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM) 
-multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) 
+(LPARAM (LPARAM (LPARAM (LPARAM (LPARAM
+(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM)
+multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM)
 multijoinexpression RPARAM) multijoinexpression?
  |//9-10
-(LPARAM (LPARAM (LPARAM (LPARAM (LPARAM (LPARAM 
-(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM) 
-multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) 
+(LPARAM (LPARAM (LPARAM (LPARAM (LPARAM (LPARAM
+(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM)
+multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM)
 multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression?
  |//10-11
-(LPARAM (LPARAM (LPARAM (LPARAM (LPARAM (LPARAM (LPARAM 
-(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM) 
-multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) 
+(LPARAM (LPARAM (LPARAM (LPARAM (LPARAM (LPARAM (LPARAM
+(LPARAM (LPARAM (LPARAM simplejoin RPARAM) multijoinexpression RPARAM)  multijoinexpression RPARAM)
+multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM)
 multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression RPARAM) multijoinexpression?
- 
- 
- )  ->^(JOINEXPRESSION simplejoin multijoinexpression* )                    
+
+
+ )  ->^(JOINEXPRESSION simplejoin multijoinexpression* )
 ;
 
 simplejoin
 :
   (s1=datasourceelement joinclause1=joinclause joinelement1=datasourceelement onclause1=onclause )
-  -> ^(LEFTEXPR $s1?) $joinclause1? ^(RIGHTEXPR $joinelement1?) $onclause1?        
+  -> ^(LEFTEXPR $s1?) $joinclause1? ^(RIGHTEXPR $joinelement1?) $onclause1?
 ;
 
 datasourcerecur
@@ -430,8 +437,8 @@ datasourcerecur
 
 multijoinexpression
 :
-  joinclause datasourceelement onclause 
-  -> 
+  joinclause datasourceelement onclause
+  ->
   ^(MULTIJOINEXPRESSION
                         joinclause
                         ^(RIGHTEXPR datasourceelement) onclause
@@ -443,7 +450,7 @@ Rule for parsing the Type of a join creates Tree node JOINTYPE (Keyword)
 */
 joinclause
 :
-    (jointypes? JOINKEYWORD EACH?)->^(JOINTYPE jointypes? JOINKEYWORD EACH? ^(TEXT TEXT[$joinclause.text])) 
+    (jointypes? JOINKEYWORD EACH?)->^(JOINTYPE jointypes? JOINKEYWORD EACH? ^(TEXT TEXT[$joinclause.text]))
 ;
 
 
@@ -452,7 +459,7 @@ Rule for parsing the Condition of a join
 */
 onclause
 :
-(ONKEYWORD 
+(ONKEYWORD
             (
                 (LPARAM condition RPARAM) | condition
             )
@@ -467,9 +474,9 @@ Rule for parsing dataset name in datasource of referred column or table, creates
 dataset
 :
   (  (BACKQUOTE name BACKQUOTE)
-   | (SINGLEQUOTE name SINGLEQUOTE) 
-   | (DOUBLEQUOTE name DOUBLEQUOTE) 
-   | (ESCAPEDDOUBLEQUOTE name ESCAPEDDOUBLEQUOTE) 
+   | (SINGLEQUOTE name SINGLEQUOTE)
+   | (DOUBLEQUOTE name DOUBLEQUOTE)
+   | (ESCAPEDDOUBLEQUOTE name ESCAPEDDOUBLEQUOTE)
    | name
   )
   ->^(DATASETNAME name)
@@ -482,7 +489,7 @@ project
 :
   ( options {greedy=true;} :
     (SINGLEQUOTE (name projectdivider? )+ SINGLEQUOTE)
-   | (DOUBLEQUOTE (name projectdivider? )+ DOUBLEQUOTE) 
+   | (DOUBLEQUOTE (name projectdivider? )+ DOUBLEQUOTE)
    | (ESCAPEDDOUBLEQUOTE (name projectdivider? )+ ESCAPEDDOUBLEQUOTE)
    | name
   )
@@ -495,7 +502,7 @@ Rule for string dividers. When strings surronded by quotes, they may contain spe
 */
 projectdivider
 :
-  ( COLON | PUNCTUATION ) ->^(DIVIDER DIVIDER[$projectdivider.text])   
+  ( COLON | PUNCTUATION ) ->^(DIVIDER DIVIDER[$projectdivider.text])
 ;
 
 /**
@@ -503,9 +510,9 @@ Rule for parsing Source Tables Creates Tree node SOURCETABLE with nested project
 */
 sourcetable
 :
-  
+
     ('['?
-     (((project columndivider)? dataset columndivider)? srctablename) 
+     (((project columndivider)? dataset columndivider)? srctablename)
       ( alias)? ']'?
     )->^(SOURCETABLE '['? project? dataset? srctablename alias? columndivider* ']'?  ^(TEXT TEXT[$sourcetable.text]))
 ;
@@ -515,7 +522,7 @@ srctablename:
 | (DOUBLEQUOTE name DOUBLEQUOTE)
 | (ESCAPEDDOUBLEQUOTE name ESCAPEDDOUBLEQUOTE)
 | (BACKQUOTE name BACKQUOTE)
-| name 
+| name
 ;
 
 
@@ -530,7 +537,7 @@ name
 
 /** Contains 1 or more number(0..9) */
 number
-:       
+:
    NUMBER->^(INTEGERPARAM NUMBER)
 ;
 
@@ -542,9 +549,9 @@ Rule for parsing the expression before from after select, creates Tree node EXPR
 expression
 :
    '*' ->^(EXPRESSION ^(JOKERCALL '*') ^(TEXT TEXT[$expression.text]))
-   | 
-   (    
-        ( expressionpart ) 
+   |
+   (
+        ( expressionpart )
         ( COMMA expressionpart )*
    )->^(EXPRESSION expressionpart* ^(TEXT TEXT[$expression.text]))
 ;
@@ -567,10 +574,10 @@ multiplecolumn
 fragment SCOPE:;
 scopealias
 :
-(IDENTIFIER | 
+(IDENTIFIER |
 (BACKSINGLEQUOTE IDENTIFIER BACKSINGLEQUOTE) |
 (DOUBLEQUOTE IDENTIFIER DOUBLEQUOTE)
- )->^(SCOPE IDENTIFIER) 
+ )->^(SCOPE IDENTIFIER)
 ;
 
 //for razorSQLs projectname which we won't need
@@ -600,11 +607,11 @@ functionparameters
 :
     (
          //nothing (empty parameter list)
-        |( 
-            (functionparameterresume) 
-            (COMMA functionparameterresume)* 
-        ) 
-        | joker 
+        |(
+            (functionparameterresume)
+            (COMMA functionparameterresume)*
+        )
+        | joker
     )->^(FUNCTIONPARAMETERS functionparameterresume* joker? ^(TEXT TEXT[$functionparameters.text]))
 ;
 
@@ -649,12 +656,12 @@ Rule for parsing comparison operators
 */
 comparisonoperator:
   comparisonoperatorbase ->^(COMPARISONOPERATOR comparisonoperatorbase)
-; 
+;
 
 comparisonoperatorbase:
 (
   '='  |
-  '<>' | 
+  '<>' |
   '!=' |
   '>'  |
   '<'  |
@@ -676,17 +683,17 @@ WS
 
 /** We don't care about comments */
 COMMENT
-    :   (   Start_Comment ( options {greedy=false;} : . )* End_Comment )+ 
+    :   (   Start_Comment ( options {greedy=false;} : . )* End_Comment )+
     {
       $channel=HIDDEN;
-    } 
+    }
     ;
 /** We don't care abut line comments */
 LINE_COMMENT
-    :   (   ( Line_Comment | '--' ) ~('\n'|'\r')* '\r'? '\n')+ 
+    :   (   ( Line_Comment | '--' ) ~('\n'|'\r')* '\r'? '\n')+
     {
       $channel=HIDDEN;
-    } 
+    }
     ;
 fragment KEYWORD:;
     /**
@@ -694,12 +701,12 @@ Used for renames for example when you refer a column by not on its original name
 */
 alias
 :
-    
+
 	    (
-	        
+
 	        ASKEYWORD IDENTIFIER ->^(ALIAS IDENTIFIER ^(KEYWORD ASKEYWORD) ^(TEXT TEXT[$alias.text]))
 	    |   ASKEYWORD aliasliteral ->^(ALIAS aliasliteral ^(KEYWORD ASKEYWORD) ^(TEXT TEXT[$alias.text]))
-	    ) 
+	    )
     |
 	    (
 	        IDENTIFIER ->^(ALIAS IDENTIFIER ^(TEXT TEXT[$alias.text]))
@@ -715,7 +722,7 @@ aliasliteral
 
 /**
 Rule for identifying any columns in the syntax, creates Tree node COLUMN and nested project,dataset,table,name,alias
-<p>is it starts with 
+<p>is it starts with
 <li> project.dataset.table.
 <li> dataset.table.
 <li> table.
@@ -728,7 +735,7 @@ column
 :
  (
     (scopealias (COLON | PUNCTUATION) )*
-   (name | (DOUBLEQUOTE name DOUBLEQUOTE))// | (ESCAPEDDOUBLEQUOTE name ESCAPEDDOUBLEQUOTE)) 
+   (name | (DOUBLEQUOTE name DOUBLEQUOTE))// | (ESCAPEDDOUBLEQUOTE name ESCAPEDDOUBLEQUOTE))
    (alias)?
   ) ->^(COLUMN scopealias* name alias? ^(TEXT TEXT[$column.text]))
 ;
@@ -756,8 +763,8 @@ table
 :
    (   (BACKQUOTE IDENTIFIER BACKQUOTE) |
       (SINGLEQUOTE IDENTIFIER SINGLEQUOTE)
-    |  (DOUBLEQUOTE IDENTIFIER DOUBLEQUOTE) 
-    |  (ESCAPEDDOUBLEQUOTE IDENTIFIER ESCAPEDDOUBLEQUOTE) 
+    |  (DOUBLEQUOTE IDENTIFIER DOUBLEQUOTE)
+    |  (ESCAPEDDOUBLEQUOTE IDENTIFIER ESCAPEDDOUBLEQUOTE)
     |   IDENTIFIER
    )
    ->^(TABLENAME SINGLEQUOTE? DOUBLEQUOTE? ESCAPEDDOUBLEQUOTE? BACKQUOTE? ^(NAME IDENTIFIER) SINGLEQUOTE? DOUBLEQUOTE? ESCAPEDDOUBLEQUOTE? BACKQUOTE?)
