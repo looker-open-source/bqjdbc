@@ -42,7 +42,7 @@ import org.junit.Test;
 /**
  * This Junit tests if the query results return as expected
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  * @author Gunics Balazs
  */
 public class QueryResultTest {

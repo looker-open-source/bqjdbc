@@ -46,7 +46,7 @@ import org.junit.Test;
  * This Junit test runs query with preparedstatement, while changing the number
  * of results
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  * @author Balazs Gunics
  *
  */

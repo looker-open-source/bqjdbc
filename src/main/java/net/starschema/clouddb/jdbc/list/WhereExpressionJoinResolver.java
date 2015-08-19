@@ -731,7 +731,7 @@ public class WhereExpressionJoinResolver {
  * This Class implements a chain of JoinElements with the possibility to add
  * new JoinElement to it, and it nest it properly inside the chain
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  */
 class JoinChain {
     List<JoinElement> notConnected = new ArrayList<JoinElement>();

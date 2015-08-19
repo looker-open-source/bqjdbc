@@ -61,7 +61,7 @@ import org.apache.log4j.Logger;
  * This class implements the java.sql.ResultSet interface's Cursor and is a
  * Superclass for BQResultset and DMDResultSet
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  *
  * @param <T>
  *            Type of Array that cursor operates with

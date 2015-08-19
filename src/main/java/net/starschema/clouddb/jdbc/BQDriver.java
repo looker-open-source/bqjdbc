@@ -73,7 +73,7 @@ import org.apache.log4j.PropertyConfigurator;
 /**
  * This Class implements the java.sql.Driver interface
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  */
 public class BQDriver implements java.sql.Driver {
 

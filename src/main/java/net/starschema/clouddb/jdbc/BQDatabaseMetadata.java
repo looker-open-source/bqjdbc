@@ -51,7 +51,7 @@ import com.google.api.services.bigquery.model.TableFieldSchema;
 /**
  * This class implements the DatabaseMetadata interface
  *
- * @author Gunics Bal�zs, Horv�th Attila
+ * @author Gunics Balázs, Horváth Attila
  */
 class BQDatabaseMetadata implements DatabaseMetaData {
 

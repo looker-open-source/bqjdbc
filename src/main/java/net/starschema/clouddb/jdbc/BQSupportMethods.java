@@ -32,7 +32,7 @@ import java.util.List;
  * This Class provides static function to cooperate with the objects of the JDBC
  * driver
  *
- * @author Horv�th Attila
+ * @author Horváth Attila
  */
 public class BQSupportMethods {
     /**
