@@ -476,7 +476,6 @@ public class ColumnReference extends Node implements UniQueIdContainer {
      */
     private UniQueIdContainer searchPointedNodeInExpression(Expression expression)
             throws ColumnCallException {
-        System.err.println("SEARCHING POINTED NODE IN EXPRESSION");
         List<ColumnCall> columns = expression.getColumns();
         List<FunctionCall> functionCalls = expression.getFunctionCalls();
         List<Node> possibleNodes = new ArrayList<Node>();

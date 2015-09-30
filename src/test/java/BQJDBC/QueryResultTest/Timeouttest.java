@@ -89,9 +89,9 @@ public class Timeouttest {
                             .getConnection(
                                     BQSupportFuncts
                                             .constructUrlFromPropertiesFile(BQSupportFuncts
-                                                    .readFromPropFile("serviceaccount.properties")),
+                                                    .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile())),
                                     BQSupportFuncts
-                                            .readFromPropFile("serviceaccount.properties"));
+                                            .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile()));
                 } catch (Exception e) {
                     this.logger.error("Error in connection" + e.toString());
                     Assert.fail("General Exception:" + e.toString());
@@ -200,11 +200,7 @@ public class Timeouttest {
         } catch (SQLException e) {
             this.logger.debug("SQLexception" + e.toString());
             // fail("SQLException" + e.toString());
-            Assert.assertTrue(e
-                    .getCause()
-                    .toString()
-                    .contains(
-                            "Access Denied: Table measurement-lab:m_lab.2010_01: QUERY_TABLE"));
+            Assert.assertTrue(e.toString().contains("Not found: Table measurement-lab:m_lab.2010_01"));
         }
     }
 

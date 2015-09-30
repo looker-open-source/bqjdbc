@@ -249,7 +249,6 @@ public class BooleanExpressionItem extends Node implements ColumnReferencePlace 
     @Override
     public String toPrettyString(int level) {
         if (this.type == BooleanExpressionItemType.COMPARISON) {
-            System.err.println(left.tokenName + " " + right.tokenName);
             return this.left.toPrettyString() + this.comparisonOperator
                     + this.right.toPrettyString();
         } else {

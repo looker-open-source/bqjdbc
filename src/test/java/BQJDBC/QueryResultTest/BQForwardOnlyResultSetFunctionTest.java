@@ -98,16 +98,9 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     @Test
     public void databaseMetaDataGetTables() {
-        //clouddb,ARTICLE_LOOKUP,starschema.net,[Ljava.lang.String;@9e8424
         ResultSet result = null;
         try {
-            //Function call getColumns
-            //catalog:null,
-            //schemaPattern: starschema_net__clouddb,
-            //tableNamePattern:OUTLET_LOOKUP, columnNamePattern: null
-            //result = con.getMetaData().getTables("OUTLET_LOOKUP", null, "starschema_net__clouddb", null );
             result = con.getMetaData().getColumns(null, "starschema_net__clouddb", "OUTLET_LOOKUP", null);
-            //Function call getTables(catalog: ARTICLE_COLOR_LOOKUP, schemaPattern: null, tableNamePattern: starschema_net__clouddb, types: TABLE , VIEW , SYSTEM TABLE , SYNONYM , ALIAS , )
         } catch (SQLException e) {
             e.printStackTrace();
             Assert.fail();
@@ -194,8 +187,8 @@ public class BQForwardOnlyResultSetFunctionTest {
                     Class.forName("net.starschema.clouddb.jdbc.BQDriver");
                     BQForwardOnlyResultSetFunctionTest.con = DriverManager.getConnection(
                             BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
-                                    .readFromPropFile("installedaccount1.properties")),
-                            BQSupportFuncts.readFromPropFile("installedaccount1.properties"));
+                                    .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile())),
+                            BQSupportFuncts.readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
                 } catch (Exception e) {
                     e.printStackTrace();
                     this.logger.error("Error in connection" + e.toString());

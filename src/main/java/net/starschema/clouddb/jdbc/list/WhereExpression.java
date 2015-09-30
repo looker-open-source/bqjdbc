@@ -153,7 +153,6 @@ public class WhereExpression extends Node {
 
     @Override
     public String toPrettyString(int level) {
-        System.err.println(this.expression.tokenName);
         return "WHERE " + this.expression.toPrettyString();
     }
 }

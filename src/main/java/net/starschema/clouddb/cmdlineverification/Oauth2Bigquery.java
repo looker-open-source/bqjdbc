@@ -212,7 +212,9 @@ public class Oauth2Bigquery {
                 .build();
         logger.debug("Authorizied?");
         Bigquery bigquery = new Builder(CmdlineUtils.getHttpTransport(),
-                CmdlineUtils.getJsonFactory(), credential).build();
+                CmdlineUtils.getJsonFactory(), credential)
+                .setApplicationName("Starschema BigQuery JDBC Driver")
+                .build();
         logger.debug("Authorizing with service asdf.");
         Oauth2Bigquery.servicepath = bigquery.getServicePath();
         logger.debug("Authorizing with service no.");

@@ -53,15 +53,15 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.apache.log4j.Logger;
 
+import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.TableRow;
-import com.google.api.services.bigquery.model.TableCell;
-import com.google.api.client.util.Data;
 
 /**
  * This class implements the java.sql.ResultSet interface, as a Forward only resultset
@@ -84,7 +84,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     protected Object[] RowsofResult;
 
     /** This holds if the resultset is closed or not */
-    protected Boolean Closed = false;
+    protected boolean closed = false;
 
     /**Paging size, the original result will be paged by FETCH_SIZE rows     */
     protected int FETCH_SIZE = 100;
@@ -126,7 +126,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery,
                     projectId, completedJob, FETCH_POS, FETCH_SIZE);
         } catch (IOException e) {
-            throw new SQLException("Failed to retrieve data", e);
+            throw new BQSQLException("Failed to retrieve data", e);
         } //should not happen
         if (this.Result == null) {  //if we don't have results at all
             this.RowsofResult = null;
@@ -145,50 +145,106 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      * @throws SQLException - if the resultset is closed or the columnIndex is not valid, or the type is unsupported
      */
     public Object getObject(int columnIndex) throws SQLException {
-        // to make the logfiles smaller!
-        //logger.debug("Function call getObject columnIndex is: " + String.valueOf(columnIndex));
-        this.closestrm();
-        if (this.isClosed()) {
-            throw new BQSQLException("This Resultset is Closed");
-        }
-        if (this.getMetaData().getColumnCount() < columnIndex
-                || columnIndex < 1) {
-            throw new BQSQLException("ColumnIndex is not valid");
-        }
-        String Columntype = this.Result.getSchema().getFields()
-                .get(columnIndex - 1).getType();
 
-        TableCell field = ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1);
+        String result = getString(columnIndex);
 
-        if (Data.isNull(field.getV())) {
-            this.wasnull = true;
+        if (this.wasNull()) {
             return null;
-        } else {
-            String result = field.getV().toString();
-            this.wasnull = false;
-            try {
-                if (Columntype.equals("STRING")) {
-                    return result;
-                }
-                if (Columntype.equals("FLOAT")) {
-                    return Float.parseFloat(result);
-                }
-                if (Columntype.equals("BOOLEAN")) {
-                    return Boolean.parseBoolean(result);
-                }
-                if (Columntype.equals("INTEGER")) {
-                    return Long.parseLong(result);
-                }
-                if (Columntype.equals("TIMESTAMP")) {
-                    long val = new BigDecimal(result).longValue() * 1000;
-                    return new Timestamp(val);
-                }
-                throw new BQSQLException("Unsupported Type (" + Columntype + ")");
-            } catch (NumberFormatException e) {
-                throw new BQSQLException(e);
+        }
+
+        String Columntype = this.Result.getSchema().getFields().get(columnIndex - 1).getType();
+
+        try {
+            if (Columntype.equals("STRING")) {
+                return result;
             }
+            if (Columntype.equals("FLOAT")) {
+                return toDouble(result);
+            }
+            if (Columntype.equals("BOOLEAN")) {
+                return toBoolean(result);
+            }
+            if (Columntype.equals("INTEGER")) {
+                return toLong(result);
+            }
+            if (Columntype.equals("TIMESTAMP")) {
+                return toTimestamp(result, null);
+            }
+            throw new BQSQLException("Unsupported Type (" + Columntype + ")");
+        }
+        catch (NumberFormatException e) {
+            throw new BQSQLException(e);
         }
     }
+
+    // toXXX = common "parsing" between Object and primitive types - to prevent discrepancies. The 4 firsts are the core ones (types supported by BigQuery)
+
+    /** Parse boolean types */
+    private Boolean toBoolean(String value) throws SQLException {
+        return Boolean.valueOf(value);
+    }
+
+    /** Parse floating point types */
+    private Double toDouble(String value) throws SQLException {
+        try {
+            return Double.valueOf(new BigDecimal(value).doubleValue());
+        }
+        catch (NumberFormatException e) {
+            throw new BQSQLException(e);
+        }
+    }
+
+
+    /** Parse integral types */
+    private Long toLong(String value) throws SQLException {
+        try {
+            return Long.valueOf(new BigDecimal(value).longValue());
+        }
+        catch (NumberFormatException e) {
+            throw new BQSQLException(e);
+        }
+    }
+
+    /** Parse date/time types */
+    private Timestamp toTimestamp(String value, Calendar cal) throws SQLException {
+        try {
+            long dbValue = new BigDecimal(value).movePointRight(3).longValue(); // movePointRight(3) =  *1000 (done before rounding) - from seconds (BigQuery specifications) to milliseconds (required by java). Precision under millisecond is discarded (BigQuery supports micro-seconds)
+            if (cal == null) {
+                cal = Calendar.getInstance(TimeZone.getTimeZone("UTC")); // The time zone of the server that host the JVM should NOT impact the results. Use UTC calendar instead (which wont apply any correction, whatever the time zone of the data)
+
+            }
+
+            Calendar dbCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+            dbCal.setTimeInMillis(dbValue);
+            cal.set(Calendar.YEAR, dbCal.get(Calendar.YEAR));
+            cal.set(Calendar.MONTH, dbCal.get(Calendar.MONTH));
+            cal.set(Calendar.DAY_OF_MONTH, dbCal.get(Calendar.DAY_OF_MONTH));
+            cal.set(Calendar.HOUR_OF_DAY, dbCal.get(Calendar.HOUR_OF_DAY));
+            cal.set(Calendar.MINUTE, dbCal.get(Calendar.MINUTE));
+            cal.set(Calendar.SECOND, dbCal.get(Calendar.SECOND));
+            cal.set(Calendar.MILLISECOND, dbCal.get(Calendar.MILLISECOND));
+            return new Timestamp(cal.getTime().getTime());
+        }
+        catch (NumberFormatException e) {
+            throw new BQSQLException(e);
+        }
+    }
+
+    // Secondary converters
+
+    /** Parse integral or floating types with (virtually) infinite precision */
+    private BigDecimal toBigDecimal(String value) {
+        return new BigDecimal(value);
+    }
+
+    private Date toDate(String value, Calendar cal) throws SQLException {
+        return new java.sql.Date(toTimestamp(value, cal).getTime());
+    }
+
+    private Time toTime(String value, Calendar cal) throws SQLException {
+        return new java.sql.Time(toTimestamp(value, cal).getTime());
+    }
+
 
     @Override
     /**
@@ -208,14 +264,15 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                 || columnIndex < 1) {
             throw new BQSQLException("ColumnIndex is not valid");
         }
-        if (this.RowsofResult == null) throw new SQLException("Invalid position!");
-        String result = (String) ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1).getV();
-        if (result == null) {
+
+        if (this.RowsofResult == null) throw new BQSQLException("Invalid position!");
+        Object resultObject = ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1).getV();
+        if (Data.isNull(resultObject)) {
             this.wasnull = true;
-        } else {
-            this.wasnull = false;
+            return null;
         }
-        return result;
+        this.wasnull = false;
+        return (String) resultObject;
     }
 
     /**
@@ -286,7 +343,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     @Override
     public void close() throws SQLException {
         // TODO free occupied resources
-        this.Closed = true;
+        this.closed = true;
         this.RowsofResult = null;
     }
 
@@ -389,79 +446,34 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             this.wasnull = true;
             this.Strm = null;
             return this.Strm;
-        } else {
-            this.wasnull = false;
-            try {
-                inptstrm = new java.io.ByteArrayInputStream(
-                        Value.getBytes("US-ASCII"));
-            } catch (UnsupportedEncodingException e) {
-                throw new BQSQLException(e);
-            }
-            this.Strm = inptstrm;
-            return this.Strm;
         }
+        this.wasnull = false;
+        try {
+            inptstrm = new java.io.ByteArrayInputStream(
+                    Value.getBytes("US-ASCII"));
+        }
+        catch (UnsupportedEncodingException e) {
+            throw new BQSQLException(e);
+        }
+        this.Strm = inptstrm;
+        return this.Strm;
     }
 
     /** {@inheritDoc} */
     @Override
     public InputStream getAsciiStream(String columnLabel) throws SQLException {
-        this.closestrm();
-        java.io.InputStream inptstrm;
-        String Value = this.getString(columnLabel);
-        if (Value == null) {
-            this.wasnull = true;
-            this.Strm = null;
-            return this.Strm;
-        } else {
-            this.wasnull = false;
-            try {
-                inptstrm = new java.io.ByteArrayInputStream(
-                        Value.getBytes("US-ASCII"));
-            } catch (UnsupportedEncodingException e) {
-                throw new BQSQLException(e);
-            }
-            this.Strm = inptstrm;
-            return this.Strm;
-        }
+        int columnIndex = this.findColumn(columnLabel);
+        return getAsciiStream(columnIndex);
     }
 
     /** {@inheritDoc} */
     @Override
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-
-        String coltype = this.getMetaData().getColumnTypeName(columnIndex);
-        if (coltype.equals("STRING")) {
-            String Value = this.getString(columnIndex);
-            if (this.wasNull()) {
-                return null;
-            } else {
-                try {
-                    return new java.math.BigDecimal(Value);
-                } catch (NumberFormatException e) {
-                    throw new BQSQLException(e);
-                }
-            }
-        } else if (coltype.equals("INTEGER")) {
-            int Value = this.getInt(columnIndex);
-            if (this.wasNull()) {
-                return null;
-            } else {
-                return new java.math.BigDecimal(Value);
-            }
-
-        } else if (coltype.equals("FLOAT")) {
-            Float Value = this.getFloat(columnIndex);
-            if (this.wasNull()) {
-                return null;
-            } else {
-                return new java.math.BigDecimal(Value);
-            }
-        } else if (coltype.equals("BOOLEAN")) {
-            throw new NumberFormatException(
-                    "Cannot format Boolean to BigDecimal");
-        } else {
-            throw new NumberFormatException("Undefined format");
+        String value = this.getString(columnIndex);
+        if (this.wasNull()) {
+            return null;
         }
+        return toBigDecimal(value);
     }
 
     // Implemented Get functions Using Cursor
@@ -470,7 +482,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale)
             throws SQLException {
-        return this.getBigDecimal(columnIndex).setScale(scale);
+        BigDecimal value = this.getBigDecimal(columnIndex);
+        if (value == null) {
+            return null;
+        }
+        return value.setScale(scale);
     }
 
     /** {@inheritDoc} */
@@ -498,30 +514,18 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             this.wasnull = true;
             this.Strm = null;
             return this.Strm;
-        } else {
-            this.wasnull = false;
-            inptstrm = new java.io.ByteArrayInputStream(Value.getBytes());
-            this.Strm = inptstrm;
-            return this.Strm;
         }
+        this.wasnull = false;
+        inptstrm = new java.io.ByteArrayInputStream(Value.getBytes());
+        this.Strm = inptstrm;
+        return this.Strm;
     }
 
     /** {@inheritDoc} */
     @Override
     public InputStream getBinaryStream(String columnLabel) throws SQLException {
-        this.closestrm();
-        java.io.InputStream inptstrm;
-        String Value = this.getString(columnLabel);
-        if (Value == null) {
-            this.wasnull = true;
-            this.Strm = null;
-            return this.Strm;
-        } else {
-            this.wasnull = false;
-            inptstrm = new java.io.ByteArrayInputStream(Value.getBytes());
-            this.Strm = inptstrm;
-            return this.Strm;
-        }
+        int columnIndex = this.findColumn(columnLabel);
+        return getBinaryStream(columnIndex);
     }
 
     /**
@@ -553,12 +557,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** {@inheritDoc} */
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
-        String Value = this.getString(columnIndex);
+        String value = this.getString(columnIndex);
         if (this.wasNull()) {
             return false;
-        } else {
-            return Boolean.parseBoolean(Value);
         }
+        return toBoolean(value).booleanValue();
     }
 
     /** {@inheritDoc} */
@@ -574,13 +577,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        } else {
-            try {
-                return Byte.parseByte(Value);
-            } catch (NumberFormatException e) {
-                throw new BQSQLException(e);
-            }
         }
+        return toLong(Value).byteValue();
     }
 
     /** {@inheritDoc} */
@@ -596,9 +594,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return null;
-        } else {
-            return Value.getBytes();
         }
+        return Value.getBytes();
     }
 
     /** {@inheritDoc} */
@@ -616,26 +613,17 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if (Value == null) {
             this.wasnull = true;
             return null;
-        } else {
-            this.wasnull = false;
-            Reader rdr = new StringReader(Value);
-            return rdr;
         }
+        this.wasnull = false;
+        Reader rdr = new StringReader(Value);
+        return rdr;
     }
 
     /** {@inheritDoc} */
     @Override
     public Reader getCharacterStream(String columnLabel) throws SQLException {
-        this.closestrm();
-        String Value = this.getString(columnLabel);
-        if (Value == null) {
-            this.wasnull = true;
-            return null;
-        } else {
-            this.wasnull = false;
-            Reader rdr = new StringReader(Value);
-            return rdr;
-        }
+        int columnIndex = this.findColumn(columnLabel);
+        return this.getCharacterStream(columnIndex);
     }
 
     /**
@@ -696,23 +684,21 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** {@inheritDoc} */
     @Override
     public Date getDate(int columnIndex) throws SQLException {
-        Long value = this.getLong(columnIndex);
+        String value = this.getString(columnIndex);
         if (this.wasNull()) {
             return null;
-        } else {
-            return new java.sql.Date(value);
         }
+        return toDate(value, null);
     }
 
     /** {@inheritDoc} */
     @Override
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-        Long value = this.getLong(columnIndex);
+        String value = this.getString(columnIndex);
         if (this.wasNull()) {
             return null;
-        } else {
-            return new java.sql.Date(value + cal.getTimeZone().getRawOffset());
         }
+        return toDate(value, cal);
     }
 
     /** {@inheritDoc} */
@@ -735,13 +721,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        } else {
-            try {
-                return Double.parseDouble(Value);
-            } catch (NumberFormatException e) {
-                throw new BQSQLException(e);
-            }
         }
+        return toDouble(Value).doubleValue();
     }
 
     /** {@inheritDoc} */
@@ -784,13 +765,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        } else {
-            try {
-                return Float.parseFloat(Value);
-            } catch (NumberFormatException e) {
-                throw new BQSQLException(e);
-            }
         }
+        return toDouble(Value).floatValue();
     }
 
     /** {@inheritDoc} */
@@ -819,13 +795,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        } else {
-            try {
-                return Integer.parseInt(Value);
-            } catch (NumberFormatException e) {
-                throw new BQSQLException(e);
-            }
         }
+        return toLong(Value).intValue();
     }
 
     /** {@inheritDoc} */
@@ -841,13 +812,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        } else {
-            try {
-                return Long.parseLong(Value);
-            } catch (NumberFormatException e) {
-                throw new BQSQLException(e);
-            }
         }
+        return toLong(Value).longValue();
     }
 
     /** {@inheritDoc} */
@@ -1050,16 +1016,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** {@inheritDoc} */
     @Override
     public short getShort(int columnIndex) throws SQLException {
-        String Value = this.getString(columnIndex);
+        String value = this.getString(columnIndex);
         if (this.wasNull()) {
             return 0;
-        } else {
-            try {
-                return Short.parseShort(Value);
-            } catch (NumberFormatException e) {
-                throw new BQSQLException(e);
-            }
         }
+        return toLong(value).shortValue();
     }
 
     /** {@inheritDoc} */
@@ -1107,28 +1068,21 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** {@inheritDoc} */
     @Override
     public Time getTime(int columnIndex) throws SQLException {
-        Long value = this.getLong(columnIndex);
+        String value = this.getString(columnIndex);
         if (this.wasNull()) {
             return null;
-        } else {
-            return new java.sql.Time(value);
         }
+        return toTime(value, null);
     }
 
     /** {@inheritDoc} */
     @Override
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-        /*
-         * Select STRFTIME_UTC_USEC(NOW(),'%x-%X%Z') AS One,
-         * FORMAT_UTC_USEC(NOW()) as Two"; Result: One Two 08/21/12-15:40:45GMT
-         * 2012-08-21 15:40:45.703908
-         */
-        Long value = this.getLong(columnIndex);
+        String value = this.getString(columnIndex);
         if (this.wasNull()) {
             return null;
-        } else {
-            return new java.sql.Time(cal.getTimeZone().getRawOffset() + value);
         }
+        return toTime(value, cal);
     }
 
     /** {@inheritDoc} */
@@ -1148,25 +1102,22 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** {@inheritDoc} */
     @Override
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
-        Long value = this.getLong(columnIndex);
+        String value = this.getString(columnIndex);
         if (this.wasNull()) {
             return null;
-        } else {
-            return new java.sql.Timestamp(value);
         }
+        return toTimestamp(value, null);
     }
 
     /** {@inheritDoc} */
     @Override
     public Timestamp getTimestamp(int columnIndex, Calendar cal)
             throws SQLException {
-        Long value = this.getLong(columnIndex);
+        String value = this.getString(columnIndex);
         if (this.wasNull()) {
             return null;
-        } else {
-            return new java.sql.Timestamp(cal.getTimeZone().getRawOffset()
-                    + value);
         }
+        return toTimestamp(value, cal);
     }
 
     /** {@inheritDoc} */
@@ -1234,28 +1185,20 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         String Value = this.getString(columnIndex);
         if (this.wasNull()) {
             return null;
-        } else {
-            try {
-                return new URL(Value);
-            } catch (MalformedURLException e) {
-                throw new BQSQLException(e);
-            }
+        }
+        try {
+            return new URL(Value);
+        }
+        catch (MalformedURLException e) {
+            throw new BQSQLException(e);
         }
     }
 
     /** {@inheritDoc} */
     @Override
     public URL getURL(String columnLabel) throws SQLException {
-        String Value = this.getString(columnLabel);
-        if (this.wasNull()) {
-            return null;
-        } else {
-            try {
-                return new URL(Value);
-            } catch (MalformedURLException e) {
-                throw new BQSQLException(e);
-            }
-        }
+        int columnIndex = this.findColumn(columnLabel);
+        return getURL(columnIndex);
     }
 
     /**
@@ -1307,7 +1250,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** {@inheritDoc} */
     @Override
     public boolean isClosed() throws SQLException {
-        return this.Closed;
+        return this.closed;
     }
 
     /** {@inheritDoc} */
@@ -1384,24 +1327,23 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             if (Cursor == -1) {
                 AT_FIRST = true;
             } else AT_FIRST = false;
-            Cursor++;
-            return true;
-        } else {
-            try {
-                this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery,
-                        projectId, completedJob, FETCH_POS, FETCH_SIZE);
-            } catch (IOException e) {
-            } //should not happen
-            if (this.Result.getRows() == null) {
-                this.RowsofResult = null;
-                return false;
-            } else {
-                this.RowsofResult = this.Result.getRows().toArray();
-                FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long) this.RowsofResult.length));
-                Cursor = 0;
-                return true;
-            }
+           Cursor++;
+           return true;
         }
+        try {
+            this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery,
+                    projectId, completedJob, FETCH_POS, FETCH_SIZE);
+        }
+        catch (IOException e) {
+        } //should not happen
+        if (this.Result.getRows() == null) {
+            this.RowsofResult = null;
+            return false;
+        }
+        this.RowsofResult = this.Result.getRows().toArray();
+        FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long)this.RowsofResult.length));
+        Cursor = 0;
+        return true;
     }
 
     /** {@inheritDoc} */

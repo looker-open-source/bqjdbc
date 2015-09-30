@@ -60,8 +60,8 @@ public class GrammarTestRunningForLong {
                     Class.forName("net.starschema.clouddb.jdbc.BQDriver");
                     con = DriverManager.getConnection(
                             BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
-                                    .readFromPropFile("installedaccount.properties")),
-                            BQSupportFuncts.readFromPropFile("installedaccount.properties"));
+                                    .readFromPropFile(getClass().getResource("/installedaccount.properties").getFile())),
+                            BQSupportFuncts.readFromPropFile(getClass().getResource("/installedaccount.properties").getFile()));
                 } catch (Exception e) {
                     logger.debug("Failed to make connection trough the JDBC driver", e);
                 }

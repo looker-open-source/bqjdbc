@@ -169,7 +169,6 @@ public class FromExpression extends Node {
                             logger.debug("SEARCHING MULTIJOINEXPRESSION");
                             switch (schild.getType()) {
                                 case JdbcGrammarParser.MULTIJOINEXPRESSION:
-                                    System.err.println("BUILDING MULTIJOINEXPRESSION");
                                     SubQuery SubQueryFromJoinExpression = WhereExpressionJoinResolver.mkSubQFromJoinExpr(joinExpression, builder, selectStatement);
 
                                     try {

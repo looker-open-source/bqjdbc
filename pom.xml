@@ -5,6 +5,9 @@
   <artifactId>bqjdbc</artifactId>
   <name>Big Query over JDBC</name>
   <description>A simple JDBC driver, to reach Google's BigQuery</description>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
   <repositories>
     <repository>
       <id>google-api-services</id>
@@ -117,7 +120,7 @@
           </execution>
         </executions>
         <configuration>
-          <finalName>${project.artifactId}-${project.version}-standalone</finalName>
+          <finalName>${project.artifactId}-${project.version}</finalName>
         </configuration>
       </plugin>
       <plugin>
@@ -144,6 +147,7 @@
         </executions>
       </plugin>
     </plugins>
+    <finalName>${project.artifactId}-${project.version}-thin</finalName>
   </build>
-  <version>1.4</version>
+  <version>1.5</version>
 </project>
