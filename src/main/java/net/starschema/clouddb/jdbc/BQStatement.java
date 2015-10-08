@@ -99,7 +99,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
                     this.connection.getBigquery(),
-                    this.ProjectId.replace("__", ":").replace("_", "."), querySql);
+                    this.ProjectId.replace("__", ":").replace("_", "."),
+                    querySql,
+                    this.connection.getDataSet());
             this.logger.debug("Executing Query: " + querySql);
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong with the query: " + querySql, e);

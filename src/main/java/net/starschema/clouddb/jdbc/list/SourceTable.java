@@ -24,19 +24,17 @@
  */
 package net.starschema.clouddb.jdbc.list;
 
-import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-
+import com.google.api.services.bigquery.model.Table;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.JdbcGrammarParser;
 import net.starschema.clouddb.jdbc.antlr.sqlparse.TreeParsingException;
-
 import org.antlr.runtime.tree.Tree;
 
-import com.google.api.services.bigquery.model.Table;
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
 
 /**
  * This class extends the basic Node
@@ -116,6 +114,11 @@ public class SourceTable extends Node {
                     default:
                         break;
                 }
+            }
+            if (this.dataset == null) {
+                try{
+                    this.dataset = ((BQConnection) builder.connection).getDataSet();
+                } catch(ClassCastException e) {}
             }
             // if we don't have a dataset, we can't make querys
             if (this.dataset == null) {

@@ -38,21 +38,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import com.google.api.services.bigquery.model.*;
 import org.apache.log4j.Logger;
 
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Jobs.Insert;
 import com.google.api.services.bigquery.model.DatasetList.Datasets;
-import com.google.api.services.bigquery.model.GetQueryResultsResponse;
-import com.google.api.services.bigquery.model.Job;
-import com.google.api.services.bigquery.model.JobConfiguration;
-import com.google.api.services.bigquery.model.JobConfigurationQuery;
 import com.google.api.services.bigquery.model.ProjectList.Projects;
-import com.google.api.services.bigquery.model.ProjectReference;
-import com.google.api.services.bigquery.model.Table;
 import com.google.api.services.bigquery.model.TableList.Tables;
-import com.google.api.services.bigquery.model.TableRow;
-import com.google.api.services.bigquery.model.TableCell;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -601,13 +594,15 @@ public class BQSupportFuncts {
      *                     </p>
      */
     public static Job startQuery(Bigquery bigquery, String projectId,
-                                 String querySql) throws IOException {
+                                 String querySql, String dataSet) throws IOException {
         BQSupportFuncts.logger.info("Inserting Query Job: " + querySql.replace("\t", "").replace("\n", " ").replace("\r", ""));
         projectId = projectId.replace("__", ":").replace("_", ".");
         Job job = new Job();
         JobConfiguration config = new JobConfiguration();
         JobConfigurationQuery queryConfig = new JobConfigurationQuery();
         config.setQuery(queryConfig);
+        if (dataSet != null)
+            queryConfig.setDefaultDataset(new DatasetReference().setDatasetId(dataSet).setProjectId(projectId));
 
         job.setConfiguration(config);
         queryConfig.setQuery(querySql);
@@ -616,4 +611,5 @@ public class BQSupportFuncts {
         insert.setProjectId(projectId);
         return insert.execute();
     }
+
 }
