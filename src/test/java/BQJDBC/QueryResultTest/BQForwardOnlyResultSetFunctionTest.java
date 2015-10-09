@@ -339,16 +339,16 @@ public class BQForwardOnlyResultSetFunctionTest {
             Assert.assertEquals("with",
                     BQForwardOnlyResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
-            Assert.assertEquals("your",
+            Assert.assertEquals("will",
                     BQForwardOnlyResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
-            Assert.assertEquals("young",
+            Assert.assertEquals("why",
                     BQForwardOnlyResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
-            Assert.assertEquals("words",
+            Assert.assertEquals("whose",
                     BQForwardOnlyResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
-            Assert.assertEquals("word",
+            Assert.assertEquals("whom",
                     BQForwardOnlyResultSetFunctionTest.Result.getString(1));
             Assert.assertFalse(BQForwardOnlyResultSetFunctionTest.Result.next());
         } catch (SQLException e) {
