@@ -596,8 +596,8 @@ public class GrammarTest {
 
         input = "select ARTICLE_LOOKUP.ARTICLE_CODE\r\n" +
                 "from ARTICLE_LOOKUP";
-        input = "select ARTICLE_LOOKUP.ARTICLE_CODE, ARTICLE_LOOKUP.ARTICLE_LABEL\n" +
-                "from ARTICLE_LOOKUP\r\n" +
+        input = "select efashion.ARTICLE_LOOKUP.ARTICLE_CODE, efashion.ARTICLE_LOOKUP.ARTICLE_LABEL\n" +
+                "from efashion.ARTICLE_LOOKUP\r\n" +
                 "";
 
         logger.info("Running test: selectjokerfromtwotablesnotnecessarywhere \r\n" + input);

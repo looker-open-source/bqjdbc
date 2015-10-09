@@ -107,14 +107,9 @@ public class QueryResultTest {
         final String sql = "SELECT TOP(word, 10), COUNT(*) FROM publicdata:samples.shakespeare";
         final String description = "The top 10 word from shakespeare #TOP #COUNT";
         String[][] expectation = new String[][]{
-                {"you", "yet", "would", "world", "without", "with", "your", "young",
-                        "words", "word"},
-                {"42", "42", "42", "42", "42", "42", "41", "41", "41", "41"}};
-        /** somehow the result changed with time
-         { "you", "yet", "would", "world", "without", "with", "will",
-         "why", "whose", "whom" },
-         { "42", "42", "42", "42", "42", "42", "42", "42", "42", "42" } };
-         */
+           { "you", "yet", "would", "world", "without", "with", "will", "why", "whose", "whom" },
+           { "42", "42", "42", "42", "42", "42", "42", "42", "42", "42" }
+        };
 
         this.logger.info("Test number: 01");
         this.logger.info("Running query:" + sql);

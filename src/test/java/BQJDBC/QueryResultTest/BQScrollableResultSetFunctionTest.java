@@ -67,7 +67,7 @@ public class BQScrollableResultSetFunctionTest {
         }
         try {
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(10));
-            Assert.assertEquals("word",
+            Assert.assertEquals("whom",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -110,7 +110,7 @@ public class BQScrollableResultSetFunctionTest {
             BQScrollableResultSetFunctionTest.Result.afterLast();
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.isAfterLast());
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(-1));
-            Assert.assertEquals("word",
+            Assert.assertEquals("whom",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -288,9 +288,8 @@ public class BQScrollableResultSetFunctionTest {
         final String sql = "SELECT TOP(word,10) AS word, COUNT(*) as count FROM publicdata:samples.shakespeare";
         final String description = "The top 10 word from shakespeare #TOP #COUNT";
         String[][] expectation = new String[][]{
-                {"you", "yet", "would", "world", "without", "with", "your", "young",
-                        "words", "word"},
-                {"42", "42", "42", "42", "42", "42", "41", "41", "41", "41"}};
+                { "you", "yet", "would", "world", "without", "with", "will", "why", "whose", "whom" },
+                { "42", "42", "42", "42", "42", "42", "42", "42", "42", "42" } };
         this.logger.info("Test number: 01");
         this.logger.info("Running query:" + sql);
 
@@ -364,16 +363,16 @@ public class BQScrollableResultSetFunctionTest {
             Assert.assertEquals("with",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(7));
-            Assert.assertEquals("your",
+            Assert.assertEquals("will",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(8));
-            Assert.assertEquals("young",
+            Assert.assertEquals("why",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(9));
-            Assert.assertEquals("words",
+            Assert.assertEquals("whose",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(10));
-            Assert.assertEquals("word",
+            Assert.assertEquals("whom",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -414,7 +413,7 @@ public class BQScrollableResultSetFunctionTest {
         try {
             BQScrollableResultSetFunctionTest.Result.afterLast();
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
-            Assert.assertEquals("word",
+            Assert.assertEquals("whom",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -539,7 +538,7 @@ public class BQScrollableResultSetFunctionTest {
             Assert.assertEquals("you",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.last());
-            Assert.assertEquals("word",
+            Assert.assertEquals("whom",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -578,16 +577,16 @@ public class BQScrollableResultSetFunctionTest {
             Assert.assertEquals("with",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
-            Assert.assertEquals("your",
+            Assert.assertEquals("will",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
-            Assert.assertEquals("young",
+            Assert.assertEquals("why",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
-            Assert.assertEquals("words",
+            Assert.assertEquals("whose",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
-            Assert.assertEquals("word",
+            Assert.assertEquals("whom",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertFalse(BQScrollableResultSetFunctionTest.Result.next());
         } catch (SQLException e) {
@@ -614,13 +613,13 @@ public class BQScrollableResultSetFunctionTest {
         try {
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.last());
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
-            Assert.assertEquals("words",
+            Assert.assertEquals("whose",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
-            Assert.assertEquals("young",
+            Assert.assertEquals("why",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
-            Assert.assertEquals("your",
+            Assert.assertEquals("will",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("with",
@@ -672,7 +671,7 @@ public class BQScrollableResultSetFunctionTest {
             Assert.assertEquals("world",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.relative(5));
-            Assert.assertEquals("words",
+            Assert.assertEquals("whose",
                     BQScrollableResultSetFunctionTest.Result.getString(1));
             Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.relative(-5));
             Assert.assertEquals("world",
