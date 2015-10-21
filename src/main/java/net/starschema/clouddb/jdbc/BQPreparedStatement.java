@@ -28,30 +28,16 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.model.Job;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.ParameterMetaData;
-import java.sql.PreparedStatement;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLXML;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Calendar;
-
-import com.google.api.services.bigquery.model.Job;
 
 /**
  * This class implements java.sql.PreparedStatement
@@ -258,7 +244,8 @@ public class BQPreparedStatement extends BQStatementRoot implements
             referencedJob = BQSupportFuncts.startQuery(
                     this.connection.getBigquery(),
                     this.ProjectId.replace("__", ":").replace("_", "."),
-                    this.RunnableStatement);
+                    this.RunnableStatement,
+                    this.connection.getDataSet());
             this.logger.info("Executing Query: " + this.RunnableStatement);
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong with the query: " + this.RunnableStatement, e);
