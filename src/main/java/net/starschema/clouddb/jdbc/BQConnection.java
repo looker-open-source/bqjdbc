@@ -25,36 +25,21 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.Bigquery;
+import net.starschema.clouddb.cmdlineverification.Oauth2Bigquery;
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.GeneralSecurityException;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.CallableStatement;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.NClob;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLClientInfoException;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Savepoint;
-import java.sql.Statement;
-import java.sql.Struct;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import net.starschema.clouddb.cmdlineverification.Oauth2Bigquery;
-
-import org.apache.log4j.Logger;
-
-import com.google.api.services.bigquery.Bigquery;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -75,6 +60,7 @@ public class BQConnection implements Connection {
      * The bigquery client to access the service.
      */
     private Bigquery bigquery = null;
+    private String dataset = null;
 
     /**
      * The projectid which needed for the queries.
@@ -100,7 +86,7 @@ public class BQConnection implements Connection {
     /**
      * Extracts the JDBC URL then makes a connection to the Bigquery.
      *
-     * @param serverdata
+     * @param url
      *            the JDBC connection URL
      * @param loginProp
      *
@@ -129,6 +115,11 @@ public class BQConnection implements Connection {
             this.logger.debug("url contains &user and &password");
         } else this.logger.debug("url doesn't contains &user and &password");
 
+        Pattern datasetFinder = Pattern.compile("/(\\w+)\\?");
+        Matcher m1 = datasetFinder.matcher(url);
+        if (m1.find())
+            this.dataset = m1.group(1);
+
         //getting the user/password for the connection
         if (containUserPassword) {
             //getting the User/Password from the URL
@@ -154,12 +145,10 @@ public class BQConnection implements Connection {
             projectid = URLDecoder.decode(
                     url.substring(url.lastIndexOf(":") + 1), "UTF-8");
             this.logger.debug("projectid + end of url: " + projectid);
-            //we either got parameters with ?:
-            if (projectid.contains("?")) {
-                this.projectId = projectid.substring(0, projectid.indexOf("?"));
-            }
-            //or we got the projectID right
-            else this.projectId = projectid;
+            //we either got parameters with ?: or / or nothing
+            Pattern projectidFinder = Pattern.compile("(.+?)[\\?/]");
+            Matcher m2 = projectidFinder.matcher(projectid);
+            this.projectId = m2.find() ? m2.group(1) : projectid;
         } catch (UnsupportedEncodingException e1) {
             throw new BQSQLException(e1);
         }
@@ -252,6 +241,10 @@ public class BQConnection implements Connection {
             this.bigquery = null;
             this.isclosed = true;
         }
+    }
+
+    public String getDataSet() {
+        return this.dataset;
     }
 
     /**
