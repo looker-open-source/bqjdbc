@@ -27,18 +27,11 @@
 
 package net.starschema.clouddb.jdbc;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLWarning;
-import java.sql.Statement;
-
+import com.google.api.services.bigquery.model.Job;
 import org.apache.log4j.Logger;
 
-import com.google.api.services.bigquery.model.Job;
+import java.io.IOException;
+import java.sql.*;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -247,7 +240,7 @@ public abstract class BQStatementRoot {
         try {
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
-                    this.connection.getBigquery(), this.ProjectId, querySql);
+                    this.connection.getBigquery(), this.ProjectId, querySql, connection.getDataSet());
             this.logger.info("Executing Query: " + querySql);
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong with the query: " + querySql, e);
