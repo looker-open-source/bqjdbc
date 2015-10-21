@@ -27,25 +27,6 @@
 
 package net.starschema.clouddb.cmdlineverification;
 
-import java.awt.Desktop;
-import java.awt.Desktop.Action;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.PrintWriter;
-
-import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
-import java.security.GeneralSecurityException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.log4j.Logger;
-
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
@@ -54,10 +35,24 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson.JacksonFactory;
+import com.google.api.client.util.Base64;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryScopes;
+import org.apache.log4j.Logger;
+
+import java.awt.*;
+import java.awt.Desktop.Action;
+import java.io.*;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -195,21 +190,31 @@ public class Oauth2Bigquery {
      * @throws IOException
      */
     public static Bigquery authorizeviaservice(String serviceaccountemail,
-                                               String keypath) throws GeneralSecurityException, IOException {
+                                               String keypath,
+                                               String password) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
 
         List<String> scopes = new ArrayList<String>();
         scopes.add(BigqueryScopes.BIGQUERY);
-        GoogleCredential credential = new GoogleCredential.Builder()
+        GoogleCredential.Builder builder = new GoogleCredential.Builder()
                 .setTransport(CmdlineUtils.getHttpTransport())
                 .setJsonFactory(CmdlineUtils.getJsonFactory())
                 .setServiceAccountId(serviceaccountemail)
                         // e-mail ADDRESS!!!!
-                .setServiceAccountScopes(scopes)
+                .setServiceAccountScopes(scopes);
                         // Currently we only want to access bigquery, but it's possible
                         // to name more than one service too
-                .setServiceAccountPrivateKeyFromP12File(new File(keypath))
-                .build();
+
+        if (password == null) {
+            builder = builder.setServiceAccountPrivateKeyFromP12File(new File(keypath));
+        }
+        else {
+            PrivateKey pk = getPrivateKeyFromCredentials(keypath, password);
+            System.out.println(Base64.encodeBase64(pk.getEncoded()));
+            builder = builder.setServiceAccountPrivateKey(pk);
+        }
+
+        GoogleCredential credential = builder.build();
         logger.debug("Authorizied?");
         Bigquery bigquery = new Builder(CmdlineUtils.getHttpTransport(),
                 CmdlineUtils.getJsonFactory(), credential)
@@ -220,6 +225,14 @@ public class Oauth2Bigquery {
         logger.debug("Authorizing with service no.");
 
         return bigquery;
+    }
+
+    private static PrivateKey getPrivateKeyFromCredentials(String keyPath, String password) throws GeneralSecurityException, IOException {
+        KeyStore keystore = KeyStore.getInstance("PKCS12");
+        keystore.load(new BufferedInputStream(new FileInputStream(new File(keyPath))), password.toCharArray());
+        System.out.println(new BufferedInputStream(new FileInputStream(new File(keyPath))));
+        System.out.println("ALiases: " + keystore.aliases().toString());
+        return (PrivateKey)keystore.getKey("privatekey", password.toCharArray());
     }
 
     /**
