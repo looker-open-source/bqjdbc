@@ -35,15 +35,18 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.util.Base64;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryScopes;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import java.awt.*;
 import java.awt.Desktop.Action;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -210,7 +213,6 @@ public class Oauth2Bigquery {
         }
         else {
             PrivateKey pk = getPrivateKeyFromCredentials(keypath, password);
-            System.out.println(Base64.encodeBase64(pk.getEncoded()));
             builder = builder.setServiceAccountPrivateKey(pk);
         }
 
@@ -229,10 +231,10 @@ public class Oauth2Bigquery {
 
     private static PrivateKey getPrivateKeyFromCredentials(String keyPath, String password) throws GeneralSecurityException, IOException {
         KeyStore keystore = KeyStore.getInstance("PKCS12");
-        keystore.load(new BufferedInputStream(new FileInputStream(new File(keyPath))), password.toCharArray());
-        System.out.println(new BufferedInputStream(new FileInputStream(new File(keyPath))));
-        System.out.println("ALiases: " + keystore.aliases().toString());
-        return (PrivateKey)keystore.getKey("privatekey", password.toCharArray());
+        byte[] bytes = FileUtils.readFileToByteArray(new File(keyPath));
+
+        keystore.load(new ByteArrayInputStream(bytes), password.toCharArray());
+        return (PrivateKey)keystore.getKey(keystore.aliases().nextElement(), password.toCharArray());
     }
 
     /**

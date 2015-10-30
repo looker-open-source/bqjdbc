@@ -33,6 +33,15 @@ public class JdbcUrlTest {
 
         // This should not blow up with a "No dataset specified" exception
         stmt.executeQuery("SELECT * FROM orders limit 1");
-    }    
+    }
+
+    @Test
+    public void canConnectWithPasswordProtectedP12File() throws SQLException {
+        String url = "jdbc:BQDriver::disco-parsec-659/looker_test?withServiceAccount=true&user=697117590302-76cr6q3217nck6gks0kf4r151j4d9f8e@developer.gserviceaccount.com&password=123456&path=src%2F%2Ftest%2Fresources%2Fbigquery_credentials_protected.p12";
+        BQConnection bqConn = new BQConnection(url, new Properties());
+
+        BQStatement stmt = new BQStatement("disco-parsec-659", bqConn);
+        stmt.executeQuery("SELECT * FROM orders limit 1");
+    }
 
 }

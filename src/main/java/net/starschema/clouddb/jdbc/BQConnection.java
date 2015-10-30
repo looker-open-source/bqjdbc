@@ -131,9 +131,10 @@ public class BQConnection implements Connection {
                 userId = URLDecoder.decode(url.substring(
                         userindex + "&user=".length(), passwordindex), "UTF-8");
                 userKey = URLDecoder.decode(
-                        url.substring(passwordindex + "&password=".length()),
+                        url.substring(passwordindex + "&password=".length(), pathIndex < 0 ? url.length() : pathIndex),
                         "UTF-8");
-                userPath = URLDecoder.decode(
+
+                userPath = pathIndex < 0 ? null : URLDecoder.decode(
                         url.substring(pathIndex + "&path=".length()),
                         "UTF-8");
             } catch (UnsupportedEncodingException e2) {
