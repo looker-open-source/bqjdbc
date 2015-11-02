@@ -391,8 +391,9 @@ public class BQSupportFuncts {
                 ", datasetID:" + (datasetId != null ? datasetId : "null") +
                 "connection");
         projectId = projectId.replace("__", ":").replace("_", ".");
-        List<Tables> tables = connection.getBigquery().tables()
-                .list(projectId, datasetId).execute().getTables();
+        Bigquery.Tables.List listCall = connection.getBigquery().tables()
+                .list(projectId, datasetId).setMaxResults(10000000L);  // Really big number that we'll never hit
+        List<Tables> tables = listCall.execute().getTables();
         if (tables != null && tables.size() != 0) {
             if (tableNamePattern != null) {
                 List<Tables> tablesSearch = new ArrayList<Tables>();
