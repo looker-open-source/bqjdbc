@@ -37,6 +37,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 import com.google.api.services.bigquery.model.*;
 import org.apache.log4j.Logger;
@@ -356,6 +357,10 @@ public class BQSupportFuncts {
         return pollJob.getStatus().getState();
     }
 
+    public static void cancelQuery(Job job, Bigquery bigquery, String projectId) throws IOException {
+        bigquery.jobs().cancel(projectId, job.getJobReference().getJobId());
+    }
+
     /**
      * Parses a (instance of table).getid() and gives back the id only for the
      * table
@@ -601,6 +606,10 @@ public class BQSupportFuncts {
         JobConfiguration config = new JobConfiguration();
         JobConfigurationQuery queryConfig = new JobConfigurationQuery();
         config.setQuery(queryConfig);
+
+        JobReference jobReference = new JobReference().setProjectId(projectId).setJobId(UUID.randomUUID().toString().replace("-", ""));
+        job.setJobReference(jobReference);
+
         if (dataSet != null)
             queryConfig.setDefaultDataset(new DatasetReference().setDatasetId(dataSet).setProjectId(projectId));
 

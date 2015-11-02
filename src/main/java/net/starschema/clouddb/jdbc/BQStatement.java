@@ -27,11 +27,11 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.model.Job;
+
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import com.google.api.services.bigquery.model.Job;
 
 /**
  * This class implements java.sql.Statement
@@ -41,6 +41,8 @@ import com.google.api.services.bigquery.model.Job;
  *
  */
 public class BQStatement extends BQStatementRoot implements java.sql.Statement {
+
+    private Job job;
 
     /**
      * Constructor for BQStatement object just initializes local variables
@@ -59,7 +61,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     /**
      * Constructor for BQStatement object just initializes local variables
      *
-     * @param projectid2
+     * @param projectid
      * @param bqConnection
      * @param resultSetType
      * @param resultSetConcurrency
@@ -83,11 +85,23 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     }
 
     /** {@inheritDoc} */
-
     @Override
     public ResultSet executeQuery(String querySql) throws SQLException {
+        try {
+            return executeQueryHelper(querySql);
+        }
+        finally {
+            this.job = null;
+        }
+    }
+
+    private ResultSet executeQueryHelper(String querySql) throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
+        }
+
+        if (this.job != null) {
+            throw new BQSQLException("Already running job");
         }
 
         this.starttime = System.currentTimeMillis();
@@ -102,6 +116,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                     this.ProjectId.replace("__", ":").replace("_", "."),
                     querySql,
                     this.connection.getDataSet());
+            this.job = referencedJob;
             this.logger.debug("Executing Query: " + querySql);
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong with the query: " + querySql, e);
@@ -140,10 +155,30 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        // here we should kill/stop the running job, but bigquery doesn't
-        // support that :(
+
+        this.cancel();
         throw new BQSQLException(
                 "Query run took more than the specified timeout");
+    }
+
+    @Override
+    public void cancel() {
+        if (this.job == null) {
+            return;
+        }
+
+        try {
+            BQSupportFuncts.cancelQuery(this.job, this.connection.getBigquery(), this.ProjectId.replace("__", ":").replace("_", "."));
+        } catch (IOException e) {
+            return;
+        }
+        return;
+    }
+
+    @Override
+    public void close() throws SQLException {
+        this.cancel();
+        super.close();
     }
 
 }
