@@ -48,6 +48,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     private Job job;
     private Condition testPoint;
     private Lock testLock;
+    private boolean conditionHit = false;
 
     /**
      * Constructor for BQStatement object just initializes local variables
@@ -175,6 +176,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         }
         this.testLock.lock();
         try {
+            conditionHit = true;
             this.testPoint.signal();
         } finally {
             this.testLock.unlock();
@@ -190,7 +192,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     public void waitForTestPoint() throws InterruptedException {
         this.testLock.lock();
         try {
-            this.testPoint.await();
+            if (!conditionHit) {
+                this.testPoint.await();
+            }
         } finally {
             this.testLock.unlock();
         }

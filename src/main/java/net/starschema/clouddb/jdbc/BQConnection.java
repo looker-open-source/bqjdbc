@@ -993,6 +993,10 @@ public class BQConnection implements Connection {
         this.runningStatements.remove(stmt);
     }
 
+    public int getNumberRunningQueries() {
+        return this.runningStatements.size();
+    }
+
     public int cancelRunningQueries() {
         int numFailed = 0;
         synchronized (this.runningStatements) {

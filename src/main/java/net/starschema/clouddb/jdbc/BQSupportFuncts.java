@@ -357,8 +357,15 @@ public class BQSupportFuncts {
         return pollJob.getStatus().getState();
     }
 
-    public static void cancelQuery(Job job, Bigquery bigquery, String projectId) throws IOException {
-        bigquery.jobs().cancel(projectId, job.getJobReference().getJobId()).execute();
+    /**
+     * Cancels a job. Uses the fact that it returns a JobCancelResponse to help enforce actually calling .execute().
+     *
+     * @param job     Instance of Job
+     * @param bigquery  Instance of authorized Bigquery client
+     * @param projectId The id of the Project the job is contained in
+     */
+    public static JobCancelResponse cancelQuery(Job job, Bigquery bigquery, String projectId) throws IOException {
+        return bigquery.jobs().cancel(projectId, job.getJobReference().getJobId()).execute();
     }
 
     /**
