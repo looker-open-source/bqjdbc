@@ -34,10 +34,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.GeneralSecurityException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -68,6 +65,8 @@ public class BQConnection implements Connection {
     private String projectId = null;
     /** Boolean to determine if the Connection is closed */
     private boolean isclosed = false;
+
+    private final Set<BQStatementRoot> runningStatements = Collections.synchronizedSet(new HashSet<BQStatementRoot>());
 
     /** Boolean to determine, to use or doesn't use the ANTLR parser */
     private boolean transformQuery = false;
@@ -986,4 +985,25 @@ public class BQConnection implements Connection {
         throw new BQSQLException("Not found");
     }
 
+    public void addRunningStatement(BQStatementRoot stmt) {
+        this.runningStatements.add(stmt);
+    }
+
+    public void removeRunningStatement(BQStatementRoot stmt) {
+        this.runningStatements.remove(stmt);
+    }
+
+    public int cancelRunningQueries() {
+        int numFailed = 0;
+        synchronized (this.runningStatements) {
+            for(BQStatementRoot stmt : this.runningStatements) {
+                try {
+                    stmt.cancel();
+                } catch (SQLException e) {
+                    numFailed++;
+                }
+            }
+        }
+        return numFailed;
+    }
 }

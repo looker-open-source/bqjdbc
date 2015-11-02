@@ -32,6 +32,9 @@ import com.google.api.services.bigquery.model.Job;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This class implements java.sql.Statement
@@ -43,6 +46,8 @@ import java.sql.SQLException;
 public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
     private Job job;
+    private Condition testPoint;
+    private Lock testLock;
 
     /**
      * Constructor for BQStatement object just initializes local variables
@@ -88,10 +93,12 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     @Override
     public ResultSet executeQuery(String querySql) throws SQLException {
         try {
+            this.connection.addRunningStatement(this);
             return executeQueryHelper(querySql);
         }
         finally {
             this.job = null;
+            this.connection.removeRunningStatement(this);
         }
     }
 
@@ -118,6 +125,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                     this.connection.getDataSet());
             this.job = referencedJob;
             this.logger.debug("Executing Query: " + querySql);
+            signalTestPoint();
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong with the query: " + querySql, e);
         }
@@ -161,8 +169,39 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 "Query run took more than the specified timeout");
     }
 
+    private void signalTestPoint() {
+        if (this.testPoint == null) {
+            return;
+        }
+        this.testLock.lock();
+        try {
+            this.testPoint.signal();
+        } finally {
+            this.testLock.unlock();
+        }
+    }
+
+    public void setTestPoint() {
+        Lock lock = new ReentrantLock();
+        this.testPoint = lock.newCondition();
+        this.testLock = lock;
+    }
+
+    public void waitForTestPoint() throws InterruptedException {
+        this.testLock.lock();
+        try {
+            this.testPoint.await();
+        } finally {
+            this.testLock.unlock();
+        }
+    }
+
+    public Job getJob() {
+        return this.job;
+    }
+
     @Override
-    public void cancel() {
+    public void cancel() throws SQLException {
         if (this.job == null) {
             return;
         }
@@ -170,9 +209,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         try {
             BQSupportFuncts.cancelQuery(this.job, this.connection.getBigquery(), this.ProjectId.replace("__", ":").replace("_", "."));
         } catch (IOException e) {
-            return;
+            throw new SQLException("Failed to kill query");
         }
-        return;
     }
 
     @Override

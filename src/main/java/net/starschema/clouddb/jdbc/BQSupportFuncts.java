@@ -358,7 +358,7 @@ public class BQSupportFuncts {
     }
 
     public static void cancelQuery(Job job, Bigquery bigquery, String projectId) throws IOException {
-        bigquery.jobs().cancel(projectId, job.getJobReference().getJobId());
+        bigquery.jobs().cancel(projectId, job.getJobReference().getJobId()).execute();
     }
 
     /**
