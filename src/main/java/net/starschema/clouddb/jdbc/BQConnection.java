@@ -123,19 +123,11 @@ public class BQConnection implements Connection {
         //getting the user/password for the connection
         if (containUserPassword) {
             //getting the User/Password from the URL
-            int passwordindex = url.indexOf("&password=");
-            int userindex = url.indexOf("&user=");
-            int pathIndex = url.indexOf("&path=");
             try {
-                userId = URLDecoder.decode(url.substring(
-                        userindex + "&user=".length(), passwordindex), "UTF-8");
-                userKey = URLDecoder.decode(
-                        url.substring(passwordindex + "&password=".length(), pathIndex < 0 ? url.length() : pathIndex),
-                        "UTF-8");
-
-                userPath = pathIndex < 0 ? null : URLDecoder.decode(
-                        url.substring(pathIndex + "&path=".length()),
-                        "UTF-8");
+                Map<String, String> components = BQSupportFuncts.getUrlQueryComponents(url);
+                userId = components.get("user");
+                userKey = components.get("password");
+                userPath = components.get("path");
             } catch (UnsupportedEncodingException e2) {
                 throw new BQSQLException(e2);
             }
