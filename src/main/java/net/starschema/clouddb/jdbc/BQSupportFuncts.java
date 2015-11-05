@@ -37,6 +37,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 import com.google.api.services.bigquery.model.*;
 import org.apache.log4j.Logger;
@@ -357,6 +358,17 @@ public class BQSupportFuncts {
     }
 
     /**
+     * Cancels a job. Uses the fact that it returns a JobCancelResponse to help enforce actually calling .execute().
+     *
+     * @param job     Instance of Job
+     * @param bigquery  Instance of authorized Bigquery client
+     * @param projectId The id of the Project the job is contained in
+     */
+    public static JobCancelResponse cancelQuery(Job job, Bigquery bigquery, String projectId) throws IOException {
+        return bigquery.jobs().cancel(projectId, job.getJobReference().getJobId()).execute();
+    }
+
+    /**
      * Parses a (instance of table).getid() and gives back the id only for the
      * table
      *
@@ -602,6 +614,10 @@ public class BQSupportFuncts {
         JobConfiguration config = new JobConfiguration();
         JobConfigurationQuery queryConfig = new JobConfigurationQuery();
         config.setQuery(queryConfig);
+
+        JobReference jobReference = new JobReference().setProjectId(projectId).setJobId(UUID.randomUUID().toString().replace("-", ""));
+        job.setJobReference(jobReference);
+
         if (dataSet != null)
             queryConfig.setDefaultDataset(new DatasetReference().setDatasetId(dataSet).setProjectId(projectId));
 
