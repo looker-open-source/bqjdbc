@@ -3,6 +3,7 @@ package BQJDBC.QueryResultTest;
 import com.google.api.services.bigquery.model.Job;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQStatement;
+import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import org.junit.Before;
 
 import java.io.IOException;
@@ -20,12 +21,13 @@ import static junit.framework.Assert.assertTrue;
  */
 public class CancelTest {
 
-    static final String URL = "jdbc:BQDriver::disco-parsec-659/looker_test?withServiceAccount=true&user=697117590302-76cr6q3217nck6gks0kf4r151j4d9f8e@developer.gserviceaccount.com&password=src%2F%2Ftest%2Fresources%2Fbigquery_credentials.p12";
     private BQConnection bq;
 
     @Before
-    public void setup() throws SQLException {
-        this.bq = new BQConnection(URL, new Properties());
+    public void setup() throws SQLException, IOException {
+        String url = BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
+                .readFromPropFile(getClass().getResource("/installedaccount.properties").getFile()), true, null);
+        this.bq = new BQConnection(url, new Properties());
     }
 
     private Thread getAndRunBackgroundQuery(final BQStatement stmt) {

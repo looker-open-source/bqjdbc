@@ -67,14 +67,15 @@ public class BQSupportFuncts {
      *                   ReadUrlFromPropFile(String)
      * @return a valid BigQuery JDBC driver URL or null if it fails to load
      * @throws UnsupportedEncodingException
-     * @see #ReadUrlFromPropFile(String)
      */
-    public static String constructUrlFromPropertiesFile(Properties properties)
+    public static String constructUrlFromPropertiesFile(Properties properties, boolean full, String dataset)
             throws UnsupportedEncodingException {
         String ProjectId = properties.getProperty("projectid");
         logger.debug("projectId is: " + ProjectId);
         String User = properties.getProperty("user");
         String Password = properties.getProperty("password");
+        String path = properties.getProperty("path");
+        dataset = dataset == null ? properties.getProperty("dataset") : dataset;
         String transformQuery = null;
 
         transformQuery = properties.getProperty("transformquery");
@@ -92,7 +93,14 @@ public class BQSupportFuncts {
             if (User != null && Password != null && ProjectId != null) {
                 forreturn = BQDriver.getURLPrefix()
                         + URLEncoder.encode(ProjectId, "UTF-8")
+                        + (dataset != null && full ? "/" + URLEncoder.encode(dataset, "UTF-8") : "")
                         + "?withServiceAccount=true";
+                if (full) {
+                    forreturn += "&user=" + URLEncoder.encode(User, "UTF-8") + "&password=" + URLEncoder.encode(Password, "UTF-8");
+                    if (path != null) {
+                        forreturn += "&path=" + URLEncoder.encode(path, "UTF-8");
+                    }
+                }
             } else {
                 return null;
             }
@@ -100,9 +108,19 @@ public class BQSupportFuncts {
             return null;
         }
 
-        if (transformQuery != null) {
-            return forreturn + "?transformQuery=" + transformQuery;
+        if (transformQuery != null && !full) {
+            if (properties.getProperty("type").equals("service")) {
+                return forreturn + "&transformQuery=" + transformQuery;
+            }
+            else {
+                return forreturn + "?transformQuery=" + transformQuery;
+            }
+
         } else return forreturn;
+    }
+
+    public static String constructUrlFromPropertiesFile(Properties properties) throws UnsupportedEncodingException {
+        return constructUrlFromPropertiesFile(properties, false, null);
     }
 
     public static Map<String, String> getUrlQueryComponents(String url) throws UnsupportedEncodingException {
@@ -402,7 +420,7 @@ public class BQSupportFuncts {
      * Returns a list of Tables which's id matches TablenamePattern and are
      * exactly in the given Project and Dataset
      *
-     * @param tablename  String that the tableid must contain
+     * @param tableNamePattern  String that the tableid must contain
      * @param projectId  The exact Id of the Project that the tables must be in
      * @param datasetId  The exact Id of the Dataset that the tables must be in
      * @param connection Instance of a valid BQConnection
