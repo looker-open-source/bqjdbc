@@ -55,6 +55,10 @@
 
 package net.starschema.clouddb.jdbc;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -63,10 +67,6 @@ import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
-
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 

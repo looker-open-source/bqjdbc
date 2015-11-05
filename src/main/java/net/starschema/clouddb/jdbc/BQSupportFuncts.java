@@ -29,24 +29,23 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.Bigquery;
+import com.google.api.services.bigquery.Bigquery.Jobs.Insert;
+import com.google.api.services.bigquery.model.DatasetList.Datasets;
+import com.google.api.services.bigquery.model.*;
+import com.google.api.services.bigquery.model.ProjectList.Projects;
+import com.google.api.services.bigquery.model.TableList.Tables;
+import org.apache.log4j.Logger;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
-
-import com.google.api.services.bigquery.model.*;
-import org.apache.log4j.Logger;
-
-import com.google.api.services.bigquery.Bigquery;
-import com.google.api.services.bigquery.Bigquery.Jobs.Insert;
-import com.google.api.services.bigquery.model.DatasetList.Datasets;
-import com.google.api.services.bigquery.model.ProjectList.Projects;
-import com.google.api.services.bigquery.model.TableList.Tables;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -104,6 +103,26 @@ public class BQSupportFuncts {
         if (transformQuery != null) {
             return forreturn + "?transformQuery=" + transformQuery;
         } else return forreturn;
+    }
+
+    public static Map<String, String> getUrlQueryComponents(String url) throws UnsupportedEncodingException {
+        String[] splitAtQP = url.split("\\?");
+        HashMap<String, String> components = new HashMap<String, String>();
+
+        if (splitAtQP.length == 1) {
+            return components;
+        }
+
+        String queryString = splitAtQP[1];
+        String[] querySubComponents = queryString.split("&");
+        for (String subComponent : querySubComponents) {
+            Matcher m = Pattern.compile("(.*)=(.*)").matcher(subComponent);
+            if (m.find()) {
+                components.put(m.group(1), URLDecoder.decode(m.group(2), "UTF-8"));
+            }
+        }
+
+        return components;
     }
 
     /**
