@@ -104,6 +104,7 @@ public class BQConnection implements Connection {
         boolean containUserPassword = false;
         String userId;
         String userKey;
+        String userPath;
 
         boolean serviceAccount = false;
 
@@ -122,14 +123,11 @@ public class BQConnection implements Connection {
         //getting the user/password for the connection
         if (containUserPassword) {
             //getting the User/Password from the URL
-            int passwordindex = url.indexOf("&password=");
-            int userindex = url.indexOf("&user=");
             try {
-                userId = URLDecoder.decode(url.substring(
-                        userindex + "&user=".length(), passwordindex), "UTF-8");
-                userKey = URLDecoder.decode(
-                        url.substring(passwordindex + "&password=".length()),
-                        "UTF-8");
+                Map<String, String> components = BQSupportFuncts.getUrlQueryComponents(url);
+                userId = components.get("user");
+                userKey = components.get("password");
+                userPath = components.get("path");
             } catch (UnsupportedEncodingException e2) {
                 throw new BQSQLException(e2);
             }
@@ -137,6 +135,7 @@ public class BQConnection implements Connection {
             //getting the User/Password from property
             userId = loginProp.getProperty("user");
             userKey = loginProp.getProperty("password");
+            userPath = loginProp.getProperty("path");
         }
 
         //getting the project ID
@@ -197,7 +196,12 @@ public class BQConnection implements Connection {
         //do we have a serviceaccount to connect with?
         if (serviceAccount) {
             try {
-                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userKey);
+                // Support for old behavior, passing no actual password, but passing the path as 'password'
+                if (userPath == null) {
+                    userPath = userKey;
+                    userKey = null;
+                }
+                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey);
                 this.logger.info("Authorized with service account");
             } catch (GeneralSecurityException e) {
                 throw new BQSQLException(e);
