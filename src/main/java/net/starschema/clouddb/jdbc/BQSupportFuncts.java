@@ -650,6 +650,9 @@ public class BQSupportFuncts {
         Job job = new Job();
         JobConfiguration config = new JobConfiguration();
         JobConfigurationQuery queryConfig = new JobConfigurationQuery();
+
+        queryConfig.setMaximumBillingTier(20);
+
         config.setQuery(queryConfig);
 
         JobReference jobReference = new JobReference().setProjectId(projectId).setJobId(UUID.randomUUID().toString().replace("-", ""));
