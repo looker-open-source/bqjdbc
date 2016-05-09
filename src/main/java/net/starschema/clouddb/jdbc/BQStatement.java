@@ -166,7 +166,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 this.connection.getBigquery(),
                 this.ProjectId.replace("__", ":").replace("_", "."),
                 querySql,
-                this.connection.getDataSet());
+                this.connection.getDataSet(),
+                this.connection.getUseLegacySql()
+        );
         this.logger.debug("Executing Query: " + querySql);
         return this.job;
     }

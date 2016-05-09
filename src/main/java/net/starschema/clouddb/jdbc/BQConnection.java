@@ -76,6 +76,14 @@ public class BQConnection implements Connection {
         return transformQuery;
     }
 
+    /** Boolean to determine whether or not to use legacy sql (default: true) **/
+    private boolean useLegacySql = true;
+
+    /** getter for useLegacySql */
+    public boolean getUseLegacySql() {
+        return useLegacySql;
+    }
+
     /** List to contain sql warnings in */
     private List<SQLWarning> SQLWarningList = new ArrayList<SQLWarning>();
 
@@ -187,6 +195,31 @@ public class BQConnection implements Connection {
             this.transformQuery = Boolean.parseBoolean(lp);
             logger.debug("from the properties we got for transformQuery the following: " +
                     lp + " which converts to: " + Boolean.toString(transformQuery));
+        }
+
+        // do we want to use  sql?
+        if (lowerCasedUrl.contains("uselegacysql=false")) {
+            this.useLegacySql = false;
+            this.logger.debug("url contains useLegacySql=false");
+        } else {
+            String lp = "true";
+            /* all the possible capitalizations of useLegacySql*/
+            if (loginProp.getProperty("UseLegacySql") != null) lp = loginProp.getProperty("UseLegacySql");
+
+            if (loginProp.getProperty("useLegacySql") != null) lp = loginProp.getProperty("useLegacySql");
+            if (loginProp.getProperty("UselegacySql") != null) lp = loginProp.getProperty("UselegacySql");
+            if (loginProp.getProperty("UseLegacysql") != null) lp = loginProp.getProperty("UseLegacysql");
+
+            if (loginProp.getProperty("uselegacySql") != null) lp = loginProp.getProperty("uselegacySql");
+            if (loginProp.getProperty("useLegacysql") != null) lp = loginProp.getProperty("useLegacysql");
+            if (loginProp.getProperty("Uselegacysql") != null) lp = loginProp.getProperty("Uselegacysql");
+
+            if (loginProp.getProperty("uselegacysql") != null) lp = loginProp.getProperty("uselegacysql");
+
+            this.useLegacySql = true;
+            this.useLegacySql = Boolean.parseBoolean(lp);
+            logger.debug("From the properties we got useLegacySql the following: " +
+                    lp + " which converts to: " + this.useLegacySql);
         }
 
         /**

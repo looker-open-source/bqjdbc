@@ -29,6 +29,7 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.JobConfigurationQuery;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -245,7 +246,9 @@ public class BQPreparedStatement extends BQStatementRoot implements
                     this.connection.getBigquery(),
                     this.ProjectId.replace("__", ":").replace("_", "."),
                     this.RunnableStatement,
-                    this.connection.getDataSet());
+                    this.connection.getDataSet(),
+                    this.connection.getUseLegacySql()
+            );
             this.logger.info("Executing Query: " + this.RunnableStatement);
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong with the query: " + this.RunnableStatement, e);

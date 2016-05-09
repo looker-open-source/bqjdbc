@@ -240,7 +240,12 @@ public abstract class BQStatementRoot {
         try {
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
-                    this.connection.getBigquery(), this.ProjectId, querySql, connection.getDataSet());
+                    this.connection.getBigquery(),
+                    this.ProjectId,
+                    querySql,
+                    connection.getDataSet(),
+                    this.connection.getUseLegacySql()
+            );
             this.logger.info("Executing Query: " + querySql);
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong with the query: " + querySql, e);

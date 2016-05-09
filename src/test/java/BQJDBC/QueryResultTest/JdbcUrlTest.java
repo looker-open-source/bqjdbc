@@ -27,7 +27,7 @@ public class JdbcUrlTest {
         URL = getUrl("/installedaccount.properties", null);
         this.bq = new BQConnection(URL, new Properties());
     }
-    
+
     @Test
     public void urlWithDefaultDatasetShouldWork() throws SQLException {
         Assert.assertEquals(properties.getProperty("dataset"), bq.getDataSet());
@@ -59,6 +59,18 @@ public class JdbcUrlTest {
         Assert.assertEquals(protectedProperties.getProperty("user"), components.get("user"));
         Assert.assertEquals(protectedProperties.getProperty("password"), components.get("password"));
         Assert.assertEquals(protectedProperties.getProperty("path"), components.get("path"));
+    }
+
+    @Test
+    public void connectionUseLegacySqlValueFromProperties() throws IOException, SQLException {
+        String url = getUrl("/protectedaccount.properties", null);
+        BQConnection bqConn = new BQConnection(url, new Properties());
+        // default false
+        Assert.assertEquals(bqConn.getUseLegacySql(), true);
+
+        String newUrl = url + "&useLegacySql=false";
+        BQConnection bqConn2 = new BQConnection(newUrl, new Properties());
+        Assert.assertEquals(bqConn2.getUseLegacySql(), false);
     }
 
     private Properties getProperties(String pathToProp) throws IOException {
