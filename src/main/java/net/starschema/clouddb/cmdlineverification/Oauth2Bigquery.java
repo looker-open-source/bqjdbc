@@ -94,6 +94,8 @@ public class Oauth2Bigquery {
             + File.separator + ".bqjdbc" + File.separator
             + "xmllocation.properties";
 
+    private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
+
     /**
      * Authorizes the installed application to access user's protected data. if
      * possible, gets the credential from xml file at PathForXmlStore
@@ -199,6 +201,8 @@ public class Oauth2Bigquery {
 
         List<String> scopes = new ArrayList<String>();
         scopes.add(BigqueryScopes.BIGQUERY);
+        // don't have access to DriveScopes without requiring the entire google drive sdk.
+        scopes.add(DRIVE_SCOPE);
         GoogleCredential.Builder builder = new GoogleCredential.Builder()
                 .setTransport(CmdlineUtils.getHttpTransport())
                 .setJsonFactory(CmdlineUtils.getJsonFactory())
