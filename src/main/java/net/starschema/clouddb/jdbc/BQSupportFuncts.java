@@ -123,20 +123,21 @@ public class BQSupportFuncts {
         return constructUrlFromPropertiesFile(properties, false, null);
     }
 
-    public static Map<String, String> getUrlQueryComponents(String url) throws UnsupportedEncodingException {
+    public static Properties getUrlQueryComponents(String url, Properties defaults) throws UnsupportedEncodingException {
         String[] splitAtQP = url.split("\\?");
-        HashMap<String, String> components = new HashMap<String, String>();
+        Properties components = (Properties) defaults.clone();
 
         if (splitAtQP.length == 1) {
             return components;
         }
 
         String queryString = splitAtQP[1];
+
         String[] querySubComponents = queryString.split("&");
         for (String subComponent : querySubComponents) {
             Matcher m = Pattern.compile("(.*)=(.*)").matcher(subComponent);
             if (m.find()) {
-                components.put(m.group(1), URLDecoder.decode(m.group(2), "UTF-8"));
+                components.setProperty(m.group(1).toLowerCase(), URLDecoder.decode(m.group(2), "UTF-8"));
             }
         }
 
