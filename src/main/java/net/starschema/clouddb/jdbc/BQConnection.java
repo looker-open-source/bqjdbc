@@ -160,6 +160,9 @@ public class BQConnection implements Connection {
         String legacySqlParam = caseInsensitiveProps.getProperty("uselegacysql");
         this.useLegacySql = (legacySqlParam == null) || Boolean.parseBoolean(legacySqlParam);
 
+        // extract UA String
+        String userAgent = caseInsensitiveProps.getProperty("useragent");
+
         // Create Connection to BigQuery
         if (serviceAccount) {
             try {
@@ -168,7 +171,7 @@ public class BQConnection implements Connection {
                     userPath = userKey;
                     userKey = null;
                 }
-                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey);
+                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey, userAgent);
                 this.logger.info("Authorized with service account");
             } catch (GeneralSecurityException e) {
                 throw new BQSQLException(e);
@@ -178,7 +181,7 @@ public class BQConnection implements Connection {
         }
         //let use Oauth
         else {
-            this.bigquery = Oauth2Bigquery.authorizeviainstalled(userId, userKey);
+            this.bigquery = Oauth2Bigquery.authorizeviainstalled(userId, userKey, userAgent);
             this.logger.info("Authorized with Oauth");
         }
         logger.debug("The project id for this connections is: " + this.projectId);
