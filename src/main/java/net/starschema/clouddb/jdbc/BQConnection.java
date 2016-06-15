@@ -108,14 +108,13 @@ public class BQConnection implements Connection {
 
         try {
             String pathParams = URLDecoder.decode(url.substring(url.lastIndexOf(":") + 1, url.indexOf('?')), "UTF-8");
+            Pattern projectAndDatasetMatcher = Pattern.compile("^([^/$]+)(?:/([^$]*))?$");
 
-            String[] path = pathParams.split("/");
+            Matcher matchData = projectAndDatasetMatcher.matcher(pathParams);
 
-            if (path.length > 1) {
-                this.projectId = path[0];
-                this.dataset = path[1];
-            } else if (path.length > 0) {
-                this.projectId = path[0];
+            if (matchData.find()) {
+                this.projectId = matchData.group(1);
+                this.dataset = matchData.group(2);
             } else {
                 this.projectId = pathParams;
             }
