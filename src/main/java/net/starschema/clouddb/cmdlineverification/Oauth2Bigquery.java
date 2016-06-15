@@ -33,10 +33,13 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets.Details;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
+import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Builder;
+import com.google.api.services.bigquery.BigqueryRequest;
+import com.google.api.services.bigquery.BigqueryRequestInitializer;
 import com.google.api.services.bigquery.BigqueryScopes;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -163,7 +166,8 @@ public class Oauth2Bigquery {
      * @throws SQLException
      */
     public static Bigquery authorizeviainstalled(String clientid,
-                                                 String clientsecret) throws SQLException {
+                                                 String clientsecret,
+                                                 String userAgent) throws SQLException {
         LocalServerReceiver rcvr = new LocalServerReceiver();
         List<String> Scopes = new ArrayList<String>();
         Scopes.add(BigqueryScopes.BIGQUERY);
@@ -177,9 +181,21 @@ public class Oauth2Bigquery {
         } catch (Exception e) {
             throw new SQLException(e);
         }
+
         logger.debug("Creating a new bigquery client.");
-        Bigquery bigquery = new Builder(CmdlineUtils.getHttpTransport(),
-                CmdlineUtils.getJsonFactory(), credential).build();
+        Builder bqBuilder = new Builder(
+                CmdlineUtils.getHttpTransport(),
+                CmdlineUtils.getJsonFactory(), credential
+        );
+
+        if (userAgent != null) {
+            BigQueryRequestUserAgentInitializer requestInitializer = new BigQueryRequestUserAgentInitializer();
+            requestInitializer.setUserAgent(userAgent);
+            bqBuilder.setBigqueryRequestInitializer(requestInitializer);
+        }
+
+        Bigquery bigquery = bqBuilder.build();
+
         Oauth2Bigquery.servicepath = bigquery.getServicePath();
         return bigquery;
     }
@@ -196,7 +212,8 @@ public class Oauth2Bigquery {
      */
     public static Bigquery authorizeviaservice(String serviceaccountemail,
                                                String keypath,
-                                               String password) throws GeneralSecurityException, IOException {
+                                               String password,
+                                               String userAgent) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
 
         List<String> scopes = new ArrayList<String>();
@@ -222,13 +239,22 @@ public class Oauth2Bigquery {
 
         GoogleCredential credential = builder.build();
         logger.debug("Authorizied?");
-        Bigquery bigquery = new Builder(CmdlineUtils.getHttpTransport(),
+
+        Bigquery.Builder bqBuilder = new Builder(
+                CmdlineUtils.getHttpTransport(),
                 CmdlineUtils.getJsonFactory(), credential)
-                .setApplicationName("Starschema BigQuery JDBC Driver")
-                .build();
-        logger.debug("Authorizing with service asdf.");
+                .setApplicationName("Starschema BigQuery JDBC Driver");
+
+        if (userAgent != null) {
+            BigQueryRequestUserAgentInitializer requestInitializer = new BigQueryRequestUserAgentInitializer();
+            requestInitializer.setUserAgent(userAgent);
+
+            bqBuilder.setBigqueryRequestInitializer(requestInitializer);
+        }
+
+        Bigquery bigquery = bqBuilder.build();
+
         Oauth2Bigquery.servicepath = bigquery.getServicePath();
-        logger.debug("Authorizing with service no.");
 
         return bigquery;
     }
@@ -361,5 +387,29 @@ public class Oauth2Bigquery {
                     jsonFactory, stringReader);
         }
         return Oauth2Bigquery.clientSecrets;
+    }
+
+    private static class BigQueryRequestUserAgentInitializer extends BigqueryRequestInitializer {
+
+        String userAgent = null;
+
+        public void setUserAgent(String userAgent) {
+            this.userAgent = userAgent;
+        }
+
+        public String getUserAgent() {
+            return this.userAgent;
+        }
+
+        @Override
+        public void initializeBigqueryRequest(BigqueryRequest<?> request) throws IOException {
+            if (userAgent != null) {
+                HttpHeaders currentHeaders = request.getRequestHeaders();
+
+                currentHeaders.setUserAgent(userAgent);
+
+                request.setRequestHeaders(currentHeaders);
+            }
+        }
     }
 }

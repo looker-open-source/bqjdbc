@@ -62,11 +62,15 @@ import org.apache.log4j.PropertyConfigurator;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 

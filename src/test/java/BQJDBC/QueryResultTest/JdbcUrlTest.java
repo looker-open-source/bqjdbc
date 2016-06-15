@@ -54,11 +54,11 @@ public class JdbcUrlTest {
     public void gettingUrlComponentsWorks() throws IOException {
         String url = getUrl("/protectedaccount.properties", null);
         Properties protectedProperties = getProperties("/protectedaccount.properties");
-        Map<String, String> components = BQSupportFuncts.getUrlQueryComponents(url);
+        Properties components = BQSupportFuncts.getUrlQueryComponents(url, new Properties());
 
-        Assert.assertEquals(protectedProperties.getProperty("user"), components.get("user"));
-        Assert.assertEquals(protectedProperties.getProperty("password"), components.get("password"));
-        Assert.assertEquals(protectedProperties.getProperty("path"), components.get("path"));
+        Assert.assertEquals(protectedProperties.getProperty("user"), components.getProperty("user"));
+        Assert.assertEquals(protectedProperties.getProperty("password"), components.getProperty("password"));
+        Assert.assertEquals(protectedProperties.getProperty("path"), components.getProperty("path"));
     }
 
     @Test

@@ -102,131 +102,67 @@ public class BQConnection implements Connection {
      * @throws SQLException
      */
     public BQConnection(String url, Properties loginProp) throws SQLException {
-
         this.logger = Logger.getLogger(this.getClass());
         this.URLPART = url;
         this.isclosed = false;
 
-        //If the URL contains user/password we'll use that
-        //If it doesn't we'll look them in the loginProp
-        boolean containUserPassword = false;
-        String userId;
-        String userKey;
-        String userPath;
-
-        boolean serviceAccount = false;
-
-        String projectid;
-
-        if (url.contains("&user=") && url.contains("&password=")) {
-            containUserPassword = true;
-            this.logger.debug("url contains &user and &password");
-        } else this.logger.debug("url doesn't contains &user and &password");
-
-        Pattern datasetFinder = Pattern.compile("/(\\w+)\\?");
-        Matcher m1 = datasetFinder.matcher(url);
-        if (m1.find())
-            this.dataset = m1.group(1);
-
-        //getting the user/password for the connection
-        if (containUserPassword) {
-            //getting the User/Password from the URL
-            try {
-                Map<String, String> components = BQSupportFuncts.getUrlQueryComponents(url);
-                userId = components.get("user");
-                userKey = components.get("password");
-                userPath = components.get("path");
-            } catch (UnsupportedEncodingException e2) {
-                throw new BQSQLException(e2);
-            }
-        } else {
-            //getting the User/Password from property
-            userId = loginProp.getProperty("user");
-            userKey = loginProp.getProperty("password");
-            userPath = loginProp.getProperty("path");
-        }
-
-        //getting the project ID
         try {
-            projectid = URLDecoder.decode(
-                    url.substring(url.lastIndexOf(":") + 1), "UTF-8");
-            this.logger.debug("projectid + end of url: " + projectid);
-            //we either got parameters with ?: or / or nothing
-            Pattern projectidFinder = Pattern.compile("(.+?)[\\?/]");
-            Matcher m2 = projectidFinder.matcher(projectid);
-            this.projectId = m2.find() ? m2.group(1) : projectid;
+            String pathParams = URLDecoder.decode(url.substring(url.lastIndexOf(":") + 1, url.indexOf('?')), "UTF-8");
+            Pattern projectAndDatasetMatcher = Pattern.compile("^([^/$]+)(?:/([^$]*))?$");
+
+            Matcher matchData = projectAndDatasetMatcher.matcher(pathParams);
+
+            if (matchData.find()) {
+                this.projectId = matchData.group(1);
+                this.dataset = matchData.group(2);
+            } else {
+                this.projectId = pathParams;
+            }
         } catch (UnsupportedEncodingException e1) {
             throw new BQSQLException(e1);
         }
-        //lets replace the : with __ and . with _
-        projectId = projectId.replace(":", "__").replace(".", "_");
-        //Connect with serviceAccount?
-        String lowerCasedUrl = url.toLowerCase();
-        if (lowerCasedUrl.contains("?withserviceaccount=true")) {
-            serviceAccount = true;
-            this.logger.debug("url contains ?withServiceAccount=true");
-        } else {
-            String sa = "";
-            if (loginProp.getProperty("withServiceAccount") != null) sa = loginProp.getProperty("withServiceAccount");
-            if (loginProp.getProperty("withServiceaccount") != null) sa = loginProp.getProperty("withServiceaccount");
-            if (loginProp.getProperty("withserviceAccount") != null) sa = loginProp.getProperty("withserviceAccount");
-            if (loginProp.getProperty("withserviceaccount") != null) sa = loginProp.getProperty("withserviceaccount");
-            if (loginProp.getProperty("WithServiceAccount") != null) sa = loginProp.getProperty("WithServiceAccount");
-            if (loginProp.getProperty("WithServiceaccount") != null) sa = loginProp.getProperty("WithServiceaccount");
-            if (loginProp.getProperty("WithserviceAccount") != null) sa = loginProp.getProperty("WithserviceAccount");
-            if (loginProp.getProperty("Withserviceaccount") != null) sa = loginProp.getProperty("Withserviceaccount");
-            serviceAccount = false;
-            serviceAccount = Boolean.parseBoolean(sa);
-            logger.debug("from the properties we got for withServiceAccount the following: " +
-                    sa + " which converts to: " + Boolean.toString(serviceAccount));
+        // lets replace the : with __ and . with _
+        this.projectId = this.projectId.replace(":", "__").replace(".", "_");
+
+        Properties caseInsensitiveLoginProps = new Properties();
+
+        if (loginProp != null) {
+            Iterator props = loginProp.keySet().iterator();
+            while (props.hasNext()) {
+                String prop = (String) props.next();
+                caseInsensitiveLoginProps.setProperty(prop.toLowerCase(), loginProp.getProperty(prop));
+            }
         }
 
-        //do we want to transform Queries?
-        if (lowerCasedUrl.contains("transformquery=true")) {
-            this.transformQuery = true;
-            this.logger.debug("url contains transformQuery=true");
-        } else {
-            String lp = "";
-            if (loginProp.getProperty("transformQuery") != null) lp = loginProp.getProperty("transformQuery");
-            if (loginProp.getProperty("TransformQuery") != null) lp = loginProp.getProperty("TransformQuery");
-            if (loginProp.getProperty("Transformquery") != null) lp = loginProp.getProperty("Transformquery");
-            if (loginProp.getProperty("transformquery") != null) lp = loginProp.getProperty("transformquery");
-            this.transformQuery = false;
-            this.transformQuery = Boolean.parseBoolean(lp);
-            logger.debug("from the properties we got for transformQuery the following: " +
-                    lp + " which converts to: " + Boolean.toString(transformQuery));
+        Properties caseInsensitiveProps;
+
+        try {
+            // parse the connection string and override anything passed via loginProps.
+            caseInsensitiveProps = BQSupportFuncts.getUrlQueryComponents(url, caseInsensitiveLoginProps);
+        } catch (UnsupportedEncodingException e2) {
+            throw new BQSQLException(e2);
         }
 
-        // do we want to use  sql?
-        if (lowerCasedUrl.contains("uselegacysql=false")) {
-            this.useLegacySql = false;
-            this.logger.debug("url contains useLegacySql=false");
-        } else {
-            String lp = "true";
-            /* all the possible capitalizations of useLegacySql*/
-            if (loginProp.getProperty("UseLegacySql") != null) lp = loginProp.getProperty("UseLegacySql");
+        String userId = caseInsensitiveProps.getProperty("user");
+        String userKey = caseInsensitiveProps.getProperty("password");
+        String userPath = caseInsensitiveProps.getProperty("path");
 
-            if (loginProp.getProperty("useLegacySql") != null) lp = loginProp.getProperty("useLegacySql");
-            if (loginProp.getProperty("UselegacySql") != null) lp = loginProp.getProperty("UselegacySql");
-            if (loginProp.getProperty("UseLegacysql") != null) lp = loginProp.getProperty("UseLegacysql");
+        // extract withServiceAccount property
+        String withServiceAccountParam = caseInsensitiveProps.getProperty("withserviceaccount");
+        Boolean serviceAccount = (withServiceAccountParam != null) && Boolean.parseBoolean(withServiceAccountParam);
 
-            if (loginProp.getProperty("uselegacySql") != null) lp = loginProp.getProperty("uselegacySql");
-            if (loginProp.getProperty("useLegacysql") != null) lp = loginProp.getProperty("useLegacysql");
-            if (loginProp.getProperty("Uselegacysql") != null) lp = loginProp.getProperty("Uselegacysql");
+        // extract transformQuery property
+        String transformQueryParam = caseInsensitiveProps.getProperty("transformquery");
+        this.transformQuery = (transformQueryParam != null) && Boolean.parseBoolean(transformQueryParam);
 
-            if (loginProp.getProperty("uselegacysql") != null) lp = loginProp.getProperty("uselegacysql");
+        // extract useLegacySql property
+        String legacySqlParam = caseInsensitiveProps.getProperty("uselegacysql");
+        this.useLegacySql = (legacySqlParam == null) || Boolean.parseBoolean(legacySqlParam);
 
-            this.useLegacySql = true;
-            this.useLegacySql = Boolean.parseBoolean(lp);
-            logger.debug("From the properties we got useLegacySql the following: " +
-                    lp + " which converts to: " + this.useLegacySql);
-        }
+        // extract UA String
+        String userAgent = caseInsensitiveProps.getProperty("useragent");
 
-        /**
-         * Lets make a connection:
-         *
-         */
-        //do we have a serviceaccount to connect with?
+        // Create Connection to BigQuery
         if (serviceAccount) {
             try {
                 // Support for old behavior, passing no actual password, but passing the path as 'password'
@@ -234,7 +170,7 @@ public class BQConnection implements Connection {
                     userPath = userKey;
                     userKey = null;
                 }
-                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey);
+                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey, userAgent);
                 this.logger.info("Authorized with service account");
             } catch (GeneralSecurityException e) {
                 throw new BQSQLException(e);
@@ -244,7 +180,7 @@ public class BQConnection implements Connection {
         }
         //let use Oauth
         else {
-            this.bigquery = Oauth2Bigquery.authorizeviainstalled(userId, userKey);
+            this.bigquery = Oauth2Bigquery.authorizeviainstalled(userId, userKey, userAgent);
             this.logger.info("Authorized with Oauth");
         }
         logger.debug("The project id for this connections is: " + this.projectId);
