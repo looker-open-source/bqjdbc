@@ -229,12 +229,13 @@ public class Oauth2Bigquery {
                         // Currently we only want to access bigquery, but it's possible
                         // to name more than one service too
 
-        if (password == null) {
-            builder = builder.setServiceAccountPrivateKeyFromP12File(new File(keypath));
-        }
-        else {
-            PrivateKey pk = getPrivateKeyFromCredentials(keypath, password);
-            builder = builder.setServiceAccountPrivateKey(pk);
+        if (keypath != null) {
+            if (password == null) {
+                builder = builder.setServiceAccountPrivateKeyFromP12File(new File(keypath));
+            } else {
+                PrivateKey pk = getPrivateKeyFromCredentials(keypath, password);
+                builder = builder.setServiceAccountPrivateKey(pk);
+            }
         }
 
         GoogleCredential credential = builder.build();
