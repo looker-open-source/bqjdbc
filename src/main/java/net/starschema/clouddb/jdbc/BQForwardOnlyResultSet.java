@@ -242,6 +242,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     }
 
     private Date toDate(String value, Calendar cal) throws SQLException {
+        // Dates in BigQuery come back in the YYYY-MM-DD format
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         try {
             java.util.Date date = sdf.parse(value);
