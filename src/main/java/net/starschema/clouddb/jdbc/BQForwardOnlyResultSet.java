@@ -51,6 +51,7 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.TimeZone;
@@ -170,6 +171,9 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             if (Columntype.equals("TIMESTAMP")) {
                 return toTimestamp(result, null);
             }
+            if (Columntype.equals("DATE")) {
+                return toDate(result, null);
+            }
             throw new BQSQLException("Unsupported Type (" + Columntype + ")");
         }
         catch (NumberFormatException e) {
@@ -238,13 +242,19 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     }
 
     private Date toDate(String value, Calendar cal) throws SQLException {
-        return new java.sql.Date(toTimestamp(value, cal).getTime());
+        // Dates in BigQuery come back in the YYYY-MM-DD format
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            java.util.Date date = sdf.parse(value);
+            return new java.sql.Date(date.getTime());
+        } catch (java.text.ParseException e) {
+            throw new BQSQLException(e);
+        }
     }
 
     private Time toTime(String value, Calendar cal) throws SQLException {
         return new java.sql.Time(toTimestamp(value, cal).getTime());
     }
-
 
     @Override
     /**
