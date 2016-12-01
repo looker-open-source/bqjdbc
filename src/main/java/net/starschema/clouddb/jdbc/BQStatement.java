@@ -30,6 +30,8 @@ package net.starschema.clouddb.jdbc;
 import com.google.api.services.bigquery.model.Job;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -115,7 +117,11 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             // Gets the Job reference of the completed job with give Query
             referencedJob = startQuery(querySql);
         } catch (IOException e) {
-            throw new BQSQLException("Something went wrong with the query: " + querySql, e);
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            String stackTrace = sw.toString();
+            throw new BQSQLException("Something went wrong with the query: " + querySql +
+                                     "\n\nUnderlying error: " + e.getMessage() + " -- " + stackTrace, e);
         }
         try {
             do {
