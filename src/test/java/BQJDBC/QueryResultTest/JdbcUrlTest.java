@@ -34,6 +34,37 @@ public class JdbcUrlTest {
     }
 
     @Test
+    public void urlWithTimeouts() throws SQLException {
+        try {
+            String url1 = URL + "&readTimeout=foo";
+            new BQConnection(url1, new Properties());
+        } catch (SQLException e){
+            Assert.assertEquals("could not parse readTimeout parameter.", e.getMessage());
+        }
+
+        try {
+            String url1 = URL + "&connectTimeout=foo";
+            new BQConnection(url1, new Properties());
+        } catch (SQLException e){
+            Assert.assertEquals("could not parse connectTimeout parameter.", e.getMessage());
+        }
+
+        try {
+            String url1 = URL + "&readTimeout=-1000";
+            new BQConnection(url1, new Properties());
+        } catch (SQLException e){
+            Assert.assertEquals("readTimeout must be positive.", e.getMessage());
+        }
+
+        try {
+            String url1 = URL + "&connectTimeout=-1000";
+            new BQConnection(url1, new Properties());
+        } catch (SQLException e){
+            Assert.assertEquals("connectTimeout must be positive.", e.getMessage());
+        }
+    }
+
+    @Test
     public void canRunQueryWithDefaultDataset() throws SQLException {
         BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bq);
 

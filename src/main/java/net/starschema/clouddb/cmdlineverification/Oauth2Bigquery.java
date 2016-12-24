@@ -34,6 +34,8 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets.Details;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.services.bigquery.Bigquery;
@@ -213,7 +215,9 @@ public class Oauth2Bigquery {
     public static Bigquery authorizeviaservice(String serviceaccountemail,
                                                String keypath,
                                                String password,
-                                               String userAgent) throws GeneralSecurityException, IOException {
+                                               String userAgent,
+                                               Integer connectTimeout,
+                                               Integer readTimeout) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
 
         List<String> scopes = new ArrayList<String>();
@@ -240,9 +244,18 @@ public class Oauth2Bigquery {
         GoogleCredential credential = builder.build();
         logger.debug("Authorizied?");
 
+        HttpRequestTimeoutInitializer httpRequestInitializer = new HttpRequestTimeoutInitializer(credential);
+        if (connectTimeout != null) {
+            httpRequestInitializer.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout != null) {
+            httpRequestInitializer.setReadTimeout(readTimeout);
+        }
+
         Bigquery.Builder bqBuilder = new Builder(
                 CmdlineUtils.getHttpTransport(),
-                CmdlineUtils.getJsonFactory(), credential)
+                CmdlineUtils.getJsonFactory(),
+                httpRequestInitializer)
                 .setApplicationName("Starschema BigQuery JDBC Driver");
 
         if (userAgent != null) {
@@ -387,6 +400,40 @@ public class Oauth2Bigquery {
                     jsonFactory, stringReader);
         }
         return Oauth2Bigquery.clientSecrets;
+    }
+
+    private static class HttpRequestTimeoutInitializer implements HttpRequestInitializer {
+        private Integer readTimeout = null;
+        private Integer connectTimeout = null;
+        private GoogleCredential credential = null;
+
+        public HttpRequestTimeoutInitializer(GoogleCredential credential) {
+            this.credential = credential;
+        }
+
+        public void setCredential(GoogleCredential credential) {
+            this.credential = credential;
+        }
+
+        public void setReadTimeout(Integer timeout) {
+            readTimeout = timeout;
+        }
+
+        public void setConnectTimeout(Integer timeout) {
+            connectTimeout = timeout;
+        }
+
+        @Override
+        public void initialize(HttpRequest httpRequest) throws IOException {
+            credential.initialize(httpRequest);
+
+            if (connectTimeout != null) {
+                httpRequest.setConnectTimeout(connectTimeout);
+            }
+            if (readTimeout != null) {
+                httpRequest.setReadTimeout(readTimeout);
+            }
+        }
     }
 
     private static class BigQueryRequestUserAgentInitializer extends BigqueryRequestInitializer {

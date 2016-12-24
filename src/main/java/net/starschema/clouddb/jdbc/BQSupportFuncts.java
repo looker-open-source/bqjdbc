@@ -29,6 +29,7 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Jobs.Insert;
 import com.google.api.services.bigquery.model.DatasetList.Datasets;
@@ -646,15 +647,14 @@ public class BQSupportFuncts {
      */
     public static Job startQuery(Bigquery bigquery, String projectId,
                                  String querySql, String dataSet, Boolean useLegacySql) throws IOException {
-        BQSupportFuncts.logger.info("Inserting Query Job: " + querySql.replace("\t", "").replace("\n", " ").replace("\r", ""));
         projectId = projectId.replace("__", ":").replace("_", ".");
         Job job = new Job();
         JobConfiguration config = new JobConfiguration();
         JobConfigurationQuery queryConfig = new JobConfigurationQuery();
         queryConfig.setUseLegacySql(useLegacySql);
         config.setQuery(queryConfig);
-
-        JobReference jobReference = new JobReference().setProjectId(projectId).setJobId(UUID.randomUUID().toString().replace("-", ""));
+        String jobId = UUID.randomUUID().toString().replace("-", "");
+        JobReference jobReference = new JobReference().setProjectId(projectId).setJobId(jobId);
         job.setJobReference(jobReference);
 
         if (dataSet != null)
@@ -665,6 +665,7 @@ public class BQSupportFuncts {
 
         Insert insert = bigquery.jobs().insert(querySql, job);
         insert.setProjectId(projectId);
+        BQSupportFuncts.logger.info("Inserting Query Job (" + jobId + "): " + querySql.replace("\t", "").replace("\n", " ").replace("\r", ""));
         return insert.execute();
     }
 

@@ -159,6 +159,32 @@ public class BQConnection implements Connection {
         String legacySqlParam = caseInsensitiveProps.getProperty("uselegacysql");
         this.useLegacySql = (legacySqlParam == null) || Boolean.parseBoolean(legacySqlParam);
 
+        String readTimeoutString = caseInsensitiveProps.getProperty("readtimeout");
+        Integer readTimeout = null;
+        if (readTimeoutString != null) {
+            try {
+                readTimeout = Integer.parseInt(readTimeoutString);
+                if (readTimeout < 0) {
+                    throw new BQSQLException("readTimeout must be positive.");
+                }
+            } catch (NumberFormatException e) {
+                throw new BQSQLException("could not parse readTimeout parameter.", e);
+            }
+        }
+
+        String connectTimeoutString = caseInsensitiveProps.getProperty("connecttimeout");
+        Integer connectTimeout = null;
+        if (connectTimeoutString != null) {
+            try {
+                connectTimeout = Integer.parseInt(connectTimeoutString);
+                if (connectTimeout < 0) {
+                    throw new BQSQLException("connectTimeout must be positive.");
+                }
+            } catch (NumberFormatException e) {
+                throw new BQSQLException("could not parse connectTimeout parameter.", e);
+            }
+        }
+
         // extract UA String
         String userAgent = caseInsensitiveProps.getProperty("useragent");
 
@@ -170,7 +196,7 @@ public class BQConnection implements Connection {
                     userPath = userKey;
                     userKey = null;
                 }
-                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey, userAgent);
+                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey, userAgent, connectTimeout, readTimeout);
                 this.logger.info("Authorized with service account");
             } catch (GeneralSecurityException e) {
                 throw new BQSQLException(e);
