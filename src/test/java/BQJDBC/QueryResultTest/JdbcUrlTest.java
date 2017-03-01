@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -71,6 +70,18 @@ public class JdbcUrlTest {
         String newUrl = url + "&useLegacySql=false";
         BQConnection bqConn2 = new BQConnection(newUrl, new Properties());
         Assert.assertEquals(bqConn2.getUseLegacySql(), false);
+    }
+
+    @Test
+    public void connectionMaxBillingBytesFromProperties() throws IOException, SQLException {
+        String url = getUrl("/protectedaccount.properties", null);
+        BQConnection bqConn = new BQConnection(url, new Properties());
+        // default null
+        Assert.assertNull(bqConn.getMaxBillingBytes());
+
+        String newUrl = url + "&maxbillingbytes=1000000000";
+        BQConnection bqConn2 = new BQConnection(newUrl, new Properties());
+        Assert.assertEquals((long) bqConn2.getMaxBillingBytes(), 1000000000);
     }
 
     private Properties getProperties(String pathToProp) throws IOException {

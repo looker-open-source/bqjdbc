@@ -67,6 +67,8 @@ public class BQConnection implements Connection {
     /** Boolean to determine if the Connection is closed */
     private boolean isclosed = false;
 
+    private Long maxBillingBytes;
+
     private final Set<BQStatementRoot> runningStatements = Collections.synchronizedSet(new HashSet<BQStatementRoot>());
 
     /** Boolean to determine, to use or doesn't use the ANTLR parser */
@@ -159,6 +161,15 @@ public class BQConnection implements Connection {
         // extract useLegacySql property
         String legacySqlParam = caseInsensitiveProps.getProperty("uselegacysql");
         this.useLegacySql = (legacySqlParam == null) || Boolean.parseBoolean(legacySqlParam);
+
+        String maxBillingBytesParam = caseInsensitiveProps.getProperty("maxbillingbytes");
+        if (maxBillingBytesParam != null) {
+            try {
+                this.maxBillingBytes = Long.parseLong(maxBillingBytesParam);
+            } catch (NumberFormatException e) {
+                throw new BQSQLException("Bad number for maxBillingBytes", e);
+            }
+        }
 
         // extract UA String
         String userAgent = caseInsensitiveProps.getProperty("useragent");
@@ -368,27 +379,22 @@ public class BQConnection implements Connection {
                 + "createStruct(string,object[])");
     }
 
-    @Override
     public void setSchema(String schema) throws SQLException {
 
     }
 
-    @Override
     public String getSchema() throws SQLException {
         return null;
     }
 
-    @Override
     public void abort(Executor executor) throws SQLException {
 
     }
 
-    @Override
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
 
     }
 
-    @Override
     public int getNetworkTimeout() throws SQLException {
         return 0;
     }
@@ -997,5 +1003,9 @@ public class BQConnection implements Connection {
             }
         }
         return numFailed;
+    }
+
+    public Long getMaxBillingBytes() {
+        return maxBillingBytes;
     }
 }

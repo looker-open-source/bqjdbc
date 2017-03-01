@@ -247,7 +247,8 @@ public class BQPreparedStatement extends BQStatementRoot implements
                     this.ProjectId.replace("__", ":").replace("_", "."),
                     this.RunnableStatement,
                     this.connection.getDataSet(),
-                    this.connection.getUseLegacySql()
+                    this.connection.getUseLegacySql(),
+                    this.connection.getMaxBillingBytes()
             );
             this.logger.info("Executing Query: " + this.RunnableStatement);
         } catch (IOException e) {

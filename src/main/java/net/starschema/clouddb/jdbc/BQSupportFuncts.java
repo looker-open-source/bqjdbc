@@ -645,13 +645,15 @@ public class BQSupportFuncts {
      *                     </p>
      */
     public static Job startQuery(Bigquery bigquery, String projectId,
-                                 String querySql, String dataSet, Boolean useLegacySql) throws IOException {
+                                 String querySql, String dataSet, Boolean useLegacySql,
+                                 Long maxBillingBytes) throws IOException {
         BQSupportFuncts.logger.info("Inserting Query Job: " + querySql.replace("\t", "").replace("\n", " ").replace("\r", ""));
         projectId = projectId.replace("__", ":").replace("_", ".");
         Job job = new Job();
         JobConfiguration config = new JobConfiguration();
         JobConfigurationQuery queryConfig = new JobConfigurationQuery();
         queryConfig.setUseLegacySql(useLegacySql);
+        queryConfig.setMaximumBytesBilled(maxBillingBytes);
         config.setQuery(queryConfig);
 
         JobReference jobReference = new JobReference().setProjectId(projectId).setJobId(UUID.randomUUID().toString().replace("-", ""));
