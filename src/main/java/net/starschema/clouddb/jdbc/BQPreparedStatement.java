@@ -1039,4 +1039,14 @@ public class BQPreparedStatement extends BQStatementRoot implements
         }
 
     }
+
+    @Override
+    public void closeOnCompletion() throws SQLException {
+
+    }
+
+    @Override
+    public boolean isCloseOnCompletion() throws SQLException {
+        return false;
+    }
 }

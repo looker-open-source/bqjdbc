@@ -470,6 +470,16 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
         throw new BQSQLException("No such column");
     }
 
+    @Override
+    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+        return null;
+    }
+
+    @Override
+    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+        return null;
+    }
+
     ;
 
     /**

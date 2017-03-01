@@ -214,6 +214,16 @@ public class BQResultSet extends ScrollableResultset<Object> implements
         return this.Statementreference;
     }
 
+    @Override
+    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+        return null;
+    }
+
+    @Override
+    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+        return null;
+    }
+
     /** {@inheritDoc} */
     @Override
     public String getString(int columnIndex) throws SQLException {

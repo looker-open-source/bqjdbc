@@ -35,6 +35,7 @@ import java.net.URLDecoder;
 import java.security.GeneralSecurityException;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -365,6 +366,31 @@ public class BQConnection implements Connection {
             throws SQLException {
         throw new BQSQLException("Not implemented."
                 + "createStruct(string,object[])");
+    }
+
+    @Override
+    public void setSchema(String schema) throws SQLException {
+
+    }
+
+    @Override
+    public String getSchema() throws SQLException {
+        return null;
+    }
+
+    @Override
+    public void abort(Executor executor) throws SQLException {
+
+    }
+
+    @Override
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+
+    }
+
+    @Override
+    public int getNetworkTimeout() throws SQLException {
+        return 0;
     }
 
     /**

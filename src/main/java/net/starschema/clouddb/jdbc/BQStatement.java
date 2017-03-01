@@ -191,6 +191,16 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     }
 
     @Override
+    public void closeOnCompletion() throws SQLException {
+
+    }
+
+    @Override
+    public boolean isCloseOnCompletion() throws SQLException {
+        return false;
+    }
+
+    @Override
     public void close() throws SQLException {
         this.cancel();
         super.close();

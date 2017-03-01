@@ -2263,6 +2263,16 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         throw new BQSQLFeatureNotSupportedException();
     }
 
+    @Override
+    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+        return null;
+    }
+
+    @Override
+    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+        return null;
+    }
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
