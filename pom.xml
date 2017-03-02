@@ -39,7 +39,7 @@
     <dependency>
       <groupId>com.google.api-client</groupId>
       <artifactId>google-api-client</artifactId>
-      <version>1.21.0</version>
+      <version>1.22.0</version>
     </dependency>
     <dependency>
       <groupId>org.mortbay.jetty</groupId>
@@ -49,12 +49,12 @@
     <dependency>
       <groupId>com.google.http-client</groupId>
       <artifactId>google-http-client-jackson</artifactId>
-      <version>1.21.0</version>
+      <version>1.22.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-bigquery</artifactId>
-      <version>v2-rev294-1.21.0</version>
+      <version>v2-rev336-1.22.0</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -128,8 +128,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>2.3.2</version>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
       </plugin>
       <plugin>
@@ -149,5 +149,5 @@
     </plugins>
     <finalName>${project.artifactId}-${project.version}-thin</finalName>
   </build>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
 </project>

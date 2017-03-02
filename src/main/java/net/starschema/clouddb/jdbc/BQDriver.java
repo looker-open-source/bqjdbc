@@ -62,15 +62,8 @@ import org.apache.log4j.PropertyConfigurator;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Properties;
-import java.util.StringTokenizer;
-import java.util.regex.Pattern;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -204,5 +197,10 @@ public class BQDriver implements java.sql.Driver {
     @Override
     public boolean jdbcCompliant() {
         return false;
+    }
+
+    @Override
+    public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        throw new SQLFeatureNotSupportedException("Not implemented.");
     }
 }

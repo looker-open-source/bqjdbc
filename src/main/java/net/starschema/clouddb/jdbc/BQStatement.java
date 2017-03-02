@@ -167,7 +167,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 this.ProjectId.replace("__", ":").replace("_", "."),
                 querySql,
                 this.connection.getDataSet(),
-                this.connection.getUseLegacySql()
+                this.connection.getUseLegacySql(),
+                this.connection.getMaxBillingBytes()
         );
         this.logger.debug("Executing Query: " + querySql);
         return this.job;
@@ -188,6 +189,16 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         } catch (IOException e) {
             throw new SQLException("Failed to kill query");
         }
+    }
+
+    @Override
+    public void closeOnCompletion() throws SQLException {
+        throw new BQSQLException("Not implemented.");
+    }
+
+    @Override
+    public boolean isCloseOnCompletion() throws SQLException {
+        throw new BQSQLException("Not implemented.");
     }
 
     @Override

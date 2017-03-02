@@ -29,7 +29,6 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.Job;
-import com.google.api.services.bigquery.model.JobConfigurationQuery;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -247,7 +246,8 @@ public class BQPreparedStatement extends BQStatementRoot implements
                     this.ProjectId.replace("__", ":").replace("_", "."),
                     this.RunnableStatement,
                     this.connection.getDataSet(),
-                    this.connection.getUseLegacySql()
+                    this.connection.getUseLegacySql(),
+                    this.connection.getMaxBillingBytes()
             );
             this.logger.info("Executing Query: " + this.RunnableStatement);
         } catch (IOException e) {
@@ -1038,5 +1038,15 @@ public class BQPreparedStatement extends BQStatementRoot implements
             this.SetParameter(parameterIndex, "\"" + x.toString() + "\"");
         }
 
+    }
+
+    @Override
+    public void closeOnCompletion() throws SQLException {
+        throw new BQSQLException("Not implemented.");
+    }
+
+    @Override
+    public boolean isCloseOnCompletion() throws SQLException {
+        throw new BQSQLException("Not implemented.");
     }
 }
