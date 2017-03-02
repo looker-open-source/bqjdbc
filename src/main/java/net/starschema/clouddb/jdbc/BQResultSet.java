@@ -26,17 +26,17 @@
  */
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.client.util.Data;
+import com.google.api.services.bigquery.model.GetQueryResultsResponse;
+import com.google.api.services.bigquery.model.TableCell;
+import com.google.api.services.bigquery.model.TableRow;
+
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.math.BigDecimal;
-
-import com.google.api.services.bigquery.model.GetQueryResultsResponse;
-import com.google.api.services.bigquery.model.TableRow;
-import com.google.api.services.bigquery.model.TableCell;
-import com.google.api.client.util.Data;
 
 /**
  * This class implements the java.sql.ResultSet interface its superclass is
@@ -216,12 +216,12 @@ public class BQResultSet extends ScrollableResultset<Object> implements
 
     @Override
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-        return null;
+        throw new BQSQLException("Not implemented.");
     }
 
     @Override
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-        return null;
+        throw new BQSQLException("Not implemented.");
     }
 
     /** {@inheritDoc} */

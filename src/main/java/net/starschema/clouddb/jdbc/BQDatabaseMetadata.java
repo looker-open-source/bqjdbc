@@ -770,12 +770,12 @@ class BQDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+        throw new BQSQLException("Not implemented.");
     }
 
     @Override
     public boolean generatedKeyAlwaysReturned() throws SQLException {
-        return false;
+        throw new BQSQLException("Not implemented.");
     }
 
     /**

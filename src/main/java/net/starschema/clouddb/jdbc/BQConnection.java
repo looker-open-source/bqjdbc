@@ -380,23 +380,23 @@ public class BQConnection implements Connection {
     }
 
     public void setSchema(String schema) throws SQLException {
-
+        throw new BQSQLException("Not implemented.");
     }
 
     public String getSchema() throws SQLException {
-        return null;
+        throw new BQSQLException("Not implemented.");
     }
 
     public void abort(Executor executor) throws SQLException {
-
+        throw new BQSQLException("Not implemented.");
     }
 
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-
+        throw new BQSQLException("Not implemented.");
     }
 
     public int getNetworkTimeout() throws SQLException {
-        return 0;
+        throw new BQSQLException("Not implemented.");
     }
 
     /**

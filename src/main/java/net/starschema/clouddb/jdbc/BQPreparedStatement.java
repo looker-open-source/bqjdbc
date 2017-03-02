@@ -29,7 +29,6 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.Job;
-import com.google.api.services.bigquery.model.JobConfigurationQuery;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -1043,11 +1042,11 @@ public class BQPreparedStatement extends BQStatementRoot implements
 
     @Override
     public void closeOnCompletion() throws SQLException {
-
+        throw new BQSQLException("Not implemented.");
     }
 
     @Override
     public boolean isCloseOnCompletion() throws SQLException {
-        return false;
+        throw new BQSQLException("Not implemented.");
     }
 }
