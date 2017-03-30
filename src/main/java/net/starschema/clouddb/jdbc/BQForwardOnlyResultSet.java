@@ -69,7 +69,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     protected boolean closed = false;
 
     /**Paging size, the original result will be paged by FETCH_SIZE rows     */
-    protected int FETCH_SIZE = 100;
+    protected int FETCH_SIZE = 5000;
     /**The Fetched rows count at the original results     */
     protected BigInteger FETCH_POS = BigInteger.ZERO;
     /** Are we at the first row? */
