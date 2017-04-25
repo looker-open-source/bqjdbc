@@ -27,42 +27,23 @@
 
 package net.starschema.clouddb.jdbc;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Map;
-import java.util.TimeZone;
-
-import org.apache.log4j.Logger;
-
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.TableRow;
+import org.apache.log4j.Logger;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * This class implements the java.sql.ResultSet interface, as a Forward only resultset
@@ -88,7 +69,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     protected boolean closed = false;
 
     /**Paging size, the original result will be paged by FETCH_SIZE rows     */
-    protected int FETCH_SIZE = 100;
+    protected int FETCH_SIZE = 5000;
     /**The Fetched rows count at the original results     */
     protected BigInteger FETCH_POS = BigInteger.ZERO;
     /** Are we at the first row? */
@@ -2261,6 +2242,16 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     public void updateNClob(String columnLabel, Reader reader)
             throws SQLException {
         throw new BQSQLFeatureNotSupportedException();
+    }
+
+    @Override
+    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+        throw new BQSQLException("Not implemented.");
+    }
+
+    @Override
+    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+        throw new BQSQLException("Not implemented.");
     }
 
     /**

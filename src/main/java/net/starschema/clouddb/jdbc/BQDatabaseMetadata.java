@@ -768,6 +768,16 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 + "getFunctionColumns(String,String,String,String)");
     }
 
+    @Override
+    public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
+        throw new BQSQLException("Not implemented.");
+    }
+
+    @Override
+    public boolean generatedKeyAlwaysReturned() throws SQLException {
+        throw new BQSQLException("Not implemented.");
+    }
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>

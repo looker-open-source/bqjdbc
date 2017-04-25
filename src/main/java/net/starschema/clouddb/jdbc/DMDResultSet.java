@@ -29,11 +29,10 @@
 
 package net.starschema.clouddb.jdbc;
 
-import java.sql.SQLException;
-
 import net.starschema.clouddb.jdbc.DMDResultSet.DMDResultSetType;
-
 import org.apache.log4j.Logger;
+
+import java.sql.SQLException;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -468,6 +467,16 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
             }
         }
         throw new BQSQLException("No such column");
+    }
+
+    @Override
+    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+        throw new BQSQLException("Not implemented.");
+    }
+
+    @Override
+    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+        throw new BQSQLException("Not implemented.");
     }
 
     ;

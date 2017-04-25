@@ -35,6 +35,7 @@ import java.net.URLDecoder;
 import java.security.GeneralSecurityException;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,6 +66,8 @@ public class BQConnection implements Connection {
     private String projectId = null;
     /** Boolean to determine if the Connection is closed */
     private boolean isclosed = false;
+
+    private Long maxBillingBytes;
 
     private final Set<BQStatementRoot> runningStatements = Collections.synchronizedSet(new HashSet<BQStatementRoot>());
 
@@ -182,6 +185,15 @@ public class BQConnection implements Connection {
                 }
             } catch (NumberFormatException e) {
                 throw new BQSQLException("could not parse connectTimeout parameter.", e);
+            }
+        }
+
+        String maxBillingBytesParam = caseInsensitiveProps.getProperty("maxbillingbytes");
+        if (maxBillingBytesParam != null) {
+            try {
+                this.maxBillingBytes = Long.parseLong(maxBillingBytesParam);
+            } catch (NumberFormatException e) {
+                throw new BQSQLException("Bad number for maxBillingBytes", e);
             }
         }
 
@@ -391,6 +403,26 @@ public class BQConnection implements Connection {
             throws SQLException {
         throw new BQSQLException("Not implemented."
                 + "createStruct(string,object[])");
+    }
+
+    public void setSchema(String schema) throws SQLException {
+        throw new BQSQLException("Not implemented.");
+    }
+
+    public String getSchema() throws SQLException {
+        throw new BQSQLException("Not implemented.");
+    }
+
+    public void abort(Executor executor) throws SQLException {
+        throw new BQSQLException("Not implemented.");
+    }
+
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+        throw new BQSQLException("Not implemented.");
+    }
+
+    public int getNetworkTimeout() throws SQLException {
+        throw new BQSQLException("Not implemented.");
     }
 
     /**
@@ -997,5 +1029,9 @@ public class BQConnection implements Connection {
             }
         }
         return numFailed;
+    }
+
+    public Long getMaxBillingBytes() {
+        return maxBillingBytes;
     }
 }

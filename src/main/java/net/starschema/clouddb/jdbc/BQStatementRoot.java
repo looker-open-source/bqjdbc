@@ -244,7 +244,8 @@ public abstract class BQStatementRoot {
                     this.ProjectId,
                     querySql,
                     connection.getDataSet(),
-                    this.connection.getUseLegacySql()
+                    this.connection.getUseLegacySql(),
+                    this.connection.getMaxBillingBytes()
             );
             this.logger.info("Executing Query: " + querySql);
         } catch (IOException e) {
