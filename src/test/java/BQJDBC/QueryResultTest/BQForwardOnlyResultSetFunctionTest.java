@@ -217,6 +217,8 @@ public class BQForwardOnlyResultSetFunctionTest {
                     .createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             stmt.setQueryTimeout(500);
             BQForwardOnlyResultSetFunctionTest.Result = stmt.executeQuery(sql);
+            Assert.assertNotNull(BQForwardOnlyResultSetFunctionTest.Result.findColumn("word"));
+            Assert.assertNotNull(BQForwardOnlyResultSetFunctionTest.Result.findColumn("count"));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
