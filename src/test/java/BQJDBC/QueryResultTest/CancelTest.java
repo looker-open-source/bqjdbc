@@ -4,6 +4,7 @@ import com.google.api.services.bigquery.model.Job;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
+import org.junit.After;
 import org.junit.Before;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ import static junit.framework.Assert.assertTrue;
 public class CancelTest {
 
     private BQConnection bq;
+    private Throwable diedWith;
 
     @Before
     public void setup() throws SQLException, IOException {
@@ -30,7 +32,21 @@ public class CancelTest {
         this.bq = new BQConnection(url, new Properties());
     }
 
+    @After
+    public void teardown() throws Throwable {
+        if (this.diedWith != null) {
+            throw this.diedWith;
+        }
+    }
+
     private Thread getAndRunBackgroundQuery(final BQStatement stmt) {
+        final CancelTest thisTest = this;
+        Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread th, Throwable ex) {
+                thisTest.diedWith = ex;
+            }
+        };
+
         Runnable background = new Runnable() {
             @Override
             public void run() {
@@ -40,6 +56,7 @@ public class CancelTest {
             }
         };
         Thread backgroundThread = new Thread(background);
+        backgroundThread.setUncaughtExceptionHandler(handler);
         backgroundThread.start();
         return backgroundThread;
     }
