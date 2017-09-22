@@ -61,6 +61,7 @@ import java.security.PrivateKey;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
@@ -274,6 +275,9 @@ public class Oauth2Bigquery {
 
     private static PrivateKey getPrivateKeyFromCredentials(String keyPath, String password) throws GeneralSecurityException, IOException {
         KeyStore keystore = KeyStore.getInstance("PKCS12");
+        if (Pattern.matches("\.json$", keyPath)) {
+            keystore = KeyStore.getInstance("JKS");
+        }
         byte[] bytes = FileUtils.readFileToByteArray(new File(keyPath));
 
         keystore.load(new ByteArrayInputStream(bytes), password.toCharArray());
