@@ -27,6 +27,12 @@
 
 package net.starschema.clouddb.cmdlineverification;
 
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.BigQueryOptions;
+import com.google.cloud.bigquery.Dataset;
+
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
@@ -50,6 +56,7 @@ import java.awt.*;
 import java.awt.Desktop.Action;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
@@ -221,6 +228,38 @@ public class Oauth2Bigquery {
                                                Integer readTimeout) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
 
+        /////////////////// NEW METHOD //////////
+
+        // Load credentials from JSON key file. If you can't set the GOOGLE_APPLICATION_CREDENTIALS
+        // environment variable, you can explicitly load the credentials file to construct the
+        // credentials.
+
+
+        //List<String> scopes = new ArrayList<String>();
+        //scopes.add(BigqueryScopes.BIGQUERY);
+        //// don't have access to DriveScopes without requiring the entire google drive sdk.
+        //scopes.add(DRIVE_SCOPE);
+
+        //GoogleCredentials credentials;
+        //// JSON keypath
+        //File credentialsPath = new File(keypath);
+        //try (FileInputStream serviceAccountStream = new FileInputStream(credentialsPath)) {
+        //    credentials = ServiceAccountCredentials.fromStream(serviceAccountStream).createScoped(scopes);
+        //}
+
+        //// Instantiate a client.
+        //BigQuery bigquery = BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
+
+        //Oauth2Bigquery.servicepath = bigquery.getServicePath();
+
+        //// Use the client.
+        //System.out.println("Datasets:");
+        //for (Dataset dataset : bigquery.listDatasets().iterateAll()) {
+        //    System.out.printf("%s%n", dataset.getDatasetId().getDataset());
+        //}
+
+        ///////////////////////////////////////////
+
         List<String> scopes = new ArrayList<String>();
         scopes.add(BigqueryScopes.BIGQUERY);
         // don't have access to DriveScopes without requiring the entire google drive sdk.
@@ -235,7 +274,11 @@ public class Oauth2Bigquery {
                         // to name more than one service too
 
         if (password == null) {
-            builder = builder.setServiceAccountPrivateKeyFromP12File(new File(keypath));
+            if (Pattern.matches(".*\\.json$", keypath)) {
+                builder = builder.setServiceAccountPrivateKeyFromPemFile(new File(keypath));
+            } else {
+                builder = builder.setServiceAccountPrivateKeyFromP12File(new File(keypath));
+            }
         }
         else {
             PrivateKey pk = getPrivateKeyFromCredentials(keypath, password);
@@ -243,6 +286,8 @@ public class Oauth2Bigquery {
         }
 
         GoogleCredential credential = builder.build();
+
+
         logger.debug("Authorizied?");
 
         HttpRequestTimeoutInitializer httpRequestInitializer = new HttpRequestTimeoutInitializer(credential);
@@ -275,8 +320,8 @@ public class Oauth2Bigquery {
 
     private static PrivateKey getPrivateKeyFromCredentials(String keyPath, String password) throws GeneralSecurityException, IOException {
         KeyStore keystore = KeyStore.getInstance("PKCS12");
-        if (Pattern.matches("\.json$", keyPath)) {
-            keystore = KeyStore.getInstance("JKS");
+        if (Pattern.matches(".*\\.json$", keyPath)) {
+            keystore = KeyStore.getInstance("PKCS-8");
         }
         byte[] bytes = FileUtils.readFileToByteArray(new File(keyPath));
 

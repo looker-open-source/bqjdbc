@@ -26,6 +26,12 @@
     </license>
   </licenses>
   <dependencies>
+    <!-- https://mvnrepository.com/artifact/com.google.auth/google-auth-library-oauth2-http -->
+    <dependency>
+        <groupId>com.google.auth</groupId>
+        <artifactId>google-auth-library-oauth2-http</artifactId>
+        <version>0.8.0</version>
+    </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
@@ -40,6 +46,16 @@
       <groupId>com.google.api-client</groupId>
       <artifactId>google-api-client</artifactId>
       <version>1.22.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.google.apis</groupId>
+        <artifactId>google-api-services-oauth2</artifactId>
+        <version>v1-rev134-1.22.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.google.cloud</groupId>
+        <artifactId>google-cloud-bigquery</artifactId>
+        <version>0.24.0-beta</version>
     </dependency>
     <dependency>
       <groupId>org.mortbay.jetty</groupId>
