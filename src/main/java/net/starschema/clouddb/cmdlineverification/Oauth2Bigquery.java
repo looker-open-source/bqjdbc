@@ -27,11 +27,11 @@
 
 package net.starschema.clouddb.cmdlineverification;
 
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.BigQueryOptions;
-import com.google.cloud.bigquery.Dataset;
+//import com.google.auth.oauth2.GoogleCredentials;
+//import com.google.auth.oauth2.ServiceAccountCredentials;
+//import com.google.cloud.bigquery.BigQuery;
+//import com.google.cloud.bigquery.BigQueryOptions;
+//import com.google.cloud.bigquery.Dataset;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
@@ -57,6 +57,7 @@ import java.awt.Desktop.Action;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
@@ -259,7 +260,6 @@ public class Oauth2Bigquery {
         //}
 
         ///////////////////////////////////////////
-
         List<String> scopes = new ArrayList<String>();
         scopes.add(BigqueryScopes.BIGQUERY);
         // don't have access to DriveScopes without requiring the entire google drive sdk.
@@ -273,20 +273,26 @@ public class Oauth2Bigquery {
                         // Currently we only want to access bigquery, but it's possible
                         // to name more than one service too
 
-        if (password == null) {
-            if (Pattern.matches(".*\\.json$", keypath)) {
-                builder = builder.setServiceAccountPrivateKeyFromPemFile(new File(keypath));
-            } else {
+        GoogleCredential credential = null;
+        // If .p12 we load the PK into the builder before build
+        if (Pattern.matches(".*\\.p12$", keypath)) {
+            if (password == null) {
                 builder = builder.setServiceAccountPrivateKeyFromP12File(new File(keypath));
             }
-        }
-        else {
-            PrivateKey pk = getPrivateKeyFromCredentials(keypath, password);
-            builder = builder.setServiceAccountPrivateKey(pk);
+            else {
+                PrivateKey pk = getPrivateKeyFromCredentials(keypath, password);
+                builder = builder.setServiceAccountPrivateKey(pk);
+            }
+            credential = builder.build();
         }
 
-        GoogleCredential credential = builder.build();
 
+        // If json then we load the PK with input stream after build
+        if (Pattern.matches(".*\\.json$", keypath)) {
+            File jsonKey = new File(keypath);
+            InputStream inputStream = new FileInputStream(jsonKey);
+            credential = credential.fromStream(inputStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory());
+        }
 
         logger.debug("Authorizied?");
 
@@ -320,9 +326,6 @@ public class Oauth2Bigquery {
 
     private static PrivateKey getPrivateKeyFromCredentials(String keyPath, String password) throws GeneralSecurityException, IOException {
         KeyStore keystore = KeyStore.getInstance("PKCS12");
-        if (Pattern.matches(".*\\.json$", keyPath)) {
-            keystore = KeyStore.getInstance("PKCS-8");
-        }
         byte[] bytes = FileUtils.readFileToByteArray(new File(keyPath));
 
         keystore.load(new ByteArrayInputStream(bytes), password.toCharArray());
