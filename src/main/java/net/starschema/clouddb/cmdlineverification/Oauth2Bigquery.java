@@ -27,12 +27,6 @@
 
 package net.starschema.clouddb.cmdlineverification;
 
-//import com.google.auth.oauth2.GoogleCredentials;
-//import com.google.auth.oauth2.ServiceAccountCredentials;
-//import com.google.cloud.bigquery.BigQuery;
-//import com.google.cloud.bigquery.BigQueryOptions;
-//import com.google.cloud.bigquery.Dataset;
-
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
@@ -49,6 +43,7 @@ import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryRequest;
 import com.google.api.services.bigquery.BigqueryRequestInitializer;
 import com.google.api.services.bigquery.BigqueryScopes;
+import net.starschema.clouddb.jdbc.BQSQLException;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
@@ -70,8 +65,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
-
-// import net.starschema.clouddb.bqjdbc.logging.Logger;
 
 public class Oauth2Bigquery {
 
@@ -228,54 +221,24 @@ public class Oauth2Bigquery {
                                                Integer connectTimeout,
                                                Integer readTimeout) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
-
-        /////////////////// NEW METHOD //////////
-
-        // Load credentials from JSON key file. If you can't set the GOOGLE_APPLICATION_CREDENTIALS
-        // environment variable, you can explicitly load the credentials file to construct the
-        // credentials.
-
-
-        //List<String> scopes = new ArrayList<String>();
-        //scopes.add(BigqueryScopes.BIGQUERY);
-        //// don't have access to DriveScopes without requiring the entire google drive sdk.
-        //scopes.add(DRIVE_SCOPE);
-
-        //GoogleCredentials credentials;
-        //// JSON keypath
-        //File credentialsPath = new File(keypath);
-        //try (FileInputStream serviceAccountStream = new FileInputStream(credentialsPath)) {
-        //    credentials = ServiceAccountCredentials.fromStream(serviceAccountStream).createScoped(scopes);
-        //}
-
-        //// Instantiate a client.
-        //BigQuery bigquery = BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
-
-        //Oauth2Bigquery.servicepath = bigquery.getServicePath();
-
-        //// Use the client.
-        //System.out.println("Datasets:");
-        //for (Dataset dataset : bigquery.listDatasets().iterateAll()) {
-        //    System.out.printf("%s%n", dataset.getDatasetId().getDataset());
-        //}
-
-        ///////////////////////////////////////////
         List<String> scopes = new ArrayList<String>();
         scopes.add(BigqueryScopes.BIGQUERY);
         // don't have access to DriveScopes without requiring the entire google drive sdk.
         scopes.add(DRIVE_SCOPE);
-        GoogleCredential.Builder builder = new GoogleCredential.Builder()
-                .setTransport(CmdlineUtils.getHttpTransport())
-                .setJsonFactory(CmdlineUtils.getJsonFactory())
-                .setServiceAccountId(serviceaccountemail)
-                        // e-mail ADDRESS!!!!
-                .setServiceAccountScopes(scopes);
-                        // Currently we only want to access bigquery, but it's possible
-                        // to name more than one service too
 
         GoogleCredential credential = null;
-        // If .p12 we load the PK into the builder before build
+
+        // If .p12 use builder to create credential
         if (Pattern.matches(".*\\.p12$", keypath)) {
+            GoogleCredential.Builder builder = new GoogleCredential.Builder()
+                    .setTransport(CmdlineUtils.getHttpTransport())
+                    .setJsonFactory(CmdlineUtils.getJsonFactory())
+                    .setServiceAccountId(serviceaccountemail)
+                    // e-mail ADDRESS!!!!
+                    .setServiceAccountScopes(scopes);
+            // Currently we only want to access bigquery, but it's possible
+            // to name more than one service too
+
             if (password == null) {
                 builder = builder.setServiceAccountPrivateKeyFromP12File(new File(keypath));
             }
@@ -285,10 +248,9 @@ public class Oauth2Bigquery {
             }
             credential = builder.build();
         }
-
-
-        // If json then we load the PK with input stream after build
-        if (Pattern.matches(".*\\.json$", keypath)) {
+        // If not .p12 must be .json
+        else {
+            // For .json load the key via credential.fromStream
             File jsonKey = new File(keypath);
             InputStream inputStream = new FileInputStream(jsonKey);
             credential = credential.fromStream(inputStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory()).createScoped(scopes);
