@@ -291,7 +291,7 @@ public class Oauth2Bigquery {
         if (Pattern.matches(".*\\.json$", keypath)) {
             File jsonKey = new File(keypath);
             InputStream inputStream = new FileInputStream(jsonKey);
-            credential = credential.fromStream(inputStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory());
+            credential = credential.fromStream(inputStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory()).createScoped(scopes);
         }
 
         logger.debug("Authorizied?");
