@@ -43,7 +43,6 @@ import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryRequest;
 import com.google.api.services.bigquery.BigqueryRequestInitializer;
 import com.google.api.services.bigquery.BigqueryScopes;
-import net.starschema.clouddb.jdbc.BQSQLException;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
