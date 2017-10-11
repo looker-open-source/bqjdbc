@@ -212,19 +212,18 @@ public class Oauth2Bigquery {
      * @throws GeneralSecurityException
      * @throws IOException
      */
-    public static GoogleCredential Create_P12_Credential(String serviceaccountemail,
+    private static GoogleCredential createP12Credential(String serviceaccountemail,
                                                          String keypath,
                                                          String password) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
-        GoogleCredential credential = null;
         GoogleCredential.Builder builder = new GoogleCredential.Builder()
                 .setTransport(CmdlineUtils.getHttpTransport())
                 .setJsonFactory(CmdlineUtils.getJsonFactory())
                 .setServiceAccountId(serviceaccountemail)
                 // e-mail ADDRESS!!!!
                 .setServiceAccountScopes(GenerateScopes());
-        // Currently we only want to access bigquery, but it's possible
-        // to name more than one service too
+                // Currently we only want to access bigquery, but it's possible
+                // to name more than one service too
 
         if (password == null) {
             builder = builder.setServiceAccountPrivateKeyFromP12File(new File(keypath));
@@ -233,8 +232,7 @@ public class Oauth2Bigquery {
             PrivateKey pk = getPrivateKeyFromCredentials(keypath, password);
             builder = builder.setServiceAccountPrivateKey(pk);
         }
-        credential = builder.build();
-        return credential;
+        return builder.build();
     }
 
     /**
@@ -245,29 +243,38 @@ public class Oauth2Bigquery {
      * @throws GeneralSecurityException
      * @throws IOException
      */
-    public static GoogleCredential Create_Json_Credential(String keypath) throws GeneralSecurityException, IOException {
+    private static GoogleCredential createJsonCredential(String keypath) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
-        GoogleCredential credential = null;
         // For .json load the key via credential.fromStream
         File jsonKey = new File(keypath);
         InputStream inputStream = new FileInputStream(jsonKey);
-        credential = credential.fromStream(inputStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory()).createScoped(GenerateScopes());
-        return credential;
+        return GoogleCredential.fromStream(inputStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory()).createScoped(GenerateScopes());
     }
 
     /**
      * This function gives back an Authorized Bigquery Client It uses a service
      * account, which doesn't need user interaction for connect
      *
-     * @param credential
-     * @return Authorized Bigquery Client via serviceaccount credential
+     * @param serviceaccountemail
+     * @param keypath
+     * @return Authorized Bigquery Client via serviceaccount e-mail and keypath
      * @throws GeneralSecurityException
      * @throws IOException
      */
-    public static Bigquery authorizeviaservice(GoogleCredential credential,
+    public static Bigquery authorizeviaservice(String serviceaccountemail,
+                                               String keypath,
+                                               String password,
                                                String userAgent,
                                                Integer connectTimeout,
                                                Integer readTimeout) throws GeneralSecurityException, IOException {
+        GoogleCredential credential;
+        // Determine which keyfile we are trying to authenticate with.
+        if (Pattern.matches(".*\\.json$", keypath)) {
+            credential = Oauth2Bigquery.createJsonCredential(keypath);
+        } else {
+            credential = Oauth2Bigquery.createP12Credential(serviceaccountemail, keypath, password);
+        }
+
         logger.debug("Authorizied?");
 
         HttpRequestTimeoutInitializer httpRequestInitializer = new HttpRequestTimeoutInitializer(credential);

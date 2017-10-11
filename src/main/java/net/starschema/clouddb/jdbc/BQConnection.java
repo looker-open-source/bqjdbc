@@ -26,7 +26,6 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.Bigquery;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import net.starschema.clouddb.cmdlineverification.Oauth2Bigquery;
 import org.apache.log4j.Logger;
 
@@ -209,16 +208,7 @@ public class BQConnection implements Connection {
                     userPath = userKey;
                     userKey = null;
                 }
-                GoogleCredential credential = null;
-
-                // Determine which keyfile we are trying to authenticate with.
-                if (Pattern.matches(".*\\.json$", userPath)) {
-                    credential = Oauth2Bigquery.Create_Json_Credential(userPath);
-                } else {
-                    credential = Oauth2Bigquery.Create_P12_Credential(userId, userPath, userKey);
-                }
-
-                this.bigquery = Oauth2Bigquery.authorizeviaservice(credential, userAgent, connectTimeout, readTimeout);
+                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey, userAgent, connectTimeout, readTimeout);
                 this.logger.info("Authorized with service account");
             } catch (GeneralSecurityException e) {
                 throw new BQSQLException(e);
