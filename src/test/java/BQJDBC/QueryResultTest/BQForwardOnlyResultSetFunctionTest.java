@@ -24,18 +24,18 @@
  */
 package BQJDBC.QueryResultTest;
 
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
-
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.math.BigDecimal;
+import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * This Junit test tests functions in BQResultset
@@ -178,6 +178,10 @@ public class BQForwardOnlyResultSetFunctionTest {
      */
     @Before
     public void NewConnection() {
+        NewConnection(false);
+    }
+
+     void NewConnection(boolean useLegaySql) {
 
         try {
             if (BQForwardOnlyResultSetFunctionTest.con == null
@@ -361,6 +365,40 @@ public class BQForwardOnlyResultSetFunctionTest {
         } catch (SQLException e) {
             Assert.assertTrue(true);
         }
+    }
+
+    @Test
+    public void testResultSetTypesInGetObject() throws SQLException, ParseException {
+        final String sql = "SELECT " +
+                "DATETIME('2012-01-01 00:00:02'), " +
+                "TIMESTAMP('2012-01-01 00:00:03'), " +
+                "CAST('2312412432423423334.234234234' AS NUMERIC), " +
+                "CAST('2011-04-03' AS DATE)";
+
+        this.NewConnection(true);
+        java.sql.ResultSet result = null;
+        try {
+            Statement stmt = BQForwardOnlyResultSetFunctionTest.con
+                    .createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            stmt.setQueryTimeout(500);
+            result = stmt.executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.next());
+        Assert.assertEquals("2012-01-01T00:00:02", result.getObject(1));
+
+        SimpleDateFormat timestampDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss z");
+        Date parsedDate = timestampDateFormat.parse("2012-01-01 00:00:03 UTC");
+        Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
+        Assert.assertEquals(timestamp, result.getObject(2));
+
+        Assert.assertEquals(new BigDecimal("2312412432423423334.234234234"), result.getObject(3));
+        SimpleDateFormat dateDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date parsedDateDate = new java.sql.Date(dateDateFormat.parse("2011-04-03").getTime());
+        Assert.assertEquals(parsedDateDate, result.getObject(4));
     }
 
 }
