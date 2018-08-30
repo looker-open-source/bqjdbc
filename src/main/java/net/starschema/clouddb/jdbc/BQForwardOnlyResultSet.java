@@ -155,7 +155,15 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             if (Columntype.equals("DATE")) {
                 return toDate(result, null);
             }
-            throw new BQSQLException("Unsupported Type (" + Columntype + ")");
+            if (Columntype.equals("DATETIME")) {
+                // Date time represents a "clock face" time and so should NOT be processed into an actual time
+                return result;
+            }
+            if (Columntype.equals("NUMERIC")) {
+                return toBigDecimal(result);
+            }
+            // For an unknown type, return the result as a string, much better than exploding.
+            return result;
         }
         catch (NumberFormatException e) {
             throw new BQSQLException(e);
