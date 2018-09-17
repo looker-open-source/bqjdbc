@@ -463,4 +463,34 @@ public class QueryResultTest {
             Assert.fail();
         }
     }
+
+    @Test
+    public void QueryResultTestTokyo01() {
+        final String sql = "SELECT meaning FROM tokyo_star.meaning_of_life;";
+        String[][] expectation = new String[][]{ {"42"} };
+
+        this.logger.info("Test Tokyo number: 1");
+        this.logger.info("Running query:" + sql);
+
+        java.sql.ResultSet Result = null;
+        try {
+            Result = QueryResultTest.con.createStatement().executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(Result);
+
+        HelperFunctions.printer(expectation);
+
+        try {
+            Assert.assertTrue(
+                    "Comparing failed in the String[][] array",
+                    this.comparer(expectation,
+                            BQSupportMethods.GetQueryResult(Result)));
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail(e.toString());
+        }
+    }
 }

@@ -160,10 +160,12 @@ public class BQSupportFuncts {
     public static void displayQueryResults(Bigquery bigquery, String projectId,
                                            Job completedJob) throws IOException {
         projectId = projectId.replace("__", ":").replace("_", ".");
+        JobReference completedJobReference = completedJob.getJobReference();
         GetQueryResultsResponse queryResult = bigquery
                 .jobs()
-                .getQueryResults(projectId,
-                        completedJob.getJobReference().getJobId()).execute();
+                .getQueryResults(projectId, completedJobReference.getJobId())
+                .setLocation(completedJobReference.getLocation())
+                .execute();
         List<TableRow> rows = queryResult.getRows();
         System.out.print("\nQuery Results:\n------------\n");
         for (TableRow row : rows) {
@@ -326,9 +328,10 @@ public class BQSupportFuncts {
      */
     public static GetQueryResultsResponse getQueryResults(Bigquery bigquery,
                                                           String projectId, Job completedJob) throws IOException {
+        JobReference completedJobReference = completedJob.getJobReference();
         GetQueryResultsResponse queryResult = bigquery.jobs()
-                .getQueryResults(projectId,
-                        completedJob.getJobReference().getJobId()).execute();
+                .getQueryResults(projectId, completedJobReference.getJobId())
+                .setLocation(completedJobReference.getLocation()).execute();
         long totalRows = queryResult.getTotalRows().longValue();
         if (totalRows == 0) {
             return queryResult;
@@ -336,8 +339,8 @@ public class BQSupportFuncts {
         while (totalRows > (long) queryResult.getRows().size()) {
             queryResult.getRows().addAll(
                     bigquery.jobs()
-                            .getQueryResults(projectId,
-                                    completedJob.getJobReference().getJobId())
+                            .getQueryResults(projectId, completedJobReference.getJobId())
+                            .setLocation(completedJobReference.getLocation())
                             .setStartIndex(BigInteger.valueOf((long) queryResult.getRows().size()))
                             .execute()
                             .getRows());
@@ -361,9 +364,10 @@ public class BQSupportFuncts {
     public static GetQueryResultsResponse getQueryResultsDivided(Bigquery bigquery,
                                                                  String projectId, Job completedJob, BigInteger startAtRow, int fetchCount) throws IOException {
         GetQueryResultsResponse queryResult;
+        JobReference completedJobReference = completedJob.getJobReference();
         queryResult = bigquery.jobs()
-                .getQueryResults(projectId,
-                        completedJob.getJobReference().getJobId())
+                .getQueryResults(projectId, completedJobReference.getJobId())
+                .setLocation(completedJobReference.getLocation())
                 .setStartIndex(startAtRow)
                 .setMaxResults((long) fetchCount).execute();
         return queryResult;
@@ -384,8 +388,11 @@ public class BQSupportFuncts {
     public static String getQueryState(Job myjob, Bigquery bigquery,
                                        String projectId) throws IOException {
         projectId = projectId.replace("__", ":").replace("_", ".");
+        JobReference myjobReference = myjob.getJobReference();
         Job pollJob = bigquery.jobs()
-                .get(projectId, myjob.getJobReference().getJobId()).execute();
+                .get(projectId, myjobReference.getJobId())
+                .setLocation(myjobReference.getLocation())
+                .execute();
         BQSupportFuncts.logger.info("Job status: "
                 + pollJob.getStatus().getState()
                 + " ; "
@@ -404,7 +411,8 @@ public class BQSupportFuncts {
      * @param projectId The id of the Project the job is contained in
      */
     public static JobCancelResponse cancelQuery(Job job, Bigquery bigquery, String projectId) throws IOException {
-        return bigquery.jobs().cancel(projectId, job.getJobReference().getJobId()).execute();
+        JobReference jobReference = job.getJobReference();
+        return bigquery.jobs().cancel(projectId, jobReference.getJobId()).setLocation(jobReference.getLocation()).execute();
     }
 
     /**
