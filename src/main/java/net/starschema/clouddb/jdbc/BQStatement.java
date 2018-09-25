@@ -42,6 +42,7 @@ import java.sql.SQLException;
  */
 public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
+    public static final int MAX_IO_FAILURE_RETRIES = 3;
     private Job job;
 
     /**
@@ -108,6 +109,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
         this.starttime = System.currentTimeMillis();
         Job referencedJob;
+        int retries = 0;
         // ANTLR Parsing
         BQQueryParser parser = new BQQueryParser(querySql, this.connection);
         querySql = parser.parse();
@@ -122,10 +124,23 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 if (this.connection.isClosed()) {
                     throw new BQSQLException("Connection is closed");
                 }
-                if (BQSupportFuncts.getQueryState(referencedJob,
-                        this.connection.getBigquery(),
-                        this.ProjectId.replace("__", ":").replace("_", ".")).equals(
-                        "DONE")) {
+
+                String status;
+                try {
+                    status = BQSupportFuncts.getQueryState(referencedJob,
+                            this.connection.getBigquery(),
+                            this.ProjectId.replace("__", ":").replace("_", "."));
+                } catch (IOException e) {
+                    if (retries++ < MAX_IO_FAILURE_RETRIES) {
+                       continue;
+                    } else {
+                        throw new BQSQLException(
+                                "Something went wrong getting results for the job " + referencedJob.getId() + ", query: " + querySql,
+                                e);
+                    }
+                }
+
+                if (status.equals("DONE")) {
                     if (resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
                         return new BQScrollableResultSet(BQSupportFuncts.getQueryResults(
                                 this.connection.getBigquery(),
