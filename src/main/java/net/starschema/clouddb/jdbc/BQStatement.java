@@ -115,7 +115,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             // Gets the Job reference of the completed job with give Query
             referencedJob = startQuery(querySql);
         } catch (IOException e) {
-            throw new BQSQLException("Something went wrong with the query: " + querySql, e);
+            throw new BQSQLException("Something went wrong creating the query: " + querySql, e);
         }
         try {
             do {
@@ -150,7 +150,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             while (System.currentTimeMillis() - this.starttime <= (long) this.querytimeout * 1000);
             // it runs for a minimum of 1 time
         } catch (IOException e) {
-            throw new BQSQLException("Something went wrong with the query: " + querySql, e);
+            throw new BQSQLException(
+                    "Something went wrong getting results for the job " + referencedJob.getId() + ", query: " + querySql,
+                    e);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
