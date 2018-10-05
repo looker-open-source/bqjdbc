@@ -93,12 +93,6 @@ public class BQConnection implements Connection {
     /** String to contain the url except the url prefix */
     private String URLPART = null;
 
-    /** Though the default in the BigQuery API client is 20s, BigQuery claims the timeout on their
-     * backend is actually 240s. Make that the default going forward to minimize compatibility issues.
-     * */
-    private static int DEFAULT_READ_TIMEOUT = 240000;
-    private static int DEFAULT_CONNECT_TIMEOUT = 240000;
-
     /**
      * Extracts the JDBC URL then makes a connection to the Bigquery.
      *
@@ -169,7 +163,7 @@ public class BQConnection implements Connection {
         this.useLegacySql = (legacySqlParam == null) || Boolean.parseBoolean(legacySqlParam);
 
         String readTimeoutString = caseInsensitiveProps.getProperty("readtimeout");
-        Integer readTimeout = DEFAULT_READ_TIMEOUT;
+        Integer readTimeout = null;
         if (readTimeoutString != null) {
             try {
                 readTimeout = Integer.parseInt(readTimeoutString);
@@ -182,7 +176,7 @@ public class BQConnection implements Connection {
         }
 
         String connectTimeoutString = caseInsensitiveProps.getProperty("connecttimeout");
-        Integer connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+        Integer connectTimeout = null;
         if (connectTimeoutString != null) {
             try {
                 connectTimeout = Integer.parseInt(connectTimeoutString);
