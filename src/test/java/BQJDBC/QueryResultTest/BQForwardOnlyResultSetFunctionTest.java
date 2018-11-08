@@ -36,6 +36,7 @@ import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 
 /**
  * This Junit test tests functions in BQResultset
@@ -189,9 +190,11 @@ public class BQForwardOnlyResultSetFunctionTest {
                 this.logger.info("Testing the JDBC driver");
                 try {
                     Class.forName("net.starschema.clouddb.jdbc.BQDriver");
+                    Properties props = BQSupportFuncts
+                            .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile());
+                    props.setProperty("useLegacySql", String.valueOf(useLegaySql));
                     BQForwardOnlyResultSetFunctionTest.con = DriverManager.getConnection(
-                            BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
-                                    .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile())),
+                            BQSupportFuncts.constructUrlFromPropertiesFile(props),
                             BQSupportFuncts.readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -204,7 +207,9 @@ public class BQForwardOnlyResultSetFunctionTest {
         } catch (SQLException e) {
             logger.debug("Oops something went wrong", e);
         }
-        this.QueryLoad();
+        if (useLegaySql) {
+            this.QueryLoad();
+        }
     }
 
     // Comprehensive Tests:
@@ -365,6 +370,33 @@ public class BQForwardOnlyResultSetFunctionTest {
         } catch (SQLException e) {
             Assert.assertTrue(true);
         }
+    }
+
+    @Test
+    public void testResultSetTypesInGetString() throws SQLException, ParseException {
+        final String sql = "SELECT " +
+                "STRUCT(1 as a, 'hello' as b), " +
+                "['a', 'b', 'c'], " +
+                "[STRUCT(1 as a, 'hello' as b), STRUCT(2 as a, 'goodbye' as b)], " +
+                "STRUCT(1 as a, ['an', 'array'] as b)";
+
+        this.NewConnection(false);
+        java.sql.ResultSet result = null;
+        try {
+            Statement stmt = BQForwardOnlyResultSetFunctionTest.con
+                    .createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            stmt.setQueryTimeout(500);
+            result = stmt.executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.next());
+        Assert.assertEquals("{\"f\":[{\"v\":\"1\"},{\"v\":\"hello\"}]}", result.getString(1));
+        Assert.assertEquals("[{\"v\":\"a\"},{\"v\":\"b\"},{\"v\":\"c\"}]", result.getString(2));
+        Assert.assertEquals("[{\"v\":{\"f\":[{\"v\":\"1\"},{\"v\":\"hello\"}]}},{\"v\":{\"f\":[{\"v\":\"2\"},{\"v\":\"goodbye\"}]}}]", result.getString(3));
+        Assert.assertEquals("{\"f\":[{\"v\":\"1\"},{\"v\":[{\"v\":\"an\"},{\"v\":\"array\"}]}]}", result.getString(4));
     }
 
     @Test

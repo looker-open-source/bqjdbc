@@ -27,6 +27,8 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.client.json.JsonGenerator;
+import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
@@ -42,6 +44,7 @@ import java.net.URL;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -271,6 +274,19 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return null;
         }
         this.wasnull = false;
+        if (resultObject instanceof List || resultObject instanceof Map) {
+            Writer writer = new StringWriter();
+            try {
+                JsonGenerator gen = new JacksonFactory().createJsonGenerator(writer);
+                gen.serialize(resultObject);
+                gen.close();
+            } catch (IOException e) {
+                // Um, a string writer is not going to throw an IO exception, but fine.
+                throw new SQLException("Failed to write JSON", e);
+            }
+            resultObject = writer.toString();
+
+        }
         return (String) resultObject;
     }
 
