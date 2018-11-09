@@ -179,35 +179,28 @@ public class BQForwardOnlyResultSetFunctionTest {
      */
     @Before
     public void NewConnection() {
-        NewConnection(false);
+        NewConnection(true);
     }
 
-     void NewConnection(boolean useLegaySql) {
+     void NewConnection(boolean useLegacySql) {
 
-        try {
-            if (BQForwardOnlyResultSetFunctionTest.con == null
-                    || !BQForwardOnlyResultSetFunctionTest.con.isValid(0)) {
-                this.logger.info("Testing the JDBC driver");
-                try {
-                    Class.forName("net.starschema.clouddb.jdbc.BQDriver");
-                    Properties props = BQSupportFuncts
-                            .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile());
-                    props.setProperty("useLegacySql", String.valueOf(useLegaySql));
-                    BQForwardOnlyResultSetFunctionTest.con = DriverManager.getConnection(
-                            BQSupportFuncts.constructUrlFromPropertiesFile(props),
-                            BQSupportFuncts.readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    this.logger.error("Error in connection" + e.toString());
-                    Assert.fail("General Exception:" + e.toString());
-                }
-                this.logger.info(((BQConnection) BQForwardOnlyResultSetFunctionTest.con)
-                        .getURLPART());
-            }
-        } catch (SQLException e) {
-            logger.debug("Oops something went wrong", e);
-        }
-        if (useLegaySql) {
+         this.logger.info("Testing the JDBC driver");
+         try {
+             Class.forName("net.starschema.clouddb.jdbc.BQDriver");
+             Properties props = BQSupportFuncts
+                     .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile());
+             props.setProperty("useLegacySql", String.valueOf(useLegacySql));
+             BQForwardOnlyResultSetFunctionTest.con = DriverManager.getConnection(
+                     BQSupportFuncts.constructUrlFromPropertiesFile(props),
+                     BQSupportFuncts.readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
+         } catch (Exception e) {
+             e.printStackTrace();
+             this.logger.error("Error in connection" + e.toString());
+             Assert.fail("General Exception:" + e.toString());
+         }
+         this.logger.info(((BQConnection) BQForwardOnlyResultSetFunctionTest.con)
+                 .getURLPART());
+         if (useLegacySql) {
             this.QueryLoad();
         }
     }
