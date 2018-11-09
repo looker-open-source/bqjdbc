@@ -36,6 +36,7 @@ import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 
 /**
  * This Junit test tests functions in BQResultset
@@ -178,33 +179,30 @@ public class BQForwardOnlyResultSetFunctionTest {
      */
     @Before
     public void NewConnection() {
-        NewConnection(false);
+        NewConnection(true);
     }
 
-     void NewConnection(boolean useLegaySql) {
+     void NewConnection(boolean useLegacySql) {
 
-        try {
-            if (BQForwardOnlyResultSetFunctionTest.con == null
-                    || !BQForwardOnlyResultSetFunctionTest.con.isValid(0)) {
-                this.logger.info("Testing the JDBC driver");
-                try {
-                    Class.forName("net.starschema.clouddb.jdbc.BQDriver");
-                    BQForwardOnlyResultSetFunctionTest.con = DriverManager.getConnection(
-                            BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
-                                    .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile())),
-                            BQSupportFuncts.readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    this.logger.error("Error in connection" + e.toString());
-                    Assert.fail("General Exception:" + e.toString());
-                }
-                this.logger.info(((BQConnection) BQForwardOnlyResultSetFunctionTest.con)
-                        .getURLPART());
-            }
-        } catch (SQLException e) {
-            logger.debug("Oops something went wrong", e);
+         this.logger.info("Testing the JDBC driver");
+         try {
+             Class.forName("net.starschema.clouddb.jdbc.BQDriver");
+             Properties props = BQSupportFuncts
+                     .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile());
+             props.setProperty("useLegacySql", String.valueOf(useLegacySql));
+             BQForwardOnlyResultSetFunctionTest.con = DriverManager.getConnection(
+                     BQSupportFuncts.constructUrlFromPropertiesFile(props),
+                     BQSupportFuncts.readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
+         } catch (Exception e) {
+             e.printStackTrace();
+             this.logger.error("Error in connection" + e.toString());
+             Assert.fail("General Exception:" + e.toString());
+         }
+         this.logger.info(((BQConnection) BQForwardOnlyResultSetFunctionTest.con)
+                 .getURLPART());
+         if (useLegacySql) {
+            this.QueryLoad();
         }
-        this.QueryLoad();
     }
 
     // Comprehensive Tests:
@@ -365,6 +363,33 @@ public class BQForwardOnlyResultSetFunctionTest {
         } catch (SQLException e) {
             Assert.assertTrue(true);
         }
+    }
+
+    @Test
+    public void testResultSetTypesInGetString() throws SQLException, ParseException {
+        final String sql = "SELECT " +
+                "STRUCT(1 as a, 'hello' as b), " +
+                "['a', 'b', 'c'], " +
+                "[STRUCT(1 as a, 'hello' as b), STRUCT(2 as a, 'goodbye' as b)], " +
+                "STRUCT(1 as a, ['an', 'array'] as b)";
+
+        this.NewConnection(false);
+        java.sql.ResultSet result = null;
+        try {
+            Statement stmt = BQForwardOnlyResultSetFunctionTest.con
+                    .createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            stmt.setQueryTimeout(500);
+            result = stmt.executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.next());
+        Assert.assertEquals("{\"b\":\"hello\",\"a\":\"1\"}", result.getString(1));
+        Assert.assertEquals("[\"a\",\"b\",\"c\"]", result.getString(2));
+        Assert.assertEquals("[{\"b\":\"hello\",\"a\":\"1\"},{\"b\":\"goodbye\",\"a\":\"2\"}]", result.getString(3));
+        Assert.assertEquals("{\"b\":[\"an\",\"array\"],\"a\":\"1\"}", result.getString(4));
     }
 
     @Test

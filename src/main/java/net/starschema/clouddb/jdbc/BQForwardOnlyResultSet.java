@@ -27,10 +27,13 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.client.json.JsonGenerator;
+import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableRow;
 import org.apache.log4j.Logger;
 
@@ -40,10 +43,9 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.*;
+import java.sql.Date;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
 /**
  * This class implements the java.sql.ResultSet interface, as a Forward only resultset
@@ -271,7 +273,64 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return null;
         }
         this.wasnull = false;
-        return (String) resultObject;
+        if (resultObject instanceof List || resultObject instanceof Map) {
+            Object resultTransformedWithSchema = smartTransformResult(
+                    resultObject,
+                    this.Result.getSchema().getFields().get(columnIndex - 1));
+            resultObject = easyToJson(resultTransformedWithSchema);
+        }
+        return resultObject.toString();
+    }
+
+    private Object smartTransformResult(Object resultObject, TableFieldSchema fieldDef) {
+        boolean isList = resultObject instanceof List;
+        boolean isMap = resultObject instanceof Map;
+        if (isMap && ((Map) resultObject).containsKey("v")) {
+            // All values in these nested structs from the API are wrapped up as {"v": <the_val>}, so we unwrap here
+            return smartTransformResult(((Map) resultObject).get("v"), fieldDef);
+        } else if (fieldDef.getMode().equals("REPEATED") && isList) {
+            List asList = ((List) resultObject);
+            ArrayList<Object> newList = new ArrayList<>();
+            for (Object obj : asList) {
+                newList.add(smartTransformResult(obj, fieldDef));
+            }
+            return newList;
+        } else if (fieldDef.getType().equals("RECORD") && isMap) {
+            Map asMap = ((Map) resultObject);
+            Object nested = asMap.get("f");
+            List<TableFieldSchema> nestedFields = fieldDef.getFields();
+            if (!(nested instanceof List) || nestedFields == null) {
+                // The API sent back something we don't understand
+                return resultObject;
+            }
+            List nestedValues = (List) nested;
+            if (nestedValues.size() != nestedFields.size()) {
+                return resultObject;
+            }
+            HashMap<String, Object> newMap = new HashMap<>();
+            for (int i = 0, n = nestedFields.size(); i < n; i++) {
+                TableFieldSchema nestedFieldDef = nestedFields.get(i);
+                newMap.put(nestedFieldDef.getName(), smartTransformResult(nestedValues.get(i), nestedFieldDef));
+            }
+            return newMap;
+        } else {
+            // This is just a plain value or the API sent back something we don't understand
+            return resultObject;
+        }
+    }
+
+
+    private String easyToJson(Object resultObject) throws SQLException {
+        Writer writer = new StringWriter();
+        try {
+            JsonGenerator gen = new JacksonFactory().createJsonGenerator(writer);
+            gen.serialize(resultObject);
+            gen.close();
+        } catch (IOException e) {
+            // Um, a string writer is not going to throw an IO exception, but fine.
+            throw new BQSQLException("Failed to write JSON", e);
+        }
+        return writer.toString();
     }
 
     /**

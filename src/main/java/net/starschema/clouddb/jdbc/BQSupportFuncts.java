@@ -29,7 +29,6 @@
 
 package net.starschema.clouddb.jdbc;
 
-import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Jobs.Insert;
 import com.google.api.services.bigquery.model.DatasetList.Datasets;
@@ -44,7 +43,10 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -107,6 +109,16 @@ public class BQSupportFuncts {
             }
         } else {
             return null;
+        }
+
+        String useLegacySql = properties.getProperty("useLegacySql");
+        if (useLegacySql != null) {
+            if (properties.getProperty("type").equals("service")) {
+                forreturn += "&useLegacySql=" + useLegacySql;
+            }
+            else {
+                forreturn += "?useLegacySql=" + useLegacySql;
+            }
         }
 
         if (transformQuery != null && !full) {
