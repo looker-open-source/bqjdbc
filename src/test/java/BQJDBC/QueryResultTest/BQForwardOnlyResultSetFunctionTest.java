@@ -393,10 +393,10 @@ public class BQForwardOnlyResultSetFunctionTest {
         }
         Assert.assertNotNull(result);
         Assert.assertTrue(result.next());
-        Assert.assertEquals("{\"f\":[{\"v\":\"1\"},{\"v\":\"hello\"}]}", result.getString(1));
-        Assert.assertEquals("[{\"v\":\"a\"},{\"v\":\"b\"},{\"v\":\"c\"}]", result.getString(2));
-        Assert.assertEquals("[{\"v\":{\"f\":[{\"v\":\"1\"},{\"v\":\"hello\"}]}},{\"v\":{\"f\":[{\"v\":\"2\"},{\"v\":\"goodbye\"}]}}]", result.getString(3));
-        Assert.assertEquals("{\"f\":[{\"v\":\"1\"},{\"v\":[{\"v\":\"an\"},{\"v\":\"array\"}]}]}", result.getString(4));
+        Assert.assertEquals("{\"b\":\"hello\",\"a\":\"1\"}", result.getString(1));
+        Assert.assertEquals("[\"a\",\"b\",\"c\"]", result.getString(2));
+        Assert.assertEquals("[{\"b\":\"hello\",\"a\":\"1\"},{\"b\":\"goodbye\",\"a\":\"2\"}]", result.getString(3));
+        Assert.assertEquals("{\"b\":[\"an\",\"array\"],\"a\":\"1\"}", result.getString(4));
     }
 
     @Test
