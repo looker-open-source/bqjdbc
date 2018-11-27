@@ -36,6 +36,7 @@ import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Properties;
 
 /**
@@ -366,7 +367,7 @@ public class BQForwardOnlyResultSetFunctionTest {
     }
 
     @Test
-    public void testResultSetTypesInGetString() throws SQLException, ParseException {
+    public void testResultSetTypesInGetString() throws SQLException, ParseException, java.io.IOException {
         final String sql = "SELECT " +
                 "STRUCT(1 as a, 'hello' as b), " +
                 "['a', 'b', 'c'], " +
@@ -386,10 +387,23 @@ public class BQForwardOnlyResultSetFunctionTest {
         }
         Assert.assertNotNull(result);
         Assert.assertTrue(result.next());
-        Assert.assertEquals("{\"b\":\"hello\",\"a\":\"1\"}", result.getString(1));
+
+        HashMap hello = new HashMap(){{put("a", "1"); put("b", "hello");}};
+        HashMap goodbye = new HashMap(){{put("a", "2"); put("b", "goodbye");}};
+
+        Assert.assertEquals(hello, org.mortbay.util.ajax.JSON.parse(result.getString(1)));
+
         Assert.assertEquals("[\"a\",\"b\",\"c\"]", result.getString(2));
-        Assert.assertEquals("[{\"b\":\"hello\",\"a\":\"1\"},{\"b\":\"goodbye\",\"a\":\"2\"}]", result.getString(3));
-        Assert.assertEquals("{\"b\":[\"an\",\"array\"],\"a\":\"1\"}", result.getString(4));
+
+        Object[] arrayOfMapsActual = (Object []) org.mortbay.util.ajax.JSON.parse(result.getString(3));
+        Assert.assertEquals(2, arrayOfMapsActual.length);
+        Assert.assertEquals(hello, arrayOfMapsActual[0]);
+        Assert.assertEquals(goodbye, arrayOfMapsActual[1]);
+
+        HashMap<String, Object> mixedBagActual = (HashMap) org.mortbay.util.ajax.JSON.parse(result.getString(4));
+        Assert.assertEquals(2, mixedBagActual.size());
+        Assert.assertEquals("1", mixedBagActual.get("a"));
+        Assert.assertEquals(org.mortbay.util.ajax.JSON.toString(new String[]{"an", "array"}), org.mortbay.util.ajax.JSON.toString(mixedBagActual.get("b")));
     }
 
     @Test
