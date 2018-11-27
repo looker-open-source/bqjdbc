@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import static org.junit.Assert.fail;
+
 /**
  * Created by steven on 10/21/15.
  */
@@ -30,6 +32,18 @@ public class JdbcUrlTest {
     @Test
     public void urlWithDefaultDatasetShouldWork() throws SQLException {
         Assert.assertEquals(properties.getProperty("dataset"), bq.getDataSet());
+    }
+
+    @Test
+    public void projectWithColons() throws SQLException {
+        String urlWithColonContainingProject = URL.replace(bq.getProjectId(), "before:after");
+        try {
+            BQConnection bq_with_colons = new BQConnection(urlWithColonContainingProject, new Properties());
+            // Some day we'll get rid of the whacky subbing in and out of colons with double underscores, but today is not that day
+            Assert.assertEquals("before__after", bq_with_colons.getProjectId());
+        } catch (SQLException e){
+            fail("failed to get or parse url: " + e.getMessage());
+        }
     }
 
     @Test

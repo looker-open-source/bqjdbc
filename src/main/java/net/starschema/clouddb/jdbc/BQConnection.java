@@ -110,7 +110,15 @@ public class BQConnection implements Connection {
         this.isclosed = false;
 
         try {
-            String pathParams = URLDecoder.decode(url.substring(url.lastIndexOf(":") + 1, url.indexOf('?')), "UTF-8");
+            Pattern pathParamsMatcher = Pattern.compile("^jdbc:BQDriver::?([^?]*)", Pattern.CASE_INSENSITIVE);
+            Matcher pathParamsMatchData = pathParamsMatcher.matcher(URLDecoder.decode(url, "UTF-8"));
+            String pathParams;
+            if (pathParamsMatchData.find()){
+                pathParams = pathParamsMatchData.group(1);
+            } else {
+                pathParams = URLDecoder.decode(url.substring(url.lastIndexOf(":") + 1, url.indexOf('?')), "UTF-8");
+            }
+
             Pattern projectAndDatasetMatcher = Pattern.compile("^([^/$]+)(?:/([^$]*))?$");
 
             Matcher matchData = projectAndDatasetMatcher.matcher(pathParams);
