@@ -164,7 +164,29 @@ public abstract class BQStatementRoot {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
         }
-        this.resset = this.executeQuery(arg0);
+        this.resset = this.executeQuery(arg0, false);
+        this.logger.info("Executing Query: " + arg0);
+        if (this.resset != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * <p>
+     * <h1>Implementation Details:</h1><br>
+     * Executes the given SQL statement on BigQuery (note: it returns only 1
+     * resultset). This function directly uses executeQuery function.
+     * It also allows bypassing maxBillingBytes for PDTs.
+     * </p>
+     */
+
+    public boolean execute(String arg0, boolean unlimitedBillingBytes) throws SQLException {
+        if (this.isClosed()) {
+            throw new BQSQLException("This Statement is Closed");
+        }
+        this.resset = this.executeQuery(arg0, unlimitedBillingBytes);
         this.logger.info("Executing Query: " + arg0);
         if (this.resset != null) {
             return true;
@@ -227,7 +249,7 @@ public abstract class BQStatementRoot {
 
     /** {@inheritDoc} */
 
-    public ResultSet executeQuery(String querySql) throws SQLException {
+    public ResultSet executeQuery(String querySql, boolean unlimitedBillingBytes) throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
         }
@@ -237,6 +259,8 @@ public abstract class BQStatementRoot {
         BQQueryParser parser = new BQQueryParser(querySql, this.connection);
         querySql = parser.parse();
 
+        Long billingBytes = !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null;
+
         try {
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
@@ -245,7 +269,7 @@ public abstract class BQStatementRoot {
                     querySql,
                     connection.getDataSet(),
                     this.connection.getUseLegacySql(),
-                    this.connection.getMaxBillingBytes()
+                    billingBytes
             );
             this.logger.info("Executing Query: " + querySql);
         } catch (IOException e) {

@@ -90,7 +90,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     public ResultSet executeQuery(String querySql) throws SQLException {
         try {
             this.connection.addRunningStatement(this);
-            return executeQueryHelper(querySql);
+            return executeQueryHelper(querySql, false);
         }
         finally {
             this.job = null;
@@ -98,7 +98,19 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         }
     }
 
-    private ResultSet executeQueryHelper(String querySql) throws SQLException {
+    @Override
+    public ResultSet executeQuery(String querySql, boolean unlimitedBillingBytes) throws SQLException {
+        try {
+            this.connection.addRunningStatement(this);
+            return executeQueryHelper(querySql, unlimitedBillingBytes);
+        }
+        finally {
+            this.job = null;
+            this.connection.removeRunningStatement(this);
+        }
+    }
+
+    private ResultSet executeQueryHelper(String querySql, boolean unlimitedBillingBytes) throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
         }
@@ -115,7 +127,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         querySql = parser.parse();
         try {
             // Gets the Job reference of the completed job with give Query
-            referencedJob = startQuery(querySql);
+            referencedJob = startQuery(querySql, unlimitedBillingBytes);
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong creating the query: " + querySql, e);
         }
@@ -181,14 +193,15 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
      * Extracted out so that we can patch it in the tests for
      * helping to signal timings.
      */
-    public Job startQuery(String querySql) throws IOException {
+    public Job startQuery(String querySql, boolean unlimitedBillingBytes) throws IOException {
+        Long billingBytes = !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null;
         this.job =  BQSupportFuncts.startQuery(
                 this.connection.getBigquery(),
                 this.ProjectId.replace("__", ":").replace("_", "."),
                 querySql,
                 this.connection.getDataSet(),
                 this.connection.getUseLegacySql(),
-                this.connection.getMaxBillingBytes()
+                billingBytes
         );
         this.logger.debug("Executing Query: " + querySql);
         return this.job;
