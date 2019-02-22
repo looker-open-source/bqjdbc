@@ -155,8 +155,8 @@ public abstract class BQStatementRoot {
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
-     * Executes the given SQL statement on BigQuery (note: it returns only 1
-     * resultset). This function directly uses executeQuery function
+     * Wrapper for execute; calls execute(arg0, false). Does NOT bypass
+     * maxBillingBytes.
      * </p>
      */
 
