@@ -161,16 +161,7 @@ public abstract class BQStatementRoot {
      */
 
     public boolean execute(String arg0) throws SQLException {
-        if (this.isClosed()) {
-            throw new BQSQLException("This Statement is Closed");
-        }
-        this.resset = this.executeQuery(arg0, false);
-        this.logger.info("Executing Query: " + arg0);
-        if (this.resset != null) {
-            return true;
-        } else {
-            return false;
-        }
+        return this.execute(arg0, false);
     }
 
     /**
