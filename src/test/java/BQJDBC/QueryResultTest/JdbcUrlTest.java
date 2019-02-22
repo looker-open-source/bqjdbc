@@ -138,6 +138,31 @@ public class JdbcUrlTest {
         Assert.assertEquals((long) bqConn2.getMaxBillingBytes(), 1000000000);
     }
 
+    @Test
+    public void maxBillingBytesOverrideWorks() throws IOException, SQLException {
+        String url = getUrl("/protectedaccount.properties", null) + "&maxbillingbytes=1";
+        BQConnection bqConn = new BQConnection(url, new Properties());
+        BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
+
+        // need to include NOW() otherwise this query will pull from cache & mess up the following ASSERTs
+        String sqlStmt = "SELECT word, NOW() from publicdata:samples.shakespeare LIMIT 100";
+
+        boolean didFailAsExpected = false;
+
+        // limited-bytes query should fail
+        try {
+            stmt.executeQuery(sqlStmt, false);
+        } catch (SQLException e) {
+            Assert.assertTrue("Expected query to fail because it exceeds maximum billing bytes.", e.toString().contains("Query exceeded limit for bytes billed: 1."));
+            didFailAsExpected = true;
+        }
+
+        Assert.assertTrue("Query did not fail as expected.", didFailAsExpected);
+
+        // unlimited-bytes query should succeed
+        stmt.executeQuery(sqlStmt, true);
+    }
+
     private Properties getProperties(String pathToProp) throws IOException {
         return BQSupportFuncts
                 .readFromPropFile(getClass().getResource(pathToProp).getFile());

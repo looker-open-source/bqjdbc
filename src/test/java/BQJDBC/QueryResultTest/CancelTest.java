@@ -143,8 +143,8 @@ public class CancelTest {
             }
         }
 
-        public Job startQuery(String querySql) throws IOException {
-            Job result = super.startQuery(querySql);
+        public Job startQuery(String querySql, boolean unlimitedBillingBytes) throws IOException {
+            Job result = super.startQuery(querySql, unlimitedBillingBytes);
             signalTestPoint();
             return result;
         }
