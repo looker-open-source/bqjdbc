@@ -54,7 +54,7 @@
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-bigquery</artifactId>
-      <version>v2-rev402-1.25.0</version>
+      <version>v2-rev431-1.25.0</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -149,5 +149,5 @@
     </plugins>
     <finalName>${project.artifactId}-${project.version}-thin</finalName>
   </build>
-  <version>1.9.1</version>
+  <version>1.9.2</version>
 </project>
