@@ -140,6 +140,39 @@ public class PreparedStatementTests {
         } catch (SQLException e) {
             Assert.fail(e.toString());
         }
+        try {
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        con = null;
+    }
+
+    /**
+     * This test ensures that getColumnType supports the Date type
+     */
+    @Test
+    public void ResultSetMetadataFunctionTestDateType() {
+        final String sql = "SELECT CAST(CURRENT_DATE() AS DATE)";
+
+        System.out.println("Running query:" + sql);
+        try {
+            PreparedStatement stm = PreparedStatementTests.con
+                    .prepareStatement(sql);
+            java.sql.ResultSet theResult = stm.executeQuery();
+            Assert.assertNotNull(theResult);
+            Assert.assertEquals("DATE type was not returned in metadata",
+                    java.sql.Types.DATE,
+                    theResult.getMetaData().getColumnType(1));
+        } catch (SQLException e) {
+            Assert.fail(e.toString());
+        }
+        try {
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        con = null;
     }
 
     /**

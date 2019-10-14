@@ -307,6 +307,11 @@ public class BQPreparedStatement extends BQStatementRoot implements
     }
 
     @Override
+    public ResultSet executeQuery(String querySql) throws SQLException {
+        throw new BQSQLFeatureNotSupportedException("executeQuery(String querySQL)");
+    }
+
+    @Override
     public ParameterMetaData getParameterMetaData() throws SQLException {
         logger.debug("function call: getParameterMetaData()");
         // TODO IMPLEMENT
