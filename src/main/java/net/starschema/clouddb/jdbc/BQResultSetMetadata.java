@@ -123,7 +123,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         if (Columntype.equals("DATE")) {
             return Date.class.getName();
         }
-        if (Columntype.equals("RECORD")) {
+        if (Columntype.equals("RECORD") || Columntype.equals("STRUCT")) {
             return Struct.class.getName();
         }
 
