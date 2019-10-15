@@ -149,24 +149,44 @@ public class PreparedStatementTests {
     }
 
     /**
-     * This test ensures that getColumnType supports the Date type
+     * This test ensures that getColumnType supports the following types: DOUBLE, BOOLEAN, BIGINT, VARCHAR, TIMESTAMP, DATE
+     * Note: RECORD/STRUCT are not tested here because PreparedStatementsTests run queries on Legacy SQL
      */
     @Test
-    public void ResultSetMetadataFunctionTestDateType() {
-        final String sql = "SELECT CAST(CURRENT_DATE() AS DATE)";
+    public void ResultSetMetadataFunctionTestTypes() {
+        final String[] queries = new String[]{
+                "SELECT 3.14",
+                "SELECT TRUE",
+                "SELECT 1",
+                "SELECT 'test'",
+                "SELECT CAST(CURRENT_TIMESTAMP() AS TIMESTAMP)",
+                "SELECT CAST(CURRENT_DATE() AS DATE)",
+        };
+        final int[] expectedType = new int[]{
+                java.sql.Types.DOUBLE,
+                java.sql.Types.BOOLEAN,
+                java.sql.Types.BIGINT,
+                java.sql.Types.VARCHAR,
+                java.sql.Types.TIMESTAMP,
+                java.sql.Types.DATE,
+        };
 
-        System.out.println("Running query:" + sql);
-        try {
-            PreparedStatement stm = PreparedStatementTests.con
-                    .prepareStatement(sql);
-            java.sql.ResultSet theResult = stm.executeQuery();
-            Assert.assertNotNull(theResult);
-            Assert.assertEquals("DATE type was not returned in metadata",
-                    java.sql.Types.DATE,
-                    theResult.getMetaData().getColumnType(1));
-        } catch (SQLException e) {
-            Assert.fail(e.toString());
+        for (int i = 0; i < queries.length; i ++) {
+            System.out.println("Running query: " + queries[i]);
+
+            try {
+                PreparedStatement stm = PreparedStatementTests.con
+                        .prepareStatement(queries[i]);
+                java.sql.ResultSet theResult = stm.executeQuery();
+                Assert.assertNotNull(theResult);
+                Assert.assertEquals("Expected type was not returned in metadata",
+                        expectedType[i],
+                        theResult.getMetaData().getColumnType(1));
+            } catch (SQLException e) {
+                Assert.fail(e.toString());
+            }
         }
+
         try {
             con.close();
         } catch (SQLException e) {

@@ -200,6 +200,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * java.sql.Types.TIMESTAMP<br>
      * java.sql.Types.DATE<br>
      * java.sql.Types.RECORD<br>
+     * java.sql.Types.STRUCT<br>
      * */
     @Override
     public int getColumnType(int column) throws SQLException {
