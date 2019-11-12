@@ -101,8 +101,6 @@ public class PreparedStatementTests {
     @Test
     public void outOfRangeTest() {
         final String sql = "SELECT corpus, COUNT(word) as wc FROM publicdata:samples.shakespeare WHERE corpus = ? GROUP BY corpus ORDER BY wc DESC LIMIT ?";
-        System.out.println("Test number: 01");
-        System.out.println("Running query:" + sql);
 
         final String first = "othello";
         final String second = "macbeth";
@@ -130,8 +128,6 @@ public class PreparedStatementTests {
     @Test
     public void ParameterlessTest() {
         final String sql = "SELECT TOP(word, 3), COUNT(*) FROM publicdata:samples.shakespeare";
-        System.out.println("Test number: 00");
-        System.out.println("Running query:" + sql);
         try {
             PreparedStatement stm = PreparedStatementTests.con
                     .prepareStatement(sql);
@@ -140,6 +136,57 @@ public class PreparedStatementTests {
         } catch (SQLException e) {
             Assert.fail(e.toString());
         }
+        try {
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        con = null;
+    }
+
+    /**
+     * This test ensures that getColumnType supports the following types: DOUBLE, BOOLEAN, BIGINT, VARCHAR, TIMESTAMP, DATE
+     * Note: RECORD/STRUCT are not tested here because PreparedStatementsTests run queries on Legacy SQL
+     */
+    @Test
+    public void ResultSetMetadataFunctionTestTypes() {
+        final String[] queries = new String[]{
+                "SELECT 3.14",
+                "SELECT TRUE",
+                "SELECT 1",
+                "SELECT 'test'",
+                "SELECT CAST(CURRENT_TIMESTAMP() AS TIMESTAMP)",
+                "SELECT CAST(CURRENT_DATE() AS DATE)",
+        };
+        final int[] expectedType = new int[]{
+                java.sql.Types.DOUBLE,
+                java.sql.Types.BOOLEAN,
+                java.sql.Types.BIGINT,
+                java.sql.Types.VARCHAR,
+                java.sql.Types.TIMESTAMP,
+                java.sql.Types.DATE,
+        };
+
+        for (int i = 0; i < queries.length; i ++) {
+            try {
+                PreparedStatement stm = PreparedStatementTests.con
+                        .prepareStatement(queries[i]);
+                java.sql.ResultSet theResult = stm.executeQuery();
+                Assert.assertNotNull(theResult);
+                Assert.assertEquals("Expected type was not returned in metadata",
+                        expectedType[i],
+                        theResult.getMetaData().getColumnType(1));
+            } catch (SQLException e) {
+                Assert.fail(e.toString());
+            }
+        }
+
+        try {
+            con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        con = null;
     }
 
     /**
@@ -148,8 +195,6 @@ public class PreparedStatementTests {
     @Test
     public void setBigDecimalTest() {
         final String sql = "SELECT corpus, COUNT(word) as wc FROM publicdata:samples.shakespeare WHERE corpus = ? GROUP BY corpus ORDER BY wc DESC LIMIT ?";
-        System.out.println("Test number: 01");
-        System.out.println("Running query:" + sql);
 
         // final String first = "othello";
         final String second = "macbeth";
@@ -174,7 +219,6 @@ public class PreparedStatementTests {
             for (int i = 0; i < ColumnCount; i++) {
                 Line += String.format("%-32s", metadata.getColumnName(i + 1));
             }
-            System.out.println(Line + "\n");
 
             // Print out Column Values
             while (theResult.next()) {
@@ -185,7 +229,6 @@ public class PreparedStatementTests {
                     }
                     Line += String.format("%-32s", theResult.getString(i + 1));
                 }
-                System.out.println(Line);
                 actual++;
             }
 
@@ -205,8 +248,6 @@ public class PreparedStatementTests {
     @Test
     public void SetByteTest() {
         final String sql = "SELECT TOP(word, ?), COUNT(*) FROM publicdata:samples.shakespeare";
-        System.out.println("Test SetByteTest");
-        System.out.println("Running query:" + sql);
 
         // SET HOW MANY RESULT YOU WISH
         Byte COUNT = new Byte("3");
@@ -246,8 +287,6 @@ public class PreparedStatementTests {
         final String sql = "SELECT corpus FROM publicdata:samples.shakespeare WHERE LOWER(word)=? GROUP BY corpus ORDER BY corpus DESC LIMIT 5;";
         String[][] expectation = new String[][]{{"winterstale", "various",
                 "twogentlemenofverona", "twelfthnight", "troilusandcressida"}};
-        System.out.println("Test SetCharacterStreamTest");
-        System.out.println("Running query:" + sql);
         java.sql.ResultSet Result = null;
         try {
             PreparedStatement stm = PreparedStatementTests.con
@@ -281,21 +320,17 @@ public class PreparedStatementTests {
     public void setDateTest() {
         final String sql = "SELECT year, month, day, is_male, weight_pounds FROM publicdata:samples.natality"
                 + " WHERE year = INTEGER(LEFT( ? ,4)) AND month = ? AND is_male = ? ORDER BY weight_pounds DESC LIMIT 1000";
-        System.out.println("Test setDateTest");
-        System.out.println("Running query:" + sql);
 
         final String first = "1989-05-01";
         final boolean istrue = true;
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         java.util.Date date = null;
-        // System.out.println(String.valueOf(date.getTime()));
         try {
             date = formatter.parse(first);
         } catch (ParseException e2) {
             Assert.fail();
             e2.printStackTrace();
         }
-        System.out.println(String.valueOf(date.getTime()));
         java.sql.ResultSet theResult = null;
         java.sql.Date firstdate = new java.sql.Date(date.getTime());
         try {
@@ -317,7 +352,6 @@ public class PreparedStatementTests {
             for (int i = 0; i < ColumnCount; i++) {
                 Line += String.format("%-32s", metadata.getColumnName(i + 1));
             }
-            System.out.println(Line + "\n");
 
             // Print out Column Values
             while (theResult.next()) {
@@ -331,7 +365,6 @@ public class PreparedStatementTests {
                     // Assert.assertEquals(String.valueOf(istrue),theResult.getString(i+1));
                     Line += String.format("%-15s", theResult.getString(i + 1));
                 }
-                System.out.println(Line);
             }
         } catch (SQLException e) {
             Assert.fail(e.toString());
@@ -351,8 +384,6 @@ public class PreparedStatementTests {
         final String sql = "SELECT corpus,COUNT(word)/? as countn FROM publicdata:samples.shakespeare Group by corpus having countn=?";
         double number = 1849.5;
 
-        System.out.println("Test SetDoubleTest");
-        System.out.println("Running query:" + sql);
         java.sql.ResultSet Result = null;
         try {
             PreparedStatement stm = PreparedStatementTests.con
@@ -393,8 +424,6 @@ public class PreparedStatementTests {
         final String sql = "SELECT corpus,COUNT(word)/? as countn FROM publicdata:samples.shakespeare Group by corpus having countn=?";
         float number = 1849.5f;
 
-        System.out.println("Test SetFloatTest");
-        System.out.println("Running query:" + sql);
         java.sql.ResultSet Result = null;
         try {
             PreparedStatement stm = PreparedStatementTests.con
@@ -436,8 +465,6 @@ public class PreparedStatementTests {
     @Test
     public void setIntTest() {
         final String sql = "SELECT TOP(word, ?), COUNT(*) FROM publicdata:samples.shakespeare";
-        System.out.println("Test number: 01");
-        System.out.println("Running query:" + sql);
 
         // SET HOW MANY RESULT YOU WISH
         int COUNT = 3;
@@ -459,7 +486,6 @@ public class PreparedStatementTests {
             for (int i = 0; i < ColumnCount; i++) {
                 Line += String.format("%-32s", metadata.getColumnName(i + 1));
             }
-            System.out.println(Line + "\n");
 
             // Print out Column Values
             while (theResult.next()) {
@@ -467,7 +493,6 @@ public class PreparedStatementTests {
                 for (int i = 0; i < ColumnCount; i++) {
                     Line += String.format("%-32s", theResult.getString(i + 1));
                 }
-                System.out.println(Line);
                 Actual++;
             }
         } catch (SQLException e) {
@@ -487,8 +512,6 @@ public class PreparedStatementTests {
         final String sql = "SELECT corpus,COUNT(word) as countn FROM publicdata:samples.shakespeare Group by corpus having countn>? limit 10";
         long number = 5200;
 
-        System.out.println("Test SetLongTest");
-        System.out.println("Running query:" + sql);
         java.sql.ResultSet Result = null;
         try {
             PreparedStatement stm = PreparedStatementTests.con
@@ -525,8 +548,6 @@ public class PreparedStatementTests {
     @Test
     public void setStringTest() {
         final String sql = "SELECT corpus, COUNT(word) as wc FROM publicdata:samples.shakespeare WHERE corpus = ? GROUP BY corpus ORDER BY wc DESC LIMIT ?";
-        System.out.println("Test number: 01");
-        System.out.println("Running query:" + sql);
 
         final String first = "othello";
         final String second = "macbeth";
@@ -552,7 +573,6 @@ public class PreparedStatementTests {
             for (int i = 0; i < ColumnCount; i++) {
                 Line += String.format("%-32s", metadata.getColumnName(i + 1));
             }
-            System.out.println(Line + "\n");
 
             // Print out Column Values
             while (theResult.next()) {
@@ -563,7 +583,6 @@ public class PreparedStatementTests {
                     }
                     Line += String.format("%-32s", theResult.getString(i + 1));
                 }
-                System.out.println(Line);
                 actual++;
             }
         } catch (SQLException e) {

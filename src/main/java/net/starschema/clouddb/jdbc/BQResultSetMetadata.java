@@ -27,9 +27,11 @@
 
 package net.starschema.clouddb.jdbc;
 
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Struct;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -118,6 +120,13 @@ class BQResultsetMetaData implements ResultSetMetaData {
         if (Columntype.equals("TIMESTAMP")) {
             return Timestamp.class.getName();
         }
+        if (Columntype.equals("DATE")) {
+            return Date.class.getName();
+        }
+        if (Columntype.equals("RECORD") || Columntype.equals("STRUCT")) {
+            return Struct.class.getName();
+        }
+
         throw new BQSQLException("Unsupported Type: " + Columntype);
     }
 
@@ -189,6 +198,9 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * java.sql.Types.BIGINT<br>
      * java.sql.Types.VARCHAR<br>
      * java.sql.Types.TIMESTAMP<br>
+     * java.sql.Types.DATE<br>
+     * java.sql.Types.RECORD<br>
+     * java.sql.Types.STRUCT<br>
      * */
     @Override
     public int getColumnType(int column) throws SQLException {
@@ -221,6 +233,14 @@ class BQResultsetMetaData implements ResultSetMetaData {
 
         if (Columntype.equals("TIMESTAMP")) {
             return java.sql.Types.TIMESTAMP;
+        }
+
+        if (Columntype.equals("DATE")) {
+            return java.sql.Types.DATE;
+        }
+
+        if (Columntype.equals("RECORD") || Columntype.equals("STRUCT")) {
+            return java.sql.Types.STRUCT;
         }
 
         throw new BQSQLException("Unsupported Type: " + Columntype); // May arise if a new data type is added to BigQuery. A new release of the driver would then be needed in order to map it correctly
@@ -272,6 +292,12 @@ class BQResultsetMetaData implements ResultSetMetaData {
         }
         if (Columntype.equals("TIMESTAMP")) {
             return 50; // TODO: better computation of the maximum length of a string representation of the date
+        }
+        if (Columntype.equals("DATE")) {
+            return 10;
+        }
+        if (Columntype.equals("RECORD") || Columntype.equals("STRUCT")) {
+            return 1024; // TODO: more accurate precision for RECORDs and STRUCTs
         }
         return 0;
     }
