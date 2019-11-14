@@ -199,6 +199,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * java.sql.Types.VARCHAR<br>
      * java.sql.Types.TIMESTAMP<br>
      * java.sql.Types.DATE<br>
+     * java.sql.Types.NUMERIC<br>
      * java.sql.Types.RECORD<br>
      * java.sql.Types.STRUCT<br>
      * */
@@ -237,6 +238,10 @@ class BQResultsetMetaData implements ResultSetMetaData {
 
         if (Columntype.equals("DATE")) {
             return java.sql.Types.DATE;
+        }
+
+        if (Columntype.equals("NUMERIC")) {
+            return java.sql.Types.NUMERIC;
         }
 
         if (Columntype.equals("RECORD") || Columntype.equals("STRUCT")) {

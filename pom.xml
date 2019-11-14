@@ -149,5 +149,5 @@
     </plugins>
     <finalName>${project.artifactId}-${project.version}-thin</finalName>
   </build>
-  <version>1.9.3</version>
+  <version>1.9.4</version>
 </project>

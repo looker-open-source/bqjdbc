@@ -157,6 +157,7 @@ public class PreparedStatementTests {
                 "SELECT 'test'",
                 "SELECT CAST(CURRENT_TIMESTAMP() AS TIMESTAMP)",
                 "SELECT CAST(CURRENT_DATE() AS DATE)",
+                "SELECT CAST('1' AS NUMERIC)",
         };
         final int[] expectedType = new int[]{
                 java.sql.Types.DOUBLE,
@@ -165,6 +166,7 @@ public class PreparedStatementTests {
                 java.sql.Types.VARCHAR,
                 java.sql.Types.TIMESTAMP,
                 java.sql.Types.DATE,
+                java.sql.Types.NUMERIC,
         };
 
         for (int i = 0; i < queries.length; i ++) {
