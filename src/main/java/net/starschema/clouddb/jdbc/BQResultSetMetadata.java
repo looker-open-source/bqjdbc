@@ -305,6 +305,9 @@ class BQResultsetMetaData implements ResultSetMetaData {
         if (Columntype.equals("DATE")) {
             return 10;
         }
+        if (Columntype.equals("DATETIME")) {
+            return 50;
+        }
         if (Columntype.equals("RECORD") || Columntype.equals("STRUCT")) {
             return 1024; // TODO: more accurate precision for RECORDs and STRUCTs
         }
