@@ -145,7 +145,7 @@ public class PreparedStatementTests {
     }
 
     /**
-     * This test ensures that getColumnType supports the following types: DOUBLE, BOOLEAN, BIGINT, VARCHAR, TIMESTAMP, DATE
+     * This test ensures that getColumnType supports the following types: DOUBLE, BOOLEAN, BIGINT, VARCHAR, TIMESTAMP, DATE, DATETIME
      * Note: RECORD/STRUCT are not tested here because PreparedStatementsTests run queries on Legacy SQL
      */
     @Test
@@ -158,6 +158,7 @@ public class PreparedStatementTests {
                 "SELECT CAST(CURRENT_TIMESTAMP() AS TIMESTAMP)",
                 "SELECT CAST(CURRENT_DATE() AS DATE)",
                 "SELECT CAST('1' AS NUMERIC)",
+                "SELECT CAST('1' AS DATETIME)"
         };
         final int[] expectedType = new int[]{
                 java.sql.Types.DOUBLE,
@@ -167,6 +168,7 @@ public class PreparedStatementTests {
                 java.sql.Types.TIMESTAMP,
                 java.sql.Types.DATE,
                 java.sql.Types.NUMERIC,
+                java.sql.Types.TIMESTAMP,
         };
 
         for (int i = 0; i < queries.length; i ++) {
