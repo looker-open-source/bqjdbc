@@ -240,6 +240,10 @@ class BQResultsetMetaData implements ResultSetMetaData {
             return java.sql.Types.DATE;
         }
 
+        if (Columntype.equals("DATETIME")) {
+            return java.sql.Types.TIMESTAMP;
+        }
+
         if (Columntype.equals("NUMERIC")) {
             return java.sql.Types.NUMERIC;
         }
@@ -300,6 +304,9 @@ class BQResultsetMetaData implements ResultSetMetaData {
         }
         if (Columntype.equals("DATE")) {
             return 10;
+        }
+        if (Columntype.equals("DATETIME")) {
+            return 50;
         }
         if (Columntype.equals("RECORD") || Columntype.equals("STRUCT")) {
             return 1024; // TODO: more accurate precision for RECORDs and STRUCTs
