@@ -170,6 +170,8 @@ public class BQConnection implements Connection {
         String legacySqlParam = caseInsensitiveProps.getProperty("uselegacysql");
         this.useLegacySql = (legacySqlParam == null) || Boolean.parseBoolean(legacySqlParam);
 
+        String jsonAuthContents = caseInsensitiveProps.getProperty("jsonauthcontents");
+
         String readTimeoutString = caseInsensitiveProps.getProperty("readtimeout");
         Integer readTimeout = null;
         if (readTimeoutString != null) {
@@ -216,7 +218,7 @@ public class BQConnection implements Connection {
                     userPath = userKey;
                     userKey = null;
                 }
-                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey, userAgent, connectTimeout, readTimeout);
+                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey, userAgent, jsonAuthContents, readTimeout, connectTimeout);
                 this.logger.info("Authorized with service account");
             } catch (GeneralSecurityException e) {
                 throw new BQSQLException(e);
