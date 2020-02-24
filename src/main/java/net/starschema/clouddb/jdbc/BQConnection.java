@@ -69,7 +69,7 @@ public class BQConnection implements Connection {
 
     private Long maxBillingBytes;
 
-    private boolean useQueryApi = false;
+    private boolean useQueryApi;
 
     private final Set<BQStatementRoot> runningStatements = Collections.synchronizedSet(new HashSet<BQStatementRoot>());
 
@@ -164,8 +164,8 @@ public class BQConnection implements Connection {
         String withServiceAccountParam = caseInsensitiveProps.getProperty("withserviceaccount");
         Boolean serviceAccount = (withServiceAccountParam != null) && Boolean.parseBoolean(withServiceAccountParam);
 
-        String useQueryApiParam = caseInsensitiveProps.getProperty("useQueryApi");
-        useQueryApi = (useQueryApiParam != null) && Boolean.parseBoolean(useQueryApiParam);
+        String useQueryApiParam = caseInsensitiveProps.getProperty("usequeryapi");
+        useQueryApi = Boolean.parseBoolean(useQueryApiParam);
 
         // extract transformQuery property
         String transformQueryParam = caseInsensitiveProps.getProperty("transformquery");

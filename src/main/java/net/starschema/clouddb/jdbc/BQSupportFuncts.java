@@ -660,6 +660,7 @@ public class BQSupportFuncts {
 
         QueryRequest qr = new QueryRequest()
                 .setTimeoutMs(queryTimeoutMs)
+                .setQuery(querySql)
                 .setUseLegacySql(useLegacySql);
                 // TODO: we should be able to set maxbillingGBs here, but this API currenlty does not support it
         if (dataSet != null) {

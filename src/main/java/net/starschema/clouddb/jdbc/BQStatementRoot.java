@@ -61,7 +61,7 @@ public abstract class BQStatementRoot {
     BQConnection connection;
 
     /** Variable that stores the set query timeout */
-    int querytimeout = Integer.MAX_VALUE;
+    int querytimeout = Integer.MAX_VALUE / 1000 - 1;
     /** Instance of log4j.Logger */
     /**
      * Variable stores the time an execute is made

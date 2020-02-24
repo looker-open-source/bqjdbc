@@ -75,7 +75,7 @@ public class QueryResultTest {
      */
     public void NewConnection(String extraUrl) {
         try {
-            if (QueryResultTest.con == null || !QueryResultTest.con.isValid(0)) {
+            if (QueryResultTest.con == null || !QueryResultTest.con.isValid(0) || extraUrl != null) {
 
                 this.logger.info("Testing the JDBC driver");
                 try {
@@ -472,7 +472,7 @@ public class QueryResultTest {
 
     @Test
     public void QueryResultTestSyncQuery() {
-        NewConnection("useQueryApi=true");
+        NewConnection("&useQueryApi=true");
         final String sql = "SELECT STRING(ROUND(weight_pounds))  FROM publicdata:samples.natality GROUP BY 1 ORDER BY 1 DESC LIMIT 10;";
         String[][] expectation = new String[][]{ {
                 "9.000000",

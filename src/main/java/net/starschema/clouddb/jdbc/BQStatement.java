@@ -28,6 +28,7 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.QueryResponse;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -132,6 +133,19 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             throw new BQSQLException("Something went wrong creating the query: " + querySql, e);
         }
         try {
+            if (this.connection.shouldUseQueryApi()) {
+                QueryResponse qr = BQSupportFuncts.runSyncQuery(
+                        this.connection.getBigquery(),
+                        this.ProjectId,
+                        querySql,
+                        connection.getDataSet(),
+                        this.connection.getUseLegacySql(),
+                        this.connection.getMaxBillingBytes(),
+                        (long) querytimeout * 1000
+                );
+                return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
+            }
+
             do {
                 if (this.connection.isClosed()) {
                     throw new BQSQLException("Connection is closed");
