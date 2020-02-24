@@ -28,10 +28,10 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
+import com.google.api.services.bigquery.model.QueryResponse;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableSchema;
 import org.apache.log4j.Logger;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.sql.*;
 import java.util.List;
@@ -45,6 +45,8 @@ class BQResultsetMetaData implements ResultSetMetaData {
 
     TableSchema schema;
     String projectId;
+
+    QueryResponse result = null;
 
     /** Logger instance */
     Logger logger = Logger.getLogger(BQResultsetMetaData.class.getName());
@@ -317,28 +319,10 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getScale(int column) throws SQLException {
-        // TODO: come back to this
-        throw new NotImplementedException();
-//        if (this.getColumnType(column) == java.sql.Types.DOUBLE) {
-//            int max = 0;
-//            schema.getFields().get(0)
-//            for (int i = 0; i < this.result.getRows().size(); i++) {
-//                Object rowdataObject = this.result.getRows().get(i).getF().get(column - 1).getV();
-//                if (Data.isNull(rowdataObject)) {
-//                    return 0;
-//                }
-//                String rowdata = (String) rowdataObject;
-//                if (rowdata.contains(".")) {
-//                    int pointback = rowdata.length() - rowdata.indexOf(".");
-//                    if (pointback > max) {
-//                        pointback = max;
-//                    }
-//                }
-//            }
-//            return max;
-//        } else {
-//            return 0;
-//        }
+        // This returns zero always. It would be better for it to throw a NotImplemented exception,
+        // but at one point it was written with some code that tried to do something silly with decimals but always
+        // ended up returning zero, so for now just go with constant return 0.
+        return 0;
     }
 
     /**
