@@ -58,6 +58,7 @@ import java.security.PrivateKey;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class Oauth2Bigquery {
 
@@ -264,6 +265,9 @@ public class Oauth2Bigquery {
         // Determine which keyfile we are trying to authenticate with.
         if (jsonAuthContents != null) {
             credential = Oauth2Bigquery.createJsonCredential(jsonAuthContents);
+        } else if (Pattern.matches(".*\\.json$", keypath)) {
+            // For backwards compat: this is no longer the preferred path for JSON (better to use [jsonAuthContents]
+            credential = Oauth2Bigquery.createJsonCredential(keypath);
         } else {
             credential = Oauth2Bigquery.createP12Credential(serviceaccountemail, keypath, password);
         }
