@@ -69,6 +69,8 @@ public class BQConnection implements Connection {
 
     private Long maxBillingBytes;
 
+    private boolean useQueryApi = false;
+
     private final Set<BQStatementRoot> runningStatements = Collections.synchronizedSet(new HashSet<BQStatementRoot>());
 
     /** Boolean to determine, to use or doesn't use the ANTLR parser */
@@ -161,6 +163,9 @@ public class BQConnection implements Connection {
         // extract withServiceAccount property
         String withServiceAccountParam = caseInsensitiveProps.getProperty("withserviceaccount");
         Boolean serviceAccount = (withServiceAccountParam != null) && Boolean.parseBoolean(withServiceAccountParam);
+
+        String useQueryApiParam = caseInsensitiveProps.getProperty("useQueryApi");
+        useQueryApi = (useQueryApiParam != null) && Boolean.parseBoolean(useQueryApiParam);
 
         // extract transformQuery property
         String transformQueryParam = caseInsensitiveProps.getProperty("transformquery");
@@ -1041,5 +1046,14 @@ public class BQConnection implements Connection {
 
     public Long getMaxBillingBytes() {
         return maxBillingBytes;
+    }
+
+    /**
+     * Returns true if queries on this connection should use the synchronous jobs.query api to run queries.
+     *
+     * This API is faster by avoiding the async overhead of job polling, but does not currently support maxBillingGBs.
+     * */
+    boolean getUseQueryApi() {
+        return useQueryApi;
     }
 }

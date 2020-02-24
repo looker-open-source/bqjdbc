@@ -653,6 +653,29 @@ public class BQSupportFuncts {
         return properties;
     }
 
+    public static Job runQuery(Bigquery bigquery, String projectId,
+                               String querySql, String dataSet, Boolean useLegacySql,
+                               Long maxBillingBytes, Long queryTimeoutMs) throws IOException {
+        projectId = projectId.replace("__", ":").replace("_", ".");
+
+        QueryRequest qr = new QueryRequest()
+                .setTimeoutMs(queryTimeoutMs)
+                .setUseLegacySql(useLegacySql);
+                // TODO: we should be able to set maxbillingGBs here, but this API currenlty does not support it
+        if (dataSet != null) {
+            qr.setDefaultDataset(new DatasetReference().setDatasetId(dataSet).setProjectId(projectId));
+        }
+
+        String jobId = bigquery.jobs().query(querySql, qr)
+                .setProjectId(projectId)
+                .execute()
+                .getJobReference()
+                .getJobId();
+
+        return bigquery.jobs().get(projectId, jobId).execute();
+    }
+
+
     /**
      * Starts a new query in async mode.
      *

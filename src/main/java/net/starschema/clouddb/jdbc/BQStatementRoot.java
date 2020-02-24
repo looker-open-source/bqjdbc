@@ -253,6 +253,22 @@ public abstract class BQStatementRoot {
         Long billingBytes = !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null;
 
         try {
+            if (this.connection.getUseQueryApi()) {
+                Job synchronouslyExecutedJob = BQSupportFuncts.runQuery(
+                        this.connection.getBigquery(),
+                        this.ProjectId,
+                        querySql,
+                        connection.getDataSet(),
+                        this.connection.getUseLegacySql(),
+                        billingBytes,
+                        (long) querytimeout * 1000
+                );
+                return new BQForwardOnlyResultSet(
+                        this.connection.getBigquery(),
+                        this.ProjectId.replace("__", ":").replace("_", "."),
+                        synchronouslyExecutedJob, this);
+            }
+
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
                     this.connection.getBigquery(),
