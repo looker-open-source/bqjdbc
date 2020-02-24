@@ -1053,7 +1053,7 @@ public class BQConnection implements Connection {
      *
      * This API is faster by avoiding the async overhead of job polling, but does not currently support maxBillingGBs.
      * */
-    boolean getUseQueryApi() {
+    boolean shouldUseQueryApi() {
         return useQueryApi;
     }
 }

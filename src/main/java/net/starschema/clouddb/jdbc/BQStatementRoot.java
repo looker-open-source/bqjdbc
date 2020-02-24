@@ -28,6 +28,7 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.QueryResponse;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -253,8 +254,8 @@ public abstract class BQStatementRoot {
         Long billingBytes = !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null;
 
         try {
-            if (this.connection.getUseQueryApi()) {
-                Job synchronouslyExecutedJob = BQSupportFuncts.runQuery(
+            if (this.connection.shouldUseQueryApi()) {
+                QueryResponse qr = BQSupportFuncts.runSyncQuery(
                         this.connection.getBigquery(),
                         this.ProjectId,
                         querySql,
@@ -263,10 +264,7 @@ public abstract class BQStatementRoot {
                         billingBytes,
                         (long) querytimeout * 1000
                 );
-                return new BQForwardOnlyResultSet(
-                        this.connection.getBigquery(),
-                        this.ProjectId.replace("__", ":").replace("_", "."),
-                        synchronouslyExecutedJob, this);
+                return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
             }
 
             // Gets the Job reference of the completed job with give Query

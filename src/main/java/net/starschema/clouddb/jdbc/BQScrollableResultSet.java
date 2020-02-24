@@ -30,6 +30,7 @@ import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.TableCell;
 import com.google.api.services.bigquery.model.TableRow;
+import com.google.api.services.bigquery.model.TableSchema;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -37,6 +38,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.List;
 
 /**
  * This class implements the java.sql.ResultSet interface its superclass is
@@ -53,40 +55,12 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
     private int maxFieldSize = 0;
 
     /**
-     * This Reference is for storing the GetQueryResultsResponse got from
-     * bigquery
-     */
-    private GetQueryResultsResponse Result = null;
-    /**
      * This Reference is for storing the Reference for the Statement which
      * created this Resultset
      */
     private BQStatement Statementreference = null;
 
-    public BQScrollableResultSet(GetQueryResultsResponse bigQueryGetQueryResultResponse,
-                                 BQPreparedStatement bqPreparedStatement) {
-        logger.debug("Created Scrollable resultset TYPE_SCROLL_INSENSITIVE");
-        this.Result = bigQueryGetQueryResultResponse;
-        BigInteger maxrow;
-        try {
-            maxrow = BigInteger.valueOf(bqPreparedStatement.getMaxRows());
-            this.Result.setTotalRows(maxrow);
-        } catch (SQLException e) {
-            // Should not happen.
-        }
-
-        try {
-            maxFieldSize = bqPreparedStatement.getMaxFieldSize();
-        } catch (SQLException e) {
-            // Should not happen.
-        }
-
-        if (this.Result.getRows() == null) {
-            this.RowsofResult = null;
-        } else {
-            this.RowsofResult = this.Result.getRows().toArray();
-        }
-    }
+    private TableSchema schema;
 
     /**
      * Constructor of BQResultset, that initializes all private variables
@@ -96,29 +70,33 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
      */
     public BQScrollableResultSet(GetQueryResultsResponse bigQueryGetQueryResultResponse,
                                  BQStatementRoot bqStatementRoot) {
-        logger.debug("Created Scrollable resultset TYPE_SCROLL_INSENSITIVE");
-        this.Result = bigQueryGetQueryResultResponse;
+        this(bigQueryGetQueryResultResponse.getRows(), bqStatementRoot, bigQueryGetQueryResultResponse.getSchema());
+
         BigInteger maxrow;
         try {
             maxrow = BigInteger.valueOf(bqStatementRoot.getMaxRows());
-            this.Result.setTotalRows(maxrow);
+            bigQueryGetQueryResultResponse.setTotalRows(maxrow);
         } catch (SQLException e) {
         } // Should not happen.
+    }
 
+    public BQScrollableResultSet(List<TableRow> rows, BQStatementRoot bqStatementRoot, TableSchema schema) {
+        logger.debug("Created Scrollable resultset TYPE_SCROLL_INSENSITIVE");
         try {
             maxFieldSize = bqStatementRoot.getMaxFieldSize();
         } catch (SQLException e) {
             // Should not happen.
         }
 
-        if (this.Result.getRows() == null) {
-            this.RowsofResult = null;
-        } else {
-            this.RowsofResult = this.Result.getRows().toArray();
+        if (rows != null) {
+            this.RowsofResult = rows.toArray();
         }
+
         if (bqStatementRoot instanceof BQStatement) {
             this.Statementreference = (BQStatement) bqStatementRoot;
         }
+
+        this.schema = schema;
     }
 
     /** {@inheritDoc} */
@@ -142,7 +120,7 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
         if (this.isClosed()) {
             throw new BQSQLException("This Resultset is Closed");
         }
-        return new BQResultsetMetaData(this.Result);
+        return new BQResultsetMetaData(this.schema, this.Statementreference.connection.getProjectId());
     }
 
     /** {@inheritDoc} */
@@ -162,7 +140,7 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
                 || columnIndex < 1) {
             throw new BQSQLException("ColumnIndex is not valid");
         }
-        String Columntype = this.Result.getSchema().getFields()
+        String Columntype = schema.getFields()
                 .get(columnIndex - 1).getType();
 
         TableCell field = ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1);
