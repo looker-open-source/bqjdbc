@@ -8,6 +8,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -98,6 +100,18 @@ public class JdbcUrlTest {
     public void canConnectWithPasswordProtectedJSONFile() throws SQLException, IOException {
         String url = getUrl("/protectedaccountjson.properties", null);
         BQConnection bqConn = new BQConnection(url, new Properties());
+
+        BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
+        stmt.executeQuery("SELECT * FROM orders limit 1");
+    }
+
+    @Test
+    public void canConnectWithJsonAuthFileContentsInProperties() throws SQLException, IOException {
+        String url = getUrl("/protectedaccountjson.properties", null);
+        String jsonContents = new String(Files.readAllBytes(Paths.get("src/test/resources/bigquery_credentials_protected.json")));
+        Properties props = new Properties();
+        props.setProperty("jsonAuthContents", jsonContents);
+        BQConnection bqConn = new BQConnection(url, props);
 
         BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
         stmt.executeQuery("SELECT * FROM orders limit 1");
