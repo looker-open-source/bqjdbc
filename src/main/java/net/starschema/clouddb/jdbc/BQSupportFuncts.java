@@ -653,7 +653,7 @@ public class BQSupportFuncts {
         return properties;
     }
 
-    public static QueryResponse runSyncQuery(Bigquery bigquery, String projectId,
+    static QueryResponse runSyncQuery(Bigquery bigquery, String projectId,
                                               String querySql, String dataSet, Boolean useLegacySql,
                                               Long maxBillingBytes, Long queryTimeoutMs) throws IOException {
         projectId = projectId.replace("__", ":").replace("_", ".");
@@ -662,7 +662,7 @@ public class BQSupportFuncts {
                 .setTimeoutMs(queryTimeoutMs)
                 .setQuery(querySql)
                 .setUseLegacySql(useLegacySql);
-                // TODO: we should be able to set maxbillingGBs here, but this API currenlty does not support it
+                // TODO: we should be able to set maxbillingGBs here, but this API currently does not support it
         if (dataSet != null) {
             qr.setDefaultDataset(new DatasetReference().setDatasetId(dataSet).setProjectId(projectId));
         }

@@ -486,7 +486,6 @@ public class QueryResultTest {
                 "18.000000",
                 "17.000000"}};
 
-        this.logger.info("Test Tokyo number: 1");
         this.logger.info("Running query:" + sql);
 
         java.sql.ResultSet Result = null;
