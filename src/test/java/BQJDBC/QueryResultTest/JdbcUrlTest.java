@@ -107,7 +107,8 @@ public class JdbcUrlTest {
 
     @Test
     public void canConnectWithJsonAuthFileContentsInProperties() throws SQLException, IOException {
-        String url = getUrl("/protectedaccountjson.properties", null);
+        String url = getUrl("/protectedaccount-json.properties", null);
+        properties = getProperties("/protectedaccount-json.properties");
         String jsonContents = new String(Files.readAllBytes(Paths.get("src/test/resources/bigquery_credentials_protected.json")));
         Properties props = new Properties();
         props.setProperty("jsonAuthContents", jsonContents);
