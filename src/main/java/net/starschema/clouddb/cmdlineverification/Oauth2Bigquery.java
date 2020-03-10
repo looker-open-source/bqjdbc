@@ -48,12 +48,7 @@ import org.apache.log4j.Logger;
 
 import java.awt.*;
 import java.awt.Desktop.Action;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -235,6 +230,21 @@ public class Oauth2Bigquery {
         return builder.build();
     }
 
+   /**
+     * This function gives back an built GoogleCredential Object from a String representing the contents of a JSON keyfile
+     *
+     * @param jsonAuthContents
+     * @return Built GoogleCredential via and keypath
+     * @throws GeneralSecurityException
+     * @throws IOException
+     */
+    private static GoogleCredential createJsonCredential(String jsonAuthContents) throws GeneralSecurityException, IOException {
+        logger.debug("Authorizing with service account.");
+        // For .json load the key via credential.fromStream
+        InputStream stringStream = new ByteArrayInputStream(jsonAuthContents.getBytes());
+        return GoogleCredential.fromStream(stringStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory()).createScoped(GenerateScopes());
+    }
+
     /**
      * This function gives back an built GoogleCredential Object from a json keyfile
      *
@@ -243,7 +253,7 @@ public class Oauth2Bigquery {
      * @throws GeneralSecurityException
      * @throws IOException
      */
-    private static GoogleCredential createJsonCredential(String keypath) throws GeneralSecurityException, IOException {
+    private static GoogleCredential createJsonCredentialFromKeyfile(String keypath) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
         // For .json load the key via credential.fromStream
         File jsonKey = new File(keypath);
@@ -257,6 +267,7 @@ public class Oauth2Bigquery {
      *
      * @param serviceaccountemail
      * @param keypath
+     * @param jsonAuthContents
      * @return Authorized Bigquery Client via serviceaccount e-mail and keypath
      * @throws GeneralSecurityException
      * @throws IOException
@@ -265,12 +276,14 @@ public class Oauth2Bigquery {
                                                String keypath,
                                                String password,
                                                String userAgent,
-                                               Integer connectTimeout,
-                                               Integer readTimeout) throws GeneralSecurityException, IOException {
+                                               String jsonAuthContents, Integer readTimeout, Integer connectTimeout) throws GeneralSecurityException, IOException {
         GoogleCredential credential;
         // Determine which keyfile we are trying to authenticate with.
-        if (Pattern.matches(".*\\.json$", keypath)) {
-            credential = Oauth2Bigquery.createJsonCredential(keypath);
+        if (jsonAuthContents != null) {
+            credential = Oauth2Bigquery.createJsonCredential(jsonAuthContents);
+        } else if (Pattern.matches(".*\\.json$", keypath)) {
+            // For backwards compat: this is no longer the preferred path for JSON (better to use [jsonAuthContents]
+            credential = Oauth2Bigquery.createJsonCredentialFromKeyfile(keypath);
         } else {
             credential = Oauth2Bigquery.createP12Credential(serviceaccountemail, keypath, password);
         }

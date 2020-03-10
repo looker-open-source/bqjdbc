@@ -8,6 +8,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -95,9 +97,24 @@ public class JdbcUrlTest {
     }
 
     @Test
-    public void canConnectWithPasswordProtectedJSONFile() throws SQLException, IOException {
-        String url = getUrl("/protectedaccountjson.properties", null);
-        BQConnection bqConn = new BQConnection(url, new Properties());
+    public void canConnectWithJSONFile() throws SQLException, IOException {
+        String url = getUrl("/protectedaccount-json.properties", null);
+        properties = getProperties("/protectedaccount-json.properties");
+        properties.setProperty("path", "src/test/resources/bigquery_credentials_protected.json");
+        BQConnection bqConn = new BQConnection(url, properties);
+
+        BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
+        stmt.executeQuery("SELECT * FROM orders limit 1");
+    }
+
+    @Test
+    public void canConnectWithJsonAuthFileContentsInProperties() throws SQLException, IOException {
+        String url = getUrl("/protectedaccount-json.properties", null);
+        properties = getProperties("/protectedaccount-json.properties");
+        String jsonContents = new String(Files.readAllBytes(Paths.get("src/test/resources/bigquery_credentials_protected.json")));
+        Properties props = new Properties();
+        props.setProperty("jsonAuthContents", jsonContents);
+        BQConnection bqConn = new BQConnection(url, props);
 
         BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
         stmt.executeQuery("SELECT * FROM orders limit 1");
