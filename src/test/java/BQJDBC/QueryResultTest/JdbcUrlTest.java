@@ -97,9 +97,11 @@ public class JdbcUrlTest {
     }
 
     @Test
-    public void canConnectWithPasswordProtectedJSONFile() throws SQLException, IOException {
-        String url = getUrl("/protectedaccountjson.properties", null);
-        BQConnection bqConn = new BQConnection(url, new Properties());
+    public void canConnectWithJSONFile() throws SQLException, IOException {
+        String url = getUrl("/protectedaccount-json.properties", null);
+        properties = getProperties("/protectedaccount-json.properties");
+        properties.setProperty("path", "src/test/resources/bigquery_credentials_protected.json");
+        BQConnection bqConn = new BQConnection(url, properties);
 
         BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
         stmt.executeQuery("SELECT * FROM orders limit 1");

@@ -231,7 +231,7 @@ public class Oauth2Bigquery {
     }
 
    /**
-     * This function gives back an built GoogleCredential Object from a json keyfile
+     * This function gives back an built GoogleCredential Object from a String representing the contents of a JSON keyfile
      *
      * @param jsonAuthContents
      * @return Built GoogleCredential via and keypath
@@ -243,6 +243,22 @@ public class Oauth2Bigquery {
         // For .json load the key via credential.fromStream
         InputStream stringStream = new ByteArrayInputStream(jsonAuthContents.getBytes());
         return GoogleCredential.fromStream(stringStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory()).createScoped(GenerateScopes());
+    }
+
+    /**
+     * This function gives back an built GoogleCredential Object from a json keyfile
+     *
+     * @param keypath
+     * @return Built GoogleCredential via and keypath
+     * @throws GeneralSecurityException
+     * @throws IOException
+     */
+    private static GoogleCredential createJsonCredentialFromKeyfile(String keypath) throws GeneralSecurityException, IOException {
+        logger.debug("Authorizing with service account.");
+        // For .json load the key via credential.fromStream
+        File jsonKey = new File(keypath);
+        InputStream inputStream = new FileInputStream(jsonKey);
+        return GoogleCredential.fromStream(inputStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory()).createScoped(GenerateScopes());
     }
 
     /**
@@ -267,7 +283,7 @@ public class Oauth2Bigquery {
             credential = Oauth2Bigquery.createJsonCredential(jsonAuthContents);
         } else if (Pattern.matches(".*\\.json$", keypath)) {
             // For backwards compat: this is no longer the preferred path for JSON (better to use [jsonAuthContents]
-            credential = Oauth2Bigquery.createJsonCredential(keypath);
+            credential = Oauth2Bigquery.createJsonCredentialFromKeyfile(keypath);
         } else {
             credential = Oauth2Bigquery.createP12Credential(serviceaccountemail, keypath, password);
         }
