@@ -204,6 +204,50 @@ public class Oauth2Bigquery {
     }
 
     /**
+     * Authorizes a bigquery Connection with the given OAuth 2.0 Access Token
+     *
+     * @param oauthToken
+     * @return Authorized Bigquery Connection via OAuth Token
+     * @throws SQLException
+     */
+    public static Bigquery authorizeviatoken(String oauthToken,
+                                             String userAgent,
+                                             Integer connectTimeout,
+                                             Integer readTimeout) throws SQLException {
+        GoogleCredential.Builder builder = new GoogleCredential.Builder()
+            .setTransport(CmdlineUtils.getHttpTransport())
+            .setJsonFactory(CmdlineUtils.getJsonFactory());
+        GoogleCredential credential = builder.build();
+
+        HttpRequestTimeoutInitializer httpRequestInitializer = new HttpRequestTimeoutInitializer(credential);
+        if (connectTimeout != null) {
+            httpRequestInitializer.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout != null) {
+            httpRequestInitializer.setReadTimeout(readTimeout);
+        }
+
+        logger.debug("Creating a new bigquery client.");
+        Builder bqBuilder = new Builder(
+            CmdlineUtils.getHttpTransport(),
+            CmdlineUtils.getJsonFactory(),
+            httpRequestInitializer
+        ).setApplicationName("Starschema BigQuery JDBC Driver");
+
+        BigQueryRequestUserAgentInitializer requestInitializer = new BigQueryRequestUserAgentInitializer();
+        requestInitializer.setOauthToken(oauthToken);
+        if (userAgent != null) {
+            requestInitializer.setUserAgent(userAgent);
+        }
+        bqBuilder.setBigqueryRequestInitializer(requestInitializer);
+
+        Bigquery bigquery = bqBuilder.build();
+
+        Oauth2Bigquery.servicepath = bigquery.getServicePath();
+        return bigquery;
+    }
+
+    /**
      * This function gives back an built GoogleCredential Ojbect from a p12 keyfile
      *
      * @param serviceaccountemail
@@ -481,10 +525,13 @@ public class Oauth2Bigquery {
     private static class BigQueryRequestUserAgentInitializer extends BigqueryRequestInitializer {
 
         String userAgent = null;
+        String oauthToken = null;
 
         public void setUserAgent(String userAgent) {
             this.userAgent = userAgent;
         }
+
+        public void setOauthToken(String oauthToken) { this.oauthToken = oauthToken; }
 
         public String getUserAgent() {
             return this.userAgent;
@@ -498,6 +545,9 @@ public class Oauth2Bigquery {
                 currentHeaders.setUserAgent(userAgent);
 
                 request.setRequestHeaders(currentHeaders);
+            }
+            if (oauthToken != null) {
+                request.setOauthToken(oauthToken);
             }
         }
     }
