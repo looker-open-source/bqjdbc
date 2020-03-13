@@ -326,16 +326,7 @@ public class Oauth2Bigquery {
                                                String password,
                                                String userAgent,
                                                String jsonAuthContents, Integer readTimeout, Integer connectTimeout) throws GeneralSecurityException, IOException {
-        GoogleCredential credential;
-        // Determine which keyfile we are trying to authenticate with.
-        if (jsonAuthContents != null) {
-            credential = Oauth2Bigquery.createJsonCredential(jsonAuthContents, false);
-        } else if (Pattern.matches(".*\\.json$", keypath)) {
-            // For backwards compat: this is no longer the preferred path for JSON (better to use [jsonAuthContents]
-            credential = Oauth2Bigquery.createJsonCredentialFromKeyfile(keypath, false);
-        } else {
-            credential = Oauth2Bigquery.createP12Credential(serviceaccountemail, keypath, password, false);
-        }
+        GoogleCredential credential = createCredential(serviceaccountemail, keypath, password, jsonAuthContents, false);
 
         logger.debug("Authorizied?");
 
@@ -371,16 +362,7 @@ public class Oauth2Bigquery {
                                              String keypath,
                                              String password,
                                              String jsonAuthContents) throws GeneralSecurityException, IOException {
-        GoogleCredential credential;
-        // Determine which keyfile we are trying to authenticate with.
-        if (jsonAuthContents != null) {
-            credential = Oauth2Bigquery.createJsonCredential(jsonAuthContents, false);
-        } else if (Pattern.matches(".*\\.json$", keypath)) {
-            // For backwards compat: this is no longer the preferred path for JSON (better to use [jsonAuthContents]
-            credential = Oauth2Bigquery.createJsonCredentialFromKeyfile(keypath, false);
-        } else {
-            credential = Oauth2Bigquery.createP12Credential(serviceaccountemail, keypath, password, false);
-        }
+        GoogleCredential credential = createCredential(serviceaccountemail, keypath, password, jsonAuthContents, true);
         HttpRequestTimeoutInitializer httpRequestInitializer = new HttpRequestTimeoutInitializer(credential);
 
         IAMCredentials.Builder builder = new IAMCredentials.Builder(
@@ -399,6 +381,24 @@ public class Oauth2Bigquery {
         generateAccessToken = iamCredentials.projects().serviceAccounts().generateAccessToken(name, request);
         GenerateAccessTokenResponse response = generateAccessToken.execute();
         return response.getAccessToken();
+    }
+
+    private static GoogleCredential createCredential(String serviceaccountemail,
+                                                     String keypath,
+                                                     String password,
+                                                     String jsonAuthContents,
+                                                     Boolean forTokenGeneration) throws GeneralSecurityException, IOException {
+        GoogleCredential credential;
+        // Determine which keyfile we are trying to authenticate with.
+        if (jsonAuthContents != null) {
+            credential = Oauth2Bigquery.createJsonCredential(jsonAuthContents, forTokenGeneration);
+        } else if (Pattern.matches(".*\\.json$", keypath)) {
+            // For backwards compat: this is no longer the preferred path for JSON (better to use [jsonAuthContents]
+            credential = Oauth2Bigquery.createJsonCredentialFromKeyfile(keypath, forTokenGeneration);
+        } else {
+            credential = Oauth2Bigquery.createP12Credential(serviceaccountemail, keypath, password, forTokenGeneration);
+        }
+        return credential;
     }
 
     // Helper function to generate scopes for credential files
