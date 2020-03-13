@@ -326,7 +326,7 @@ public class Oauth2Bigquery {
                                                String password,
                                                String userAgent,
                                                String jsonAuthContents, Integer readTimeout, Integer connectTimeout) throws GeneralSecurityException, IOException {
-        GoogleCredential credential = createCredential(serviceaccountemail, keypath, password, jsonAuthContents, false);
+        GoogleCredential credential = createServiceAccountCredential(serviceaccountemail, keypath, password, jsonAuthContents, false);
 
         logger.debug("Authorizied?");
 
@@ -362,7 +362,7 @@ public class Oauth2Bigquery {
                                              String keypath,
                                              String password,
                                              String jsonAuthContents) throws GeneralSecurityException, IOException {
-        GoogleCredential credential = createCredential(serviceaccountemail, keypath, password, jsonAuthContents, true);
+        GoogleCredential credential = createServiceAccountCredential(serviceaccountemail, keypath, password, jsonAuthContents, true);
         HttpRequestTimeoutInitializer httpRequestInitializer = new HttpRequestTimeoutInitializer(credential);
 
         IAMCredentials.Builder builder = new IAMCredentials.Builder(
@@ -383,11 +383,11 @@ public class Oauth2Bigquery {
         return response.getAccessToken();
     }
 
-    private static GoogleCredential createCredential(String serviceaccountemail,
-                                                     String keypath,
-                                                     String password,
-                                                     String jsonAuthContents,
-                                                     Boolean forTokenGeneration) throws GeneralSecurityException, IOException {
+    private static GoogleCredential createServiceAccountCredential(String serviceaccountemail,
+                                                                   String keypath,
+                                                                   String password,
+                                                                   String jsonAuthContents,
+                                                                   Boolean forTokenGeneration) throws GeneralSecurityException, IOException {
         GoogleCredential credential;
         // Determine which keyfile we are trying to authenticate with.
         if (jsonAuthContents != null) {
