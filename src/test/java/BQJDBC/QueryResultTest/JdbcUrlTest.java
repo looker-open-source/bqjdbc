@@ -1,6 +1,7 @@
 package BQJDBC.QueryResultTest;
 
 import junit.framework.Assert;
+import net.starschema.clouddb.cmdlineverification.Oauth2Bigquery;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
@@ -8,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -100,6 +102,25 @@ public class JdbcUrlTest {
         BQConnection bqConn = new BQConnection(url, new Properties());
 
         BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
+        stmt.executeQuery("SELECT * FROM orders limit 1");
+    }
+
+    @Test
+    public void canConnectWithOAuthAccessToken() throws SQLException, IOException, GeneralSecurityException {
+        // generate access token from service account credentials
+        Properties serviceProps = getProperties("/protectedaccount.properties");
+        String accessToken = Oauth2Bigquery.generateAccessToken(
+            serviceProps.getProperty("user"),
+            serviceProps.getProperty("path"),
+            serviceProps.getProperty("password")
+        );
+
+        Properties oauthProps = getProperties("/oauthaccount.properties");
+        oauthProps.setProperty("password", accessToken);
+        String url = BQSupportFuncts.constructUrlFromPropertiesFile(oauthProps, true, null);
+        BQConnection bqConn = new BQConnection(url, new Properties());
+
+        BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
         stmt.executeQuery("SELECT * FROM orders limit 1");
     }
 

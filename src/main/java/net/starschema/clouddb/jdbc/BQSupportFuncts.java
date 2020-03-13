@@ -107,6 +107,17 @@ public class BQSupportFuncts {
             } else {
                 return null;
             }
+        } else if (properties.getProperty("type").equals("oauth")) {
+            if (Password != null && ProjectId != null) {
+                forreturn = BQDriver.getURLPrefix()
+                    + URLEncoder.encode(ProjectId, "UTF-8")
+                    + (dataset != null && full ? "/" + URLEncoder.encode(dataset, "UTF-8") : "");
+                if (full) {
+                    forreturn += "?oAuthAccessToken=" + URLEncoder.encode(Password, "UTF-8");
+                }
+            } else {
+                return null;
+            }
         } else {
             return null;
         }
