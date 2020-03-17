@@ -355,6 +355,17 @@ public class Oauth2Bigquery {
         return bigquery;
     }
 
+    /**
+     * This function gives back a valid OAuth 2.0 access token from service account credentials
+     *
+     * @param serviceaccountemail
+     * @param keypath
+     * @param password
+     * @param jsonAuthContents
+     * @return Valid OAuth 2.0 access token
+     * @throws GeneralSecurityException
+     * @throws IOException
+     */
     public static String generateAccessToken(String serviceaccountemail,
                                              String keypath,
                                              String password,
