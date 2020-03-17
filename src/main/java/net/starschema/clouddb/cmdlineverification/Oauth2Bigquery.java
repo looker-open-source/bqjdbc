@@ -209,7 +209,7 @@ public class Oauth2Bigquery {
      * @return Authorized Bigquery Connection via OAuth Token
      * @throws SQLException
      */
-    public static Bigquery authorizeviatoken(String oauthToken,
+    public static Bigquery authorizeViaToken(String oauthToken,
                                              String userAgent,
                                              Integer connectTimeout,
                                              Integer readTimeout) throws SQLException {

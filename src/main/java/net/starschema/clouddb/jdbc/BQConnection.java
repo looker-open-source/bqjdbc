@@ -230,7 +230,7 @@ public class BQConnection implements Connection {
         }
         else if (oAuthAccessToken != null) {
             try {
-                this.bigquery = Oauth2Bigquery.authorizeviatoken(oAuthAccessToken, userAgent, connectTimeout, readTimeout);
+                this.bigquery = Oauth2Bigquery.authorizeViaToken(oAuthAccessToken, userAgent, connectTimeout, readTimeout);
                 this.logger.info("Authorized with OAuth access token");
             } catch (SQLException e) {
                 throw new BQSQLException(e);
