@@ -65,9 +65,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class Oauth2Bigquery {
-
-    private static String servicepath = null;
-
     /**
      * Log4j logger, for debugging.
      */
@@ -198,7 +195,6 @@ public class Oauth2Bigquery {
 
         Bigquery bigquery = bqBuilder.build();
 
-        Oauth2Bigquery.servicepath = bigquery.getServicePath();
         return bigquery;
     }
 
@@ -242,7 +238,6 @@ public class Oauth2Bigquery {
 
         Bigquery bigquery = bqBuilder.build();
 
-        Oauth2Bigquery.servicepath = bigquery.getServicePath();
         return bigquery;
     }
 
@@ -352,8 +347,6 @@ public class Oauth2Bigquery {
         }
 
         Bigquery bigquery = bqBuilder.build();
-
-        Oauth2Bigquery.servicepath = bigquery.getServicePath();
 
         return bigquery;
     }
@@ -505,10 +498,6 @@ public class Oauth2Bigquery {
      */
     public static GoogleClientSecrets getClientSecrets() {
         return Oauth2Bigquery.clientSecrets;
-    }
-
-    public static String getservicepath() {
-        return Oauth2Bigquery.servicepath;
     }
 
     /**
