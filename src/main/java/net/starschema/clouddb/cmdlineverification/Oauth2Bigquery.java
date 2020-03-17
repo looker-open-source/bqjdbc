@@ -258,7 +258,7 @@ public class Oauth2Bigquery {
     private static GoogleCredential createP12Credential(String serviceaccountemail,
                                                          String keypath,
                                                          String password,
-                                                         Boolean forTokenGeneration) throws GeneralSecurityException, IOException {
+                                                         boolean forTokenGeneration) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
         GoogleCredential.Builder builder = new GoogleCredential.Builder()
                 .setTransport(CmdlineUtils.getHttpTransport())
@@ -287,7 +287,7 @@ public class Oauth2Bigquery {
      * @throws GeneralSecurityException
      * @throws IOException
      */
-    private static GoogleCredential createJsonCredential(String jsonAuthContents, Boolean forTokenGeneration) throws GeneralSecurityException, IOException {
+    private static GoogleCredential createJsonCredential(String jsonAuthContents, boolean forTokenGeneration) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
         // For .json load the key via credential.fromStream
         InputStream stringStream = new ByteArrayInputStream(jsonAuthContents.getBytes());
@@ -302,7 +302,7 @@ public class Oauth2Bigquery {
      * @throws GeneralSecurityException
      * @throws IOException
      */
-    private static GoogleCredential createJsonCredentialFromKeyfile(String keypath, Boolean forTokenGeneration) throws GeneralSecurityException, IOException {
+    private static GoogleCredential createJsonCredentialFromKeyfile(String keypath, boolean forTokenGeneration) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
         // For .json load the key via credential.fromStream
         File jsonKey = new File(keypath);
@@ -387,7 +387,7 @@ public class Oauth2Bigquery {
                                                                    String keypath,
                                                                    String password,
                                                                    String jsonAuthContents,
-                                                                   Boolean forTokenGeneration) throws GeneralSecurityException, IOException {
+                                                                   boolean forTokenGeneration) throws GeneralSecurityException, IOException {
         GoogleCredential credential;
         // Determine which keyfile we are trying to authenticate with.
         if (jsonAuthContents != null) {
@@ -402,7 +402,7 @@ public class Oauth2Bigquery {
     }
 
     // Helper function to generate scopes for credential files
-    private static List<String> GenerateScopes(Boolean forTokenGeneration){
+    private static List<String> GenerateScopes(boolean forTokenGeneration){
         List<String> scopes = new ArrayList<String>();
         if (forTokenGeneration) {
             scopes.add(BigqueryScopes.CLOUD_PLATFORM);
