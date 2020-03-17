@@ -77,6 +77,10 @@ public class Oauth2Bigquery {
             "epiphany", "konqueror", "conkeror", "midori", "kazehakase",
             "mozilla"};
     /**
+     * Application name set on bigquery connection
+     */
+    static final String applicationName = "Starschema BigQuery JDBC Driver";
+    /**
      * Google client secrets or {@code null} before initialized in
      * {@link #authorize}.
      */
@@ -227,7 +231,7 @@ public class Oauth2Bigquery {
             CmdlineUtils.getHttpTransport(),
             CmdlineUtils.getJsonFactory(),
             httpRequestInitializer
-        ).setApplicationName("Starschema BigQuery JDBC Driver");
+        ).setApplicationName(applicationName);
 
         BigQueryRequestUserAgentInitializer requestInitializer = new BigQueryRequestUserAgentInitializer();
         requestInitializer.setOauthToken(oauthToken);
@@ -337,7 +341,7 @@ public class Oauth2Bigquery {
                 CmdlineUtils.getHttpTransport(),
                 CmdlineUtils.getJsonFactory(),
                 httpRequestInitializer)
-                .setApplicationName("Starschema BigQuery JDBC Driver");
+                .setApplicationName(applicationName);
 
         if (userAgent != null) {
             BigQueryRequestUserAgentInitializer requestInitializer = new BigQueryRequestUserAgentInitializer();
@@ -362,7 +366,7 @@ public class Oauth2Bigquery {
             CmdlineUtils.getHttpTransport(),
             CmdlineUtils.getJsonFactory(),
             httpRequestInitializer
-        ).setApplicationName("Starschema BigQuery JDBC Driver");
+        ).setApplicationName(applicationName);
 
         IAMCredentials iamCredentials = builder.build();
 
