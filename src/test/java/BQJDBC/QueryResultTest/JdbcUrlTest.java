@@ -134,7 +134,7 @@ public class JdbcUrlTest {
         );
 
         Properties oauthProps = getProperties("/oauthaccount.properties");
-        oauthProps.setProperty("password", accessToken);
+        oauthProps.setProperty("oauthaccesstoken", accessToken);
         String url = BQSupportFuncts.constructUrlFromPropertiesFile(oauthProps, true, null);
         BQConnection bqConn = new BQConnection(url, new Properties());
 
