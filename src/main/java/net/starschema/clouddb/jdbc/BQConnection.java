@@ -158,6 +158,8 @@ public class BQConnection implements Connection {
         String userKey = caseInsensitiveProps.getProperty("password");
         String userPath = caseInsensitiveProps.getProperty("path");
 
+        String oAuthAccessToken = caseInsensitiveProps.getProperty("oauthaccesstoken");
+
         // extract withServiceAccount property
         String withServiceAccountParam = caseInsensitiveProps.getProperty("withserviceaccount");
         Boolean serviceAccount = (withServiceAccountParam != null) && Boolean.parseBoolean(withServiceAccountParam);
@@ -226,7 +228,14 @@ public class BQConnection implements Connection {
                 throw new BQSQLException(e);
             }
         }
-        //let use Oauth
+        else if (oAuthAccessToken != null) {
+            try {
+                this.bigquery = Oauth2Bigquery.authorizeViaToken(oAuthAccessToken, userAgent, connectTimeout, readTimeout);
+                this.logger.info("Authorized with OAuth access token");
+            } catch (SQLException e) {
+                throw new BQSQLException(e);
+            }
+        }
         else {
             this.bigquery = Oauth2Bigquery.authorizeviainstalled(userId, userKey, userAgent);
             this.logger.info("Authorized with Oauth");
