@@ -27,6 +27,7 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.bigquery.model.Job;
 
 import java.io.IOException;
@@ -129,6 +130,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             // Gets the Job reference of the completed job with give Query
             referencedJob = startQuery(querySql, unlimitedBillingBytes);
         } catch (IOException e) {
+            if (e instanceof GoogleJsonResponseException && ((GoogleJsonResponseException) e).getStatusCode() == 401) {
+                throw new BQSQLException("Not authorized to create the query: " + querySql, e);
+            }
             throw new BQSQLException("Something went wrong creating the query: " + querySql, e);
         }
         try {

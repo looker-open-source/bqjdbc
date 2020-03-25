@@ -3,15 +3,19 @@ package BQJDBC.QueryResultTest;
 import junit.framework.Assert;
 import net.starschema.clouddb.cmdlineverification.Oauth2Bigquery;
 import net.starschema.clouddb.jdbc.BQConnection;
+import net.starschema.clouddb.jdbc.BQSQLException;
 import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.internal.matchers.StringContains;
+import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -139,6 +143,22 @@ public class JdbcUrlTest {
         BQConnection bqConn = new BQConnection(url, new Properties());
 
         BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
+        stmt.executeQuery("SELECT * FROM orders limit 1");
+    }
+
+    @Rule
+    public ExpectedException exceptionRule = ExpectedException.none();
+
+    @Test
+    public void errorsWhenConnectWithInvalidOAuthAccessToken() throws SQLException, IOException {
+        Properties oauthProps = getProperties("/oauthaccount.properties");
+        oauthProps.setProperty("oauthaccesstoken", "invalid_token");
+        String url = BQSupportFuncts.constructUrlFromPropertiesFile(oauthProps, true, null);
+        BQConnection bqConn = new BQConnection(url, new Properties());
+
+        BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
+        exceptionRule.expect(BQSQLException.class);
+        exceptionRule.expectMessage(StringContains.containsString("Not authorized"));
         stmt.executeQuery("SELECT * FROM orders limit 1");
     }
 
