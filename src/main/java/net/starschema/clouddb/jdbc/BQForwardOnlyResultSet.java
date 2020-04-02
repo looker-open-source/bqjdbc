@@ -137,7 +137,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      */
     public Object getObject(int columnIndex) throws SQLException {
 
-        String result = getString(columnIndex);
+        String result = getString(columnIndex, false);
 
         if (this.wasNull()) {
             return null;
@@ -262,6 +262,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      * @throws SQLException - if the resultset is closed or the columnIndex is not valid, or the type is unsupported
      */
     public String getString(int columnIndex) throws SQLException {
+        return getString(columnIndex, true);
+    }
+
+    private String getString(int columnIndex, boolean formatTimestamps) throws SQLException {
         //to make the logfiles smaller!
         //logger.debug("Function call getString columnIndex is: " + String.valueOf(columnIndex));
         this.closestrm();
@@ -280,7 +284,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return null;
         }
         this.wasnull = false;
-        if (getMetaData().getColumnTypeName(columnIndex).equals("TIMESTAMP")) {
+        if (formatTimestamps && getMetaData().getColumnTypeName(columnIndex).equals("TIMESTAMP")) {
             Instant instant = Instant.ofEpochMilli((new BigDecimal((String) resultObject).movePointRight(3)).longValue());
             return TIMESTAMP_FORMATTER.format(instant);
         }
