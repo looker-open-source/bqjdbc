@@ -42,9 +42,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.*;
 import java.sql.Date;
+import java.sql.*;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -89,6 +92,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** Cursor position which goes from -1 to FETCH_SIZE then 0 to FETCH_SIZE
      * The -1 is needed because of the while(Result.next() == true) { } iterating method*/
     private int Cursor = -1;
+
+    private final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+            .withZone(ZoneId.of("UTC"));
 
     /**
      * Constructor for the forward only resultset
@@ -273,6 +280,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return null;
         }
         this.wasnull = false;
+        if (getMetaData().getColumnType(columnIndex) == Types.TIMESTAMP) {
+            Instant instant = Instant.ofEpochMilli((new BigDecimal((String) resultObject).movePointRight(3)).longValue());
+            return TIMESTAMP_FORMATTER.format(instant);
+        }
         if (resultObject instanceof List || resultObject instanceof Map) {
             Object resultTransformedWithSchema = smartTransformResult(
                     resultObject,
