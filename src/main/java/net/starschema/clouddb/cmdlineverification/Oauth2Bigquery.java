@@ -597,6 +597,8 @@ public class Oauth2Bigquery {
             return this.userAgent;
         }
 
+        public String getOauthToken() {return this.oauthToken; }
+
         @Override
         public void initializeBigqueryRequest(BigqueryRequest<?> request) throws IOException {
             if (userAgent != null) {
