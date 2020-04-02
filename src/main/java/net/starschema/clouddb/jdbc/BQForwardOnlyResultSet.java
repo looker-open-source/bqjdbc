@@ -280,7 +280,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return null;
         }
         this.wasnull = false;
-        if (getMetaData().getColumnType(columnIndex) == Types.TIMESTAMP) {
+        if (getMetaData().getColumnTypeName(columnIndex).equals("TIMESTAMP")) {
             Instant instant = Instant.ofEpochMilli((new BigDecimal((String) resultObject).movePointRight(3)).longValue());
             return TIMESTAMP_FORMATTER.format(instant);
         }
