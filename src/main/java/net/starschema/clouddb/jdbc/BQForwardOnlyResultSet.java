@@ -94,7 +94,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     private int Cursor = -1;
 
     private final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter
-            .ofPattern("yyyy-MM-dd HH:mm:ss")
+            .ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
             .withZone(ZoneId.of("UTC"));
 
     /**
@@ -281,7 +281,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         }
         this.wasnull = false;
         if (getMetaData().getColumnType(columnIndex) == Types.TIMESTAMP) {
-            Instant instant = Instant.ofEpochSecond(new BigDecimal((String) resultObject).longValue());
+            Instant instant = Instant.ofEpochMilli((new BigDecimal((String) resultObject).movePointRight(3)).longValue());
             return TIMESTAMP_FORMATTER.format(instant);
         }
         if (resultObject instanceof List || resultObject instanceof Map) {

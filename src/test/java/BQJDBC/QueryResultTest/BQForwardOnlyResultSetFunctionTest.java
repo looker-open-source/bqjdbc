@@ -373,7 +373,7 @@ public class BQForwardOnlyResultSetFunctionTest {
                 "['a', 'b', 'c'], " +
                 "[STRUCT(1 as a, 'hello' as b), STRUCT(2 as a, 'goodbye' as b)], " +
                 "STRUCT(1 as a, ['an', 'array'] as b)," +
-                "TIMESTAMP('2012-01-01 00:00:03') as t"
+                "TIMESTAMP('2012-01-01 00:00:03.032') as t"
         ;
 
         this.NewConnection(false);
@@ -407,7 +407,7 @@ public class BQForwardOnlyResultSetFunctionTest {
         Assert.assertEquals("1", mixedBagActual.get("a"));
         Assert.assertEquals(org.mortbay.util.ajax.JSON.toString(new String[]{"an", "array"}), org.mortbay.util.ajax.JSON.toString(mixedBagActual.get("b")));
 
-        Assert.assertEquals("2012-01-01 00:00:03", result.getString(5));
+        Assert.assertEquals("2012-01-01 00:00:03.032", result.getString(5));
     }
 
     @Test
