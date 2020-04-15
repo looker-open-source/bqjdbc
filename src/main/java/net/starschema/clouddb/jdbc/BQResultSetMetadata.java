@@ -27,12 +27,7 @@
 
 package net.starschema.clouddb.jdbc;
 
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Struct;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.List;
 
 import com.google.api.client.util.Data;
@@ -192,16 +187,24 @@ class BQResultsetMetaData implements ResultSetMetaData {
 
     /**
      * {@inheritDoc} <br>
-     * note: This Can only Return due to bigquery:<br>
-     * java.sql.Types.DOUBLE<br>
-     * java.sql.Types.BOOLEAN<br>
-     * java.sql.Types.BIGINT<br>
-     * java.sql.Types.VARCHAR<br>
-     * java.sql.Types.TIMESTAMP<br>
-     * java.sql.Types.DATE<br>
-     * java.sql.Types.NUMERIC<br>
-     * java.sql.Types.RECORD<br>
-     * java.sql.Types.STRUCT<br>
+     * note: see below for BQ type => Java type enum<br>
+     * INTEGER => java.sql.Types.BIGINT<br>
+     * NUMERIC => java.sql.Types.NUMERIC<br>
+     * FLOAT => java.sql.Types.DOUBLE<br>
+     * BOOLEAN => java.sql.Types.BOOLEAN<br>
+     * STRING => java.sql.Types.VARCHAR<br>
+     * BYTES => java.sql.Types.VARCHAR<br>
+     * DATE => java.sql.Types.DATE<br>
+     * DATETIME => java.sql.Types.TIMESTAMP<br>
+     * TIME => java.sql.Types.TIME<br>
+     * TIMESTAMP => java.sql.Types.TIMESTAMP<br>
+     * ARRAY => unsupported<br>
+     * STRUCT => java.sql.Types.STRUCT<br>
+     * GEOGRAPHY => unsupported<br>
+     *
+     * If making changes to this method, please ensure that these types stay 1:1 with the types listed here:
+     *   https://cloud.google.com/bigquery/data-types
+     *   https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types
      * */
     @Override
     public int getColumnType(int column) throws SQLException {
@@ -246,6 +249,14 @@ class BQResultsetMetaData implements ResultSetMetaData {
 
         if (Columntype.equals("NUMERIC")) {
             return java.sql.Types.NUMERIC;
+        }
+
+        if (Columntype.equals("TIME")) {
+            return Types.TIME;
+        }
+
+        if (Columntype.equals("BYTES")) {
+            return Types.VARCHAR;
         }
 
         if (Columntype.equals("RECORD") || Columntype.equals("STRUCT")) {
