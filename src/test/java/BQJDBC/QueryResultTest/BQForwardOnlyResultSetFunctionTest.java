@@ -38,6 +38,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.*;
 
 /**
  * This Junit test tests functions in BQResultset
@@ -442,6 +443,35 @@ public class BQForwardOnlyResultSetFunctionTest {
         SimpleDateFormat dateDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Date parsedDateDate = new java.sql.Date(dateDateFormat.parse("2011-04-03").getTime());
         Assert.assertEquals(parsedDateDate, result.getObject(4));
+    }
+
+    @Test
+    public void testResultSetArraysInGetObject() throws SQLException, ParseException {
+        final String sql = "SELECT [1, 2, 3], [TIMESTAMP(\"2010-09-07 15:30:00 America/Los_Angeles\")]";
+
+        this.NewConnection(false);
+        java.sql.ResultSet result = null;
+        try {
+            Statement stmt = BQForwardOnlyResultSetFunctionTest.con
+                    .createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            stmt.setQueryTimeout(500);
+            result = stmt.executeQuery(sql);
+            System.out.println(result);
+        } catch (SQLException e) {
+            this.logger.error("SQLException" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.next());
+        ArrayList<Long> expected = new ArrayList<>(Arrays.asList(new Long(1), new Long(2), new Long(3)));
+        Assert.assertEquals(expected, result.getObject(1));
+
+        SimpleDateFormat timestampDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss z");
+        Date parsedDate = timestampDateFormat.parse("2010-09-07 22:30:00 UTC");
+        Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
+        ArrayList<Timestamp> expectedTwo = new ArrayList<>();
+        expectedTwo.add(timestamp);
+        Assert.assertEquals(expectedTwo, result.getObject(2));
     }
 
 }

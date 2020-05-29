@@ -144,39 +144,55 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         }
 
         String Columntype = this.Result.getSchema().getFields().get(columnIndex - 1).getType();
+        String mode = this.Result.getSchema().getFields().get(columnIndex - 1).getMode();
+
+        String outerColType = "";
+
+        if (mode.equals("REPEATED")) {
+            outerColType = "ARRAY";
+        }
 
         try {
-            if (Columntype.equals("STRING")) {
-                return result;
-            }
-            if (Columntype.equals("FLOAT")) {
-                return toDouble(result);
-            }
-            if (Columntype.equals("BOOLEAN")) {
-                return toBoolean(result);
-            }
-            if (Columntype.equals("INTEGER")) {
-                return toLong(result);
-            }
-            if (Columntype.equals("TIMESTAMP")) {
-                return toTimestamp(result, null);
-            }
-            if (Columntype.equals("DATE")) {
-                return toDate(result, null);
-            }
-            if (Columntype.equals("DATETIME")) {
-                // Date time represents a "clock face" time and so should NOT be processed into an actual time
-                return result;
-            }
-            if (Columntype.equals("NUMERIC")) {
-                return toBigDecimal(result);
-            }
-            // For an unknown type, return the result as a string, much better than exploding.
+            return parseToObject(result, Columntype, outerColType);
+        }
+        catch (NumberFormatException err) {
+            throw new BQSQLException(err);
+        }
+    }
+
+    /** Convert result string to its appropriate Java type based on supplied ColumnType */
+    private Object parseToObject(String result, String Columntype, String outerColType) throws SQLException {
+        if (outerColType.equals("ARRAY")) {
+            return toArray(result, Columntype);
+        }
+        if (Columntype.equals("STRING")) {
             return result;
         }
-        catch (NumberFormatException e) {
-            throw new BQSQLException(e);
+        if (Columntype.equals("FLOAT")) {
+            return toDouble(result);
         }
+        if (Columntype.equals("BOOLEAN")) {
+            return toBoolean(result);
+        }
+        if (Columntype.equals("INTEGER")) {
+            return toLong(result);
+        }
+        if (Columntype.equals("TIMESTAMP")) {
+            return toTimestamp(result, null);
+        }
+        if (Columntype.equals("DATE")) {
+            return toDate(result, null);
+        }
+        if (Columntype.equals("DATETIME")) {
+            // Date time represents a "clock face" time and so should NOT be processed into an actual time
+            return result;
+        }
+        if (Columntype.equals("NUMERIC")) {
+            return toBigDecimal(result);
+        }
+
+        // For an unknown type, return the result as a string, much better than exploding.
+        return result;
     }
 
     // toXXX = common "parsing" between Object and primitive types - to prevent discrepancies. The 4 firsts are the core ones (types supported by BigQuery)
@@ -196,6 +212,22 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         }
     }
 
+    /** Parse array types */
+    private ArrayList<Object> toArray(String value, String Columntype) throws SQLException {
+        value = value.replace ("[", "");
+        value = value.replace ("]", "");
+        value = value.replace ("\"", "");
+
+        String unparsedStrings [] = value.split(",");
+
+        ArrayList<Object> parsedObjects = new ArrayList<>();
+
+        for (int i = 0; i < unparsedStrings.length; i ++) {
+            parsedObjects.add(i, parseToObject(unparsedStrings[i], Columntype, ""));
+        }
+
+        return parsedObjects;
+    }
 
     /** Parse integral types */
     private Long toLong(String value) throws SQLException {
