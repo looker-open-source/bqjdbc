@@ -461,9 +461,4 @@ public class BQForwardOnlyResultSetFunctionTest {
         Assert.assertEquals(parsedDateDate, result.getObject(4));
     }
 
-    @Test
-    public void testResultsWithLimitedRows() {
-
-    }
-
 }

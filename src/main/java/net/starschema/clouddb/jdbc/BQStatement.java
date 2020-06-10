@@ -129,12 +129,6 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         BQQueryParser parser = new BQQueryParser(querySql, this.connection);
         querySql = parser.parse();
         try {
-            // Gets the Job reference of the completed job with give Query
-            referencedJob = startQuery(querySql, unlimitedBillingBytes);
-        } catch (IOException e) {
-            throw new BQSQLException("Something went wrong creating the query: " + querySql, e);
-        }
-        try {
             if (this.connection.shouldUseQueryApi()) {
                 QueryResponse qr = BQSupportFuncts.runSyncQuery(
                         this.connection.getBigquery(),
@@ -146,9 +140,13 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         (long) querytimeout * 1000,
                         (long) getMaxRows()
                 );
+                boolean fetchedAll = qr.getTotalRows().equals(BigInteger.ZERO) ||
+                        qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()));
+                // Don't look up the job if we have nothing else we need to do
+                referencedJob = fetchedAll ?
+                        null :
+                        this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
                 if (qr.getJobComplete()) {
-                    boolean fetchedAll = qr.getTotalRows().equals(BigInteger.ZERO) ||
-                            qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()));
                     if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
                         return new BQForwardOnlyResultSet(
                                 this.connection.getBigquery(),
@@ -161,9 +159,15 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                     }
                     jobAlreadyCompleted = true;
                 }
-                referencedJob = this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
+            } else {
+                // Run the query async and return a Job that represents the running query
+                referencedJob = startQuery(querySql, unlimitedBillingBytes);
             }
+        } catch (IOException e) {
+            throw new BQSQLException("Something went wrong creating the query: " + querySql, e);
+        }
 
+        try {
             do {
                 if (this.connection.isClosed()) {
                     throw new BQSQLException("Connection is closed");

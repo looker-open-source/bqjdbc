@@ -106,7 +106,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      * Constructor for the forward only resultset
      * @param bigquery - the bigquery client to be used to connect
      * @param projectId - the project which contains the Job
-     * @param completedJob - the Job ID, which will be used to get the results
+     * @param completedJob - the Job ID, which will be used to get the results, can be null if prefetchedAllRows is true
      * @param bqStatementRoot - reference for the Statement which created the result
      * @param prefetchedRows - array of rows already fetched from BigQuery.
      * @param prefetchedAllRows - true if all rows have already been fetched and we should not ask for any more.
