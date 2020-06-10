@@ -667,7 +667,8 @@ public class BQSupportFuncts {
 
     static QueryResponse runSyncQuery(Bigquery bigquery, String projectId,
                                               String querySql, String dataSet, Boolean useLegacySql,
-                                              Long maxBillingBytes, Long queryTimeoutMs) throws IOException {
+                                              Long maxBillingBytes, Long queryTimeoutMs, Long maxResults
+    ) throws IOException {
         projectId = projectId.replace("__", ":").replace("_", ".");
 
         QueryRequest qr = new QueryRequest()
@@ -677,6 +678,9 @@ public class BQSupportFuncts {
                 .setMaximumBytesBilled(maxBillingBytes);
         if (dataSet != null) {
             qr.setDefaultDataset(new DatasetReference().setDatasetId(dataSet).setProjectId(projectId));
+        }
+        if (maxResults != null) {
+            qr.setMaxResults(maxResults);
         }
 
         return bigquery.jobs().query(querySql, qr)

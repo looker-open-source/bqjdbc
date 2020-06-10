@@ -265,7 +265,8 @@ public abstract class BQStatementRoot {
                         connection.getDataSet(),
                         this.connection.getUseLegacySql(),
                         billingBytes,
-                        (long) querytimeout * 1000
+                        (long) querytimeout * 1000,
+                        (long) getMaxRows()
                 );
                 if (qr.getJobComplete()) {
                     if (qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))) {
@@ -733,15 +734,10 @@ public abstract class BQStatementRoot {
     }
 
     /**
-     * <p>
-     * <h1>Implementation Details:</h1><br>
-     * arg0 == 0 ? arg0 : Integer.MAX_VALUE - 1
-     * </p>
-     *
-     * @throws BQSQLException
+     * NOTE: can pass 0 or negative to set to unlimited
      */
-    public void setMaxRows(int arg0) throws SQLException {
-        this.resultMaxRowCount = arg0 == 0 ? arg0 : Integer.MAX_VALUE - 1;
+    public void setMaxRows(int newMax) {
+        this.resultMaxRowCount = newMax <= 0 ? Integer.MAX_VALUE - 1 : newMax;
     }
 
     /**

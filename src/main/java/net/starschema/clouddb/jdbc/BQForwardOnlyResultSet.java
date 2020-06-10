@@ -76,7 +76,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /**Paging size, the original result will be paged by FETCH_SIZE rows     */
     protected int FETCH_SIZE = 5000;
     /**The Fetched rows count at the original results     */
-    protected BigInteger FETCH_POS = BigInteger.ZERO;
+    protected BigInteger fetchPos = BigInteger.ZERO;
     /** Are we at the first row? */
     protected boolean AT_FIRST = true;
     /** REference for the original statement which created this resultset     */
@@ -124,6 +124,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         this.projectId = projectId;
         if (prefetchedRows != null) {
             this.rowsofResult = prefetchedRows;
+            fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
             this.prefetchedAllRows = prefetchedAllRows;
             this.schema = schema;
         } else {
@@ -131,7 +132,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             GetQueryResultsResponse result;
             try {
                 result = BQSupportFuncts.getQueryResultsDivided(bigquery,
-                        projectId, completedJob, FETCH_POS, FETCH_SIZE);
+                        projectId, completedJob, fetchPos, FETCH_SIZE);
             } catch (IOException e) {
                 throw new BQSQLException("Failed to retrieve data", e);
             } //should not happen
@@ -142,7 +143,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             } else {                        //we got results, it wasn't empty
                 this.rowsofResult = result.getRows();
                 this.schema = result.getSchema();
-                FETCH_POS = FETCH_POS.add(BigInteger.valueOf(this.rowsofResult.size()));
+                fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
             }
         }
     }
@@ -1431,7 +1432,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         GetQueryResultsResponse result;
         try {
              result = BQSupportFuncts.getQueryResultsDivided(bigquery,
-                    projectId, completedJob, FETCH_POS, FETCH_SIZE);
+                    projectId, completedJob, fetchPos, FETCH_SIZE);
         }
         catch (IOException e) {
             //should not happen ... according to whoever cooked this up back in the day
@@ -1442,7 +1443,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return false;
         }
         this.rowsofResult = result.getRows();
-        FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long)this.rowsofResult.size()));
+        fetchPos = fetchPos.add(BigInteger.valueOf((long)this.rowsofResult.size()));
         Cursor = 0;
         return true;
     }

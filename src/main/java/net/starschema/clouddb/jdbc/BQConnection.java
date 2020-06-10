@@ -166,6 +166,7 @@ public class BQConnection implements Connection {
         String withServiceAccountParam = caseInsensitiveProps.getProperty("withserviceaccount");
         Boolean serviceAccount = (withServiceAccountParam != null) && Boolean.parseBoolean(withServiceAccountParam);
 
+        // There's really no reason anyone would ever not want to use this... but leave it in for a bit as a bailout switch
         String useQueryApiParam = caseInsensitiveProps.getProperty("usequeryapi");
         useQueryApi = useQueryApiParam == null || !useQueryApiParam.equalsIgnoreCase("false");
 

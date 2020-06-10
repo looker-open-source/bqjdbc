@@ -51,9 +51,11 @@ public class BQForwardOnlyResultSetFunctionTest {
     private static java.sql.ResultSet Result = null;
 
     Logger logger = Logger.getLogger(BQForwardOnlyResultSetFunctionTest.class.getName());
+    private Integer maxRows = null;
 
     @Test
     public void ChainedCursorFunctionTest() {
+        this.QueryLoad();
         this.logger.info("ChainedFunctionTest");
         try {
             Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
@@ -100,6 +102,7 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     @Test
     public void databaseMetaDataGetTables() {
+        this.QueryLoad();
         ResultSet result = null;
         try {
             result = con.getMetaData().getColumns(null, "starschema_net__clouddb", "OUTLET_LOOKUP", null);
@@ -135,6 +138,7 @@ public class BQForwardOnlyResultSetFunctionTest {
      */
     @Test
     public void isClosedValidtest() {
+        this.QueryLoad();
         try {
             Assert.assertEquals(true, BQForwardOnlyResultSetFunctionTest.con.isValid(0));
         } catch (SQLException e) {
@@ -183,7 +187,7 @@ public class BQForwardOnlyResultSetFunctionTest {
         NewConnection(true);
     }
 
-     void NewConnection(boolean useLegacySql) {
+    void NewConnection(boolean useLegacySql) {
 
          this.logger.info("Testing the JDBC driver");
          try {
@@ -201,9 +205,6 @@ public class BQForwardOnlyResultSetFunctionTest {
          }
          this.logger.info(((BQConnection) BQForwardOnlyResultSetFunctionTest.con)
                  .getURLPART());
-         if (useLegacySql) {
-            this.QueryLoad();
-        }
     }
 
     // Comprehensive Tests:
@@ -219,6 +220,9 @@ public class BQForwardOnlyResultSetFunctionTest {
             Statement stmt = BQForwardOnlyResultSetFunctionTest.con
                     .createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             stmt.setQueryTimeout(500);
+            if (this.maxRows != null) {
+                stmt.setMaxRows(this.maxRows);
+            }
             BQForwardOnlyResultSetFunctionTest.Result = stmt.executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -242,6 +246,7 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     @Test
     public void TestResultIndexOutofBound() {
+        this.QueryLoad();
         try {
             this.logger.debug(BQForwardOnlyResultSetFunctionTest.Result.getBoolean(99));
         } catch (SQLException e) {
@@ -253,6 +258,7 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     @Test
     public void TestResultSetFirst() {
+        this.QueryLoad();
         try {
 //            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.first());
             Result.next();
@@ -265,6 +271,7 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     @Test
     public void TestResultSetgetBoolean() {
+        this.QueryLoad();
         try {
             Assert.assertTrue(Result.next());
             Assert.assertEquals(Boolean.parseBoolean("42"),
@@ -277,6 +284,7 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     @Test
     public void TestResultSetgetFloat() {
+        this.QueryLoad();
         try {
             Assert.assertTrue(Result.next());
             Assert.assertEquals(new Float(42),
@@ -289,6 +297,7 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     @Test
     public void TestResultSetgetInteger() {
+        this.QueryLoad();
         try {
             Assert.assertTrue(Result.next());
             Assert.assertEquals(42, BQForwardOnlyResultSetFunctionTest.Result.getInt(2));
@@ -300,7 +309,7 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     @Test
     public void TestResultSetgetRow() {
-
+        this.QueryLoad();
         try {
             Assert.assertTrue(Result.next());
             BQForwardOnlyResultSetFunctionTest.Result.getRow();
@@ -311,6 +320,7 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     @Test
     public void TestResultSetgetString() {
+        this.QueryLoad();
         try {
             Assert.assertTrue(Result.next());
             Assert.assertEquals("you",
@@ -322,7 +332,14 @@ public class BQForwardOnlyResultSetFunctionTest {
     }
 
     @Test
+    public void TestResultSetNextWithLimitedRows() {
+        this.maxRows = 2;
+        TestResultSetNext();
+    }
+
+    @Test
     public void TestResultSetNext() {
+        this.QueryLoad();
         try {
 //            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.first());
             Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
@@ -442,6 +459,11 @@ public class BQForwardOnlyResultSetFunctionTest {
         SimpleDateFormat dateDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Date parsedDateDate = new java.sql.Date(dateDateFormat.parse("2011-04-03").getTime());
         Assert.assertEquals(parsedDateDate, result.getObject(4));
+    }
+
+    @Test
+    public void testResultsWithLimitedRows() {
+
     }
 
 }
