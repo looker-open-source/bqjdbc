@@ -40,6 +40,8 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.List;
 
+import static net.starschema.clouddb.jdbc.BQForwardOnlyResultSet.toDate;
+
 /**
  * This class implements the java.sql.ResultSet interface its superclass is
  * ScrollableResultset
@@ -178,6 +180,16 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
                     long val = new BigDecimal(result).longValue() * 1000;
                     return new Timestamp(val);
                 }
+                if (Columntype.equals("DATETIME")) {
+                    // Date time represents a "clock face" time and so should NOT be processed into an actual time
+                    return result;
+                }
+                if (Columntype.equals("NUMERIC")) {
+                    return new BigDecimal(result);
+                }
+                if (Columntype.equals("DATE")) {
+                    return toDate(result, null);
+                }
                 throw new BQSQLException("Unsupported Type");
             } catch (NumberFormatException e) {
                 throw new BQSQLException(e);
@@ -211,8 +223,8 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
         if (this.isClosed()) {
             throw new BQSQLException("This Resultset is Closed");
         }
-        String result = (String) ((TableRow) this.RowsofResult[this.Cursor]).getF()
-                .get(columnIndex - 1).getV();
+        String result = ((TableRow) this.RowsofResult[this.Cursor]).getF()
+                .get(columnIndex - 1).getV().toString();
         if (result == null) {
             this.wasnull = true;
         } else {
