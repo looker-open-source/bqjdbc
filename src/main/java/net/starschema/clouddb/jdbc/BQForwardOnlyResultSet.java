@@ -122,9 +122,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         this.bigquery = bigquery;
         this.completedJob = completedJob;
         this.projectId = projectId;
-        if (prefetchedRows != null) {
+        if (prefetchedRows != null || prefetchedAllRows) {
+            // prefetchedAllRows can be true with rows null for an empty result set
             this.rowsofResult = prefetchedRows;
-            fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
+            if (prefetchedRows != null)
+                fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
             this.prefetchedAllRows = prefetchedAllRows;
             this.schema = schema;
         } else {
