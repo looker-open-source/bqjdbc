@@ -29,6 +29,8 @@ public class CancelTest {
     public void setup() throws SQLException, IOException {
         String url = BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
                 .readFromPropFile(getClass().getResource("/installedaccount.properties").getFile()), true, null);
+        // this test relies on async to know when to attempt the cancel
+        url += "&useQueryApi=false";
         this.bq = new BQConnection(url, new Properties());
     }
 
