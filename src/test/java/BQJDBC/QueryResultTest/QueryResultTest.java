@@ -471,7 +471,49 @@ public class QueryResultTest {
     }
 
     @Test
+    public void QueryResultTestAsyncQuery() {
+        NewConnection("&useQueryApi=false");
+        final String sql = "SELECT STRING(ROUND(weight_pounds))  FROM publicdata:samples.natality GROUP BY 1 ORDER BY 1 DESC LIMIT 10;";
+        String[][] expectation = new String[][]{ {
+                "9.000000",
+                "8.000000",
+                "7.000000",
+                "6.000000",
+                "5.000000",
+                "4.000000",
+                "3.000000",
+                "2.000000",
+                "18.000000",
+                "17.000000"}};
+
+        this.logger.info("Running query:" + sql);
+
+        java.sql.ResultSet Result = null;
+        try {
+            Result = QueryResultTest.con.createStatement().executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(Result);
+
+        HelperFunctions.printer(expectation);
+
+        try {
+            Assert.assertTrue(
+                    "Comparing failed in the String[][] array",
+                    this.comparer(expectation,
+                            BQSupportMethods.GetQueryResult(Result)));
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail(e.toString());
+        }
+    }
+
+
+    @Test
     public void QueryResultTestSyncQuery() {
+        // sync is the default, but let's test it explicitly declared anyway
         NewConnection("&useQueryApi=true");
         final String sql = "SELECT STRING(ROUND(weight_pounds))  FROM publicdata:samples.natality GROUP BY 1 ORDER BY 1 DESC LIMIT 10;";
         String[][] expectation = new String[][]{ {
