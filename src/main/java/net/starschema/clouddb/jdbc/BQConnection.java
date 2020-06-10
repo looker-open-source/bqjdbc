@@ -165,7 +165,7 @@ public class BQConnection implements Connection {
         Boolean serviceAccount = (withServiceAccountParam != null) && Boolean.parseBoolean(withServiceAccountParam);
 
         String useQueryApiParam = caseInsensitiveProps.getProperty("usequeryapi");
-        useQueryApi = Boolean.parseBoolean(useQueryApiParam);
+        useQueryApi = useQueryApiParam == null || !useQueryApiParam.equalsIgnoreCase("false");
 
         // extract transformQuery property
         String transformQueryParam = caseInsensitiveProps.getProperty("transformquery");

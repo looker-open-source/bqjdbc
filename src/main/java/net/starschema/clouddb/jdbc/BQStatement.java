@@ -31,6 +31,7 @@ import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.QueryResponse;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -123,6 +124,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         this.starttime = System.currentTimeMillis();
         Job referencedJob;
         int retries = 0;
+        boolean jobAlreadyCompleted = false;
         // ANTLR Parsing
         BQQueryParser parser = new BQQueryParser(querySql, this.connection);
         querySql = parser.parse();
@@ -143,7 +145,14 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         this.connection.getMaxBillingBytes(),
                         (long) querytimeout * 1000
                 );
-                return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
+                if (qr.getJobComplete()) {
+                    if (qr.getTotalRows().equals(BigInteger.ZERO) ||
+                            qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))) {
+                        return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
+                    }
+                    jobAlreadyCompleted = true;
+                }
+                referencedJob = this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
             }
 
             do {
@@ -152,17 +161,21 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 }
 
                 String status;
-                try {
-                    status = BQSupportFuncts.getQueryState(referencedJob,
-                            this.connection.getBigquery(),
-                            this.ProjectId.replace("__", ":").replace("_", "."));
-                } catch (IOException e) {
-                    if (retries++ < MAX_IO_FAILURE_RETRIES) {
-                       continue;
-                    } else {
-                        throw new BQSQLException(
-                                "Something went wrong getting results for the job " + referencedJob.getId() + ", query: " + querySql,
-                                e);
+                if (jobAlreadyCompleted) {
+                    status = "DONE";
+                } else {
+                    try {
+                        status = BQSupportFuncts.getQueryState(referencedJob,
+                                this.connection.getBigquery(),
+                                this.ProjectId.replace("__", ":").replace("_", "."));
+                    } catch (IOException e) {
+                        if (retries++ < MAX_IO_FAILURE_RETRIES) {
+                            continue;
+                        } else {
+                            throw new BQSQLException(
+                                    "Something went wrong getting results for the job " + referencedJob.getId() + ", query: " + querySql,
+                                    e);
+                        }
                     }
                 }
 

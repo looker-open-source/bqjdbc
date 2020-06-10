@@ -32,6 +32,7 @@ import com.google.api.services.bigquery.model.QueryResponse;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.sql.*;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
@@ -253,6 +254,8 @@ public abstract class BQStatementRoot {
 
         Long billingBytes = !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null;
 
+        boolean jobAlreadyCompleted = false;
+
         try {
             if (this.connection.shouldUseQueryApi()) {
                 QueryResponse qr = BQSupportFuncts.runSyncQuery(
@@ -264,25 +267,33 @@ public abstract class BQStatementRoot {
                         billingBytes,
                         (long) querytimeout * 1000
                 );
-                return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
+                if (qr.getJobComplete()) {
+                    if (qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))) {
+                        return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
+                    }
+                    jobAlreadyCompleted = true;
+                }
+                referencedJob = this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
+            } else {
+                // Gets the Job reference of the completed job with give Query
+                referencedJob = BQSupportFuncts.startQuery(
+                        this.connection.getBigquery(),
+                        this.ProjectId,
+                        querySql,
+                        connection.getDataSet(),
+                        this.connection.getUseLegacySql(),
+                        billingBytes
+                );
             }
 
-            // Gets the Job reference of the completed job with give Query
-            referencedJob = BQSupportFuncts.startQuery(
-                    this.connection.getBigquery(),
-                    this.ProjectId,
-                    querySql,
-                    connection.getDataSet(),
-                    this.connection.getUseLegacySql(),
-                    billingBytes
-            );
+
             this.logger.info("Executing Query: " + querySql);
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong with the query: " + querySql, e);
         }
         try {
             do {
-                if (BQSupportFuncts.getQueryState(referencedJob,
+                if (jobAlreadyCompleted || BQSupportFuncts.getQueryState(referencedJob,
                         this.connection.getBigquery(), this.ProjectId).equals(
                         "DONE")) {
                     if (resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
