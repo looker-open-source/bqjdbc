@@ -42,9 +42,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.*;
 import java.sql.Date;
+import java.sql.*;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -90,6 +93,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      * The -1 is needed because of the while(Result.next() == true) { } iterating method*/
     private int Cursor = -1;
 
+    private final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+            .withZone(ZoneId.of("UTC"));
+
     /**
      * Constructor for the forward only resultset
      * @param bigquery - the bigquery client to be used to connect
@@ -130,7 +137,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      */
     public Object getObject(int columnIndex) throws SQLException {
 
-        String result = getString(columnIndex);
+        String result = getString(columnIndex, false);
 
         if (this.wasNull()) {
             return null;
@@ -255,6 +262,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      * @throws SQLException - if the resultset is closed or the columnIndex is not valid, or the type is unsupported
      */
     public String getString(int columnIndex) throws SQLException {
+        return getString(columnIndex, true);
+    }
+
+    private String getString(int columnIndex, boolean formatTimestamps) throws SQLException {
         //to make the logfiles smaller!
         //logger.debug("Function call getString columnIndex is: " + String.valueOf(columnIndex));
         this.closestrm();
@@ -273,6 +284,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return null;
         }
         this.wasnull = false;
+        if (formatTimestamps && getMetaData().getColumnTypeName(columnIndex).equals("TIMESTAMP")) {
+            Instant instant = Instant.ofEpochMilli((new BigDecimal((String) resultObject).movePointRight(3)).longValue());
+            return TIMESTAMP_FORMATTER.format(instant);
+        }
         if (resultObject instanceof List || resultObject instanceof Map) {
             Object resultTransformedWithSchema = smartTransformResult(
                     resultObject,

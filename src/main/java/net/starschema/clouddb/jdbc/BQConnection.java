@@ -160,6 +160,8 @@ public class BQConnection implements Connection {
         String userKey = caseInsensitiveProps.getProperty("password");
         String userPath = caseInsensitiveProps.getProperty("path");
 
+        String oAuthAccessToken = caseInsensitiveProps.getProperty("oauthaccesstoken");
+
         // extract withServiceAccount property
         String withServiceAccountParam = caseInsensitiveProps.getProperty("withserviceaccount");
         Boolean serviceAccount = (withServiceAccountParam != null) && Boolean.parseBoolean(withServiceAccountParam);
@@ -174,6 +176,8 @@ public class BQConnection implements Connection {
         // extract useLegacySql property
         String legacySqlParam = caseInsensitiveProps.getProperty("uselegacysql");
         this.useLegacySql = (legacySqlParam == null) || Boolean.parseBoolean(legacySqlParam);
+
+        String jsonAuthContents = caseInsensitiveProps.getProperty("jsonauthcontents");
 
         String readTimeoutString = caseInsensitiveProps.getProperty("readtimeout");
         Integer readTimeout = null;
@@ -221,7 +225,7 @@ public class BQConnection implements Connection {
                     userPath = userKey;
                     userKey = null;
                 }
-                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey, userAgent, connectTimeout, readTimeout);
+                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey, userAgent, jsonAuthContents, readTimeout, connectTimeout);
                 this.logger.info("Authorized with service account");
             } catch (GeneralSecurityException e) {
                 throw new BQSQLException(e);
@@ -229,7 +233,14 @@ public class BQConnection implements Connection {
                 throw new BQSQLException(e);
             }
         }
-        //let use Oauth
+        else if (oAuthAccessToken != null) {
+            try {
+                this.bigquery = Oauth2Bigquery.authorizeViaToken(oAuthAccessToken, userAgent, connectTimeout, readTimeout);
+                this.logger.info("Authorized with OAuth access token");
+            } catch (SQLException e) {
+                throw new BQSQLException(e);
+            }
+        }
         else {
             this.bigquery = Oauth2Bigquery.authorizeviainstalled(userId, userKey, userAgent);
             this.logger.info("Authorized with Oauth");

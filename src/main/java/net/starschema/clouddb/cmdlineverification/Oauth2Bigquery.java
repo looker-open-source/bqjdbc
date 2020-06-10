@@ -43,17 +43,15 @@ import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryRequest;
 import com.google.api.services.bigquery.BigqueryRequestInitializer;
 import com.google.api.services.bigquery.BigqueryScopes;
+import com.google.api.services.iamcredentials.v1.IAMCredentials;
+import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenRequest;
+import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenResponse;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import java.awt.*;
 import java.awt.Desktop.Action;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -62,13 +60,11 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class Oauth2Bigquery {
-
-    private static String servicepath = null;
-
     /**
      * Log4j logger, for debugging.
      */
@@ -80,6 +76,10 @@ public class Oauth2Bigquery {
     static final String[] browsers = {"google-chrome", "firefox", "opera",
             "epiphany", "konqueror", "conkeror", "midori", "kazehakase",
             "mozilla"};
+    /**
+     * Application name set on bigquery connection
+     */
+    static final String applicationName = "Starschema BigQuery JDBC Driver";
     /**
      * Google client secrets or {@code null} before initialized in
      * {@link #authorize}.
@@ -199,7 +199,49 @@ public class Oauth2Bigquery {
 
         Bigquery bigquery = bqBuilder.build();
 
-        Oauth2Bigquery.servicepath = bigquery.getServicePath();
+        return bigquery;
+    }
+
+    /**
+     * Authorizes a bigquery Connection with the given OAuth 2.0 Access Token
+     *
+     * @param oauthToken
+     * @return Authorized Bigquery Connection via OAuth Token
+     * @throws SQLException
+     */
+    public static Bigquery authorizeViaToken(String oauthToken,
+                                             String userAgent,
+                                             Integer connectTimeout,
+                                             Integer readTimeout) throws SQLException {
+        GoogleCredential.Builder builder = new GoogleCredential.Builder()
+            .setTransport(CmdlineUtils.getHttpTransport())
+            .setJsonFactory(CmdlineUtils.getJsonFactory());
+        GoogleCredential credential = builder.build();
+
+        HttpRequestTimeoutInitializer httpRequestInitializer = new HttpRequestTimeoutInitializer(credential);
+        if (connectTimeout != null) {
+            httpRequestInitializer.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout != null) {
+            httpRequestInitializer.setReadTimeout(readTimeout);
+        }
+
+        logger.debug("Creating a new bigquery client.");
+        Builder bqBuilder = new Builder(
+            CmdlineUtils.getHttpTransport(),
+            CmdlineUtils.getJsonFactory(),
+            httpRequestInitializer
+        ).setApplicationName(applicationName);
+
+        BigQueryRequestUserAgentInitializer requestInitializer = new BigQueryRequestUserAgentInitializer();
+        requestInitializer.setOauthToken(oauthToken);
+        if (userAgent != null) {
+            requestInitializer.setUserAgent(userAgent);
+        }
+        bqBuilder.setBigqueryRequestInitializer(requestInitializer);
+
+        Bigquery bigquery = bqBuilder.build();
+
         return bigquery;
     }
 
@@ -214,14 +256,15 @@ public class Oauth2Bigquery {
      */
     private static GoogleCredential createP12Credential(String serviceaccountemail,
                                                          String keypath,
-                                                         String password) throws GeneralSecurityException, IOException {
+                                                         String password,
+                                                         boolean forTokenGeneration) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
         GoogleCredential.Builder builder = new GoogleCredential.Builder()
                 .setTransport(CmdlineUtils.getHttpTransport())
                 .setJsonFactory(CmdlineUtils.getJsonFactory())
                 .setServiceAccountId(serviceaccountemail)
                 // e-mail ADDRESS!!!!
-                .setServiceAccountScopes(GenerateScopes());
+                .setServiceAccountScopes(GenerateScopes(forTokenGeneration));
                 // Currently we only want to access bigquery, but it's possible
                 // to name more than one service too
 
@@ -235,6 +278,21 @@ public class Oauth2Bigquery {
         return builder.build();
     }
 
+   /**
+     * This function gives back an built GoogleCredential Object from a String representing the contents of a JSON keyfile
+     *
+     * @param jsonAuthContents
+     * @return Built GoogleCredential via and keypath
+     * @throws GeneralSecurityException
+     * @throws IOException
+     */
+    private static GoogleCredential createJsonCredential(String jsonAuthContents, boolean forTokenGeneration) throws GeneralSecurityException, IOException {
+        logger.debug("Authorizing with service account.");
+        // For .json load the key via credential.fromStream
+        InputStream stringStream = new ByteArrayInputStream(jsonAuthContents.getBytes());
+        return GoogleCredential.fromStream(stringStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory()).createScoped(GenerateScopes(forTokenGeneration));
+    }
+
     /**
      * This function gives back an built GoogleCredential Object from a json keyfile
      *
@@ -243,12 +301,12 @@ public class Oauth2Bigquery {
      * @throws GeneralSecurityException
      * @throws IOException
      */
-    private static GoogleCredential createJsonCredential(String keypath) throws GeneralSecurityException, IOException {
+    private static GoogleCredential createJsonCredentialFromKeyfile(String keypath, boolean forTokenGeneration) throws GeneralSecurityException, IOException {
         logger.debug("Authorizing with service account.");
         // For .json load the key via credential.fromStream
         File jsonKey = new File(keypath);
         InputStream inputStream = new FileInputStream(jsonKey);
-        return GoogleCredential.fromStream(inputStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory()).createScoped(GenerateScopes());
+        return GoogleCredential.fromStream(inputStream, CmdlineUtils.getHttpTransport(), CmdlineUtils.getJsonFactory()).createScoped(GenerateScopes(forTokenGeneration));
     }
 
     /**
@@ -257,6 +315,7 @@ public class Oauth2Bigquery {
      *
      * @param serviceaccountemail
      * @param keypath
+     * @param jsonAuthContents
      * @return Authorized Bigquery Client via serviceaccount e-mail and keypath
      * @throws GeneralSecurityException
      * @throws IOException
@@ -265,15 +324,8 @@ public class Oauth2Bigquery {
                                                String keypath,
                                                String password,
                                                String userAgent,
-                                               Integer connectTimeout,
-                                               Integer readTimeout) throws GeneralSecurityException, IOException {
-        GoogleCredential credential;
-        // Determine which keyfile we are trying to authenticate with.
-        if (Pattern.matches(".*\\.json$", keypath)) {
-            credential = Oauth2Bigquery.createJsonCredential(keypath);
-        } else {
-            credential = Oauth2Bigquery.createP12Credential(serviceaccountemail, keypath, password);
-        }
+                                               String jsonAuthContents, Integer readTimeout, Integer connectTimeout) throws GeneralSecurityException, IOException {
+        GoogleCredential credential = createServiceAccountCredential(serviceaccountemail, keypath, password, jsonAuthContents, false);
 
         logger.debug("Authorizied?");
 
@@ -289,7 +341,7 @@ public class Oauth2Bigquery {
                 CmdlineUtils.getHttpTransport(),
                 CmdlineUtils.getJsonFactory(),
                 httpRequestInitializer)
-                .setApplicationName("Starschema BigQuery JDBC Driver");
+                .setApplicationName(applicationName);
 
         if (userAgent != null) {
             BigQueryRequestUserAgentInitializer requestInitializer = new BigQueryRequestUserAgentInitializer();
@@ -300,17 +352,73 @@ public class Oauth2Bigquery {
 
         Bigquery bigquery = bqBuilder.build();
 
-        Oauth2Bigquery.servicepath = bigquery.getServicePath();
-
         return bigquery;
     }
 
+    /**
+     * This function gives back a valid OAuth 2.0 access token from service account credentials
+     *
+     * @param serviceaccountemail
+     * @param keypath
+     * @param password
+     * @param jsonAuthContents
+     * @return Valid OAuth 2.0 access token
+     * @throws GeneralSecurityException
+     * @throws IOException
+     */
+    public static String generateAccessToken(String serviceaccountemail,
+                                             String keypath,
+                                             String password,
+                                             String jsonAuthContents) throws GeneralSecurityException, IOException {
+        GoogleCredential credential = createServiceAccountCredential(serviceaccountemail, keypath, password, jsonAuthContents, true);
+        HttpRequestTimeoutInitializer httpRequestInitializer = new HttpRequestTimeoutInitializer(credential);
+
+        IAMCredentials.Builder builder = new IAMCredentials.Builder(
+            CmdlineUtils.getHttpTransport(),
+            CmdlineUtils.getJsonFactory(),
+            httpRequestInitializer
+        ).setApplicationName(applicationName);
+
+        IAMCredentials iamCredentials = builder.build();
+
+        String name = "projects/-/serviceAccounts/" + serviceaccountemail;
+        GenerateAccessTokenRequest request = new GenerateAccessTokenRequest();
+        request.setScope(Collections.singletonList(BigqueryScopes.CLOUD_PLATFORM));
+
+        IAMCredentials.Projects.ServiceAccounts.GenerateAccessToken generateAccessToken;
+        generateAccessToken = iamCredentials.projects().serviceAccounts().generateAccessToken(name, request);
+        GenerateAccessTokenResponse response = generateAccessToken.execute();
+        return response.getAccessToken();
+    }
+
+    private static GoogleCredential createServiceAccountCredential(String serviceaccountemail,
+                                                                   String keypath,
+                                                                   String password,
+                                                                   String jsonAuthContents,
+                                                                   boolean forTokenGeneration) throws GeneralSecurityException, IOException {
+        GoogleCredential credential;
+        // Determine which keyfile we are trying to authenticate with.
+        if (jsonAuthContents != null) {
+            credential = Oauth2Bigquery.createJsonCredential(jsonAuthContents, forTokenGeneration);
+        } else if (Pattern.matches(".*\\.json$", keypath)) {
+            // For backwards compat: this is no longer the preferred path for JSON (better to use [jsonAuthContents]
+            credential = Oauth2Bigquery.createJsonCredentialFromKeyfile(keypath, forTokenGeneration);
+        } else {
+            credential = Oauth2Bigquery.createP12Credential(serviceaccountemail, keypath, password, forTokenGeneration);
+        }
+        return credential;
+    }
+
     // Helper function to generate scopes for credential files
-    private static List<String> GenerateScopes(){
+    private static List<String> GenerateScopes(boolean forTokenGeneration){
         List<String> scopes = new ArrayList<String>();
-        scopes.add(BigqueryScopes.BIGQUERY);
-        // don't have access to DriveScopes without requiring the entire google drive sdk.
-        scopes.add(DRIVE_SCOPE);
+        if (forTokenGeneration) {
+            scopes.add(BigqueryScopes.CLOUD_PLATFORM);
+        } else {
+            scopes.add(BigqueryScopes.BIGQUERY);
+            // don't have access to DriveScopes without requiring the entire google drive sdk.
+            scopes.add(DRIVE_SCOPE);
+        }
         return scopes;
     }
 
@@ -407,10 +515,6 @@ public class Oauth2Bigquery {
         return Oauth2Bigquery.clientSecrets;
     }
 
-    public static String getservicepath() {
-        return Oauth2Bigquery.servicepath;
-    }
-
     /**
      * Creates GoogleClientsecrets "installed application" instance based on
      * given Clientid, and Clientsecret
@@ -481,14 +585,19 @@ public class Oauth2Bigquery {
     private static class BigQueryRequestUserAgentInitializer extends BigqueryRequestInitializer {
 
         String userAgent = null;
+        String oauthToken = null;
 
         public void setUserAgent(String userAgent) {
             this.userAgent = userAgent;
         }
 
+        public void setOauthToken(String oauthToken) { this.oauthToken = oauthToken; }
+
         public String getUserAgent() {
             return this.userAgent;
         }
+
+        public String getOauthToken() {return this.oauthToken; }
 
         @Override
         public void initializeBigqueryRequest(BigqueryRequest<?> request) throws IOException {
@@ -498,6 +607,9 @@ public class Oauth2Bigquery {
                 currentHeaders.setUserAgent(userAgent);
 
                 request.setRequestHeaders(currentHeaders);
+            }
+            if (oauthToken != null) {
+                request.setOauthToken(oauthToken);
             }
         }
     }
