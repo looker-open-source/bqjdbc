@@ -146,8 +146,16 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         (long) querytimeout * 1000
                 );
                 if (qr.getJobComplete()) {
-                    if (qr.getTotalRows().equals(BigInteger.ZERO) ||
-                            qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))) {
+                    boolean fetchedAll = qr.getTotalRows().equals(BigInteger.ZERO) ||
+                            qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()));
+                    if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
+                        return new BQForwardOnlyResultSet(
+                                this.connection.getBigquery(),
+                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                referencedJob, this, qr.getRows(), fetchedAll, qr.getSchema());
+                    } else if (fetchedAll) {
+                        // We can only return scrollable result sets here if we have all the rows: otherwise we'll
+                        // have to go get more below
                         return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
                     }
                     jobAlreadyCompleted = true;
