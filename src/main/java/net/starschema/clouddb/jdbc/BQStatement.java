@@ -140,8 +140,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         (long) 10 * 1000, // we need this to respond fast enough to avoid any socket timeouts
                         (long) getMaxRows()
                 );
-                boolean fetchedAll = qr.getJobComplete() && (qr.getTotalRows().equals(BigInteger.ZERO) ||
-                        qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size())));
+                boolean fetchedAll = qr.getJobComplete() && qr.getTotalRows() != null &&
+                        (qr.getTotalRows().equals(BigInteger.ZERO) ||
+                                (qr.getRows() != null && qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))));
                 // Don't look up the job if we have nothing else we need to do
                 referencedJob = fetchedAll ?
                         null :
