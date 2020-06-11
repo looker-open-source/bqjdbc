@@ -137,11 +137,11 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         connection.getDataSet(),
                         this.connection.getUseLegacySql(),
                         !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
-                        (long) querytimeout * 1000,
+                        (long) 10 * 1000, // we need this to respond fast enough to avoid any socket timeouts
                         (long) getMaxRows()
                 );
-                boolean fetchedAll = qr.getTotalRows().equals(BigInteger.ZERO) ||
-                        qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()));
+                boolean fetchedAll = qr.getJobComplete() && (qr.getTotalRows().equals(BigInteger.ZERO) ||
+                        qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size())));
                 // Don't look up the job if we have nothing else we need to do
                 referencedJob = fetchedAll ?
                         null :
