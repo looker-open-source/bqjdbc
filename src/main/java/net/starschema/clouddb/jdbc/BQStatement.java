@@ -48,6 +48,11 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     private Job job;
 
     /**
+     * Enough time to give most fast queries time to complete, but not too long so that we worry about
+     * having our socket closed by any reasonable intermediate component. */
+    private static final long SYNC_TIMEOUT_MILLIS = 10 * 1000;
+
+    /**
      * Constructor for BQStatement object just initializes local variables
      *
      * @param projectid
@@ -137,7 +142,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         connection.getDataSet(),
                         this.connection.getUseLegacySql(),
                         !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
-                        (long) 10 * 1000, // we need this to respond fast enough to avoid any socket timeouts
+                        SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
                         (long) getMaxRows()
                 );
                 boolean fetchedAll = qr.getJobComplete() && qr.getTotalRows() != null &&

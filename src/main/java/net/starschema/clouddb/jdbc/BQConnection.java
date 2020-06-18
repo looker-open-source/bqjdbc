@@ -1063,7 +1063,8 @@ public class BQConnection implements Connection {
     /**
      * Returns true if queries on this connection should use the synchronous jobs.query api to run queries.
      *
-     * This API is faster by avoiding the async overhead of job polling, but does not currently support maxBillingGBs.
+     * This is the default, and the old, async API is being left in as a bailout switch in case there is some use case
+     * that only it supports that a client discovers.
      * */
     boolean shouldUseQueryApi() {
         return useQueryApi;
