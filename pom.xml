@@ -62,11 +62,6 @@
       <version>v1-rev66-1.25.0</version>
     </dependency>
     <dependency>
-      <groupId>com.google.apis</groupId>
-      <artifactId>google-api-services-iamcredentials</artifactId>
-      <version>v1-rev66-1.25.0</version>
-    </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.8.2</version>
