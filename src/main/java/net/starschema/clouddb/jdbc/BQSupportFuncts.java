@@ -665,6 +665,25 @@ public class BQSupportFuncts {
         return properties;
     }
 
+    /**
+     * Run a query using the synchronous jobs.query() BigQuery endpoint.
+     *
+     * @param bigquery The BigQuery API wrapper
+     * @param projectId
+     * @param querySql The SQL to execute
+     * @param dataSet default dataset, can be null
+     * @param useLegacySql
+     * @param maxBillingBytes Maximum bytes that the API will allow to bill
+     * @param queryTimeoutMs The timeout at which point the API will return with an incomplete result
+     *                         NOTE: this does _not_ mean the query fails, just we have to get the results async
+     * @param maxResults The maximum number of rows to return with the synchronous response
+     *                     Can be null for no max, but the API always has a 10MB limit
+     *                     If more results exist, we need to fetch them in subsequent API requests.
+     *
+     * @return A [QueryResponse] with the results of the query, may be incomplete, may not have all rows.
+     *
+     * @throws IOException
+     */
     static QueryResponse runSyncQuery(Bigquery bigquery, String projectId,
                                               String querySql, String dataSet, Boolean useLegacySql,
                                               Long maxBillingBytes, Long queryTimeoutMs, Long maxResults
