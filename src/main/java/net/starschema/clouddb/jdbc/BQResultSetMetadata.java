@@ -30,10 +30,10 @@ package net.starschema.clouddb.jdbc;
 import java.sql.*;
 import java.util.List;
 
-import com.google.api.client.util.Data;
 import org.apache.log4j.Logger;
 
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
+import com.google.api.services.bigquery.model.QueryResponse;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableSchema;
 
@@ -44,11 +44,10 @@ import com.google.api.services.bigquery.model.TableSchema;
  */
 class BQResultsetMetaData implements ResultSetMetaData {
 
-    /** Reference of the bigquery GetQueryResultsResponse object */
-    GetQueryResultsResponse result = null;
+    TableSchema schema;
+    String projectId;
 
-    /** Reference of the bigquery GetQueryResultsResponse object */
-    ResultSet results = null;
+    QueryResponse result = null;
 
     /** Logger instance */
     Logger logger = Logger.getLogger(BQResultsetMetaData.class.getName());
@@ -59,8 +58,12 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * @param result the bigquery GetQueryResultsResponse object
      */
     public BQResultsetMetaData(GetQueryResultsResponse result) {
-        //logger.debug("function call getResultSetMetaData()");
-        this.result = result;
+        this(result.getSchema(), result.getJobReference().getProjectId());
+    }
+
+    public BQResultsetMetaData(TableSchema schema, String projectId) {
+        this.schema = schema;
+        this.projectId = projectId;
     }
 
     /**
@@ -73,9 +76,8 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public String getCatalogName(int column) throws SQLException {
-        logger.debug("function call getCatalogName() return is: " +
-                this.result.getJobReference().getProjectId());
-        return this.result.getJobReference().getProjectId();
+        logger.debug("function call getCatalogName() return is: " + projectId);
+        return projectId;
     }
 
     /**
@@ -92,7 +94,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
 
         String Columntype = null;
         try {
-            Columntype = this.result.getSchema().getFields().get(column - 1)
+            Columntype = schema.getFields().get(column - 1)
                     .getType();
         } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException(e);
@@ -128,7 +130,6 @@ class BQResultsetMetaData implements ResultSetMetaData {
     /** {@inheritDoc} */
     @Override
     public int getColumnCount() throws SQLException {
-        TableSchema schema = this.result.getSchema();
         List<TableFieldSchema> schemafieldlist = null;
         if (schema != null) {
             schemafieldlist = schema.getFields();
@@ -136,7 +137,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
             return 0;
         }
         if (schemafieldlist != null) {
-            return this.result.getSchema().getFields().size();
+            return schema.getFields().size();
         } else {
             return 0;
         }
@@ -163,7 +164,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
             throw new IndexOutOfBoundsException();
         }
         try {
-            return this.result.getSchema().getFields().get(column - 1)
+            return schema.getFields().get(column - 1)
                     .getName();
         } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException(e);
@@ -178,7 +179,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
                     new IndexOutOfBoundsException());
         }
         try {
-            return this.result.getSchema().getFields().get(column - 1)
+            return schema.getFields().get(column - 1)
                     .getName();
         } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnName(int)", e);
@@ -213,7 +214,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         }
         String Columntype = "";
         try {
-            Columntype = this.result.getSchema().getFields().get(column - 1)
+            Columntype = schema.getFields().get(column - 1)
                     .getType();
         } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnType(int)", e);
@@ -275,7 +276,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         }
         String Columntype = "";
         try {
-            Columntype = this.result.getSchema().getFields().get(column - 1)
+            Columntype = schema.getFields().get(column - 1)
                     .getType();
         } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getColumnTypeName(int)", e);
@@ -291,7 +292,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
         }
         String Columntype = "";
         try {
-            Columntype = this.result.getSchema().getFields().get(column - 1)
+            Columntype = schema.getFields().get(column - 1)
                     .getType();
         } catch (IndexOutOfBoundsException e) {
             throw new BQSQLException("getPrecision(int)", e);
@@ -335,25 +336,10 @@ class BQResultsetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getScale(int column) throws SQLException {
-        if (this.getColumnType(column) == java.sql.Types.DOUBLE) {
-            int max = 0;
-            for (int i = 0; i < this.result.getRows().size(); i++) {
-                Object rowdataObject = this.result.getRows().get(i).getF().get(column - 1).getV();
-                if (Data.isNull(rowdataObject)) {
-                    return 0;
-                }
-                String rowdata = (String) rowdataObject;
-                if (rowdata.contains(".")) {
-                    int pointback = rowdata.length() - rowdata.indexOf(".");
-                    if (pointback > max) {
-                        pointback = max;
-                    }
-                }
-            }
-            return max;
-        } else {
-            return 0;
-        }
+        // This returns zero always. It would be better for it to throw a NotImplemented exception,
+        // but at one point it was written with some code that tried to do something silly with decimals but always
+        // ended up returning zero, so for now just go with constant return 0.
+        return 0;
     }
 
     /**

@@ -28,9 +28,11 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.QueryResponse;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.sql.*;
 
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
@@ -60,7 +62,7 @@ public abstract class BQStatementRoot {
     BQConnection connection;
 
     /** Variable that stores the set query timeout */
-    int querytimeout = Integer.MAX_VALUE;
+    int querytimeout = Integer.MAX_VALUE / 1000 - 1;
     /** Instance of log4j.Logger */
     /**
      * Variable stores the time an execute is made
@@ -252,23 +254,47 @@ public abstract class BQStatementRoot {
 
         Long billingBytes = !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null;
 
+        boolean jobAlreadyCompleted = false;
+
         try {
-            // Gets the Job reference of the completed job with give Query
-            referencedJob = BQSupportFuncts.startQuery(
-                    this.connection.getBigquery(),
-                    this.ProjectId,
-                    querySql,
-                    connection.getDataSet(),
-                    this.connection.getUseLegacySql(),
-                    billingBytes
-            );
+            if (this.connection.shouldUseQueryApi()) {
+                QueryResponse qr = BQSupportFuncts.runSyncQuery(
+                        this.connection.getBigquery(),
+                        this.ProjectId,
+                        querySql,
+                        connection.getDataSet(),
+                        this.connection.getUseLegacySql(),
+                        billingBytes,
+                        (long) querytimeout * 1000,
+                        (long) getMaxRows()
+                );
+                if (qr.getJobComplete()) {
+                    if (qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))) {
+                        return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
+                    }
+                    jobAlreadyCompleted = true;
+                }
+                referencedJob = this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
+            } else {
+                // Gets the Job reference of the completed job with give Query
+                referencedJob = BQSupportFuncts.startQuery(
+                        this.connection.getBigquery(),
+                        this.ProjectId,
+                        querySql,
+                        connection.getDataSet(),
+                        this.connection.getUseLegacySql(),
+                        billingBytes
+                );
+            }
+
+
             this.logger.info("Executing Query: " + querySql);
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong with the query: " + querySql, e);
         }
         try {
             do {
-                if (BQSupportFuncts.getQueryState(referencedJob,
+                if (jobAlreadyCompleted || BQSupportFuncts.getQueryState(referencedJob,
                         this.connection.getBigquery(), this.ProjectId).equals(
                         "DONE")) {
                     if (resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
@@ -708,15 +734,10 @@ public abstract class BQStatementRoot {
     }
 
     /**
-     * <p>
-     * <h1>Implementation Details:</h1><br>
-     * arg0 == 0 ? arg0 : Integer.MAX_VALUE - 1
-     * </p>
-     *
-     * @throws BQSQLException
+     * NOTE: can pass 0 or negative to set to unlimited
      */
-    public void setMaxRows(int arg0) throws SQLException {
-        this.resultMaxRowCount = arg0 == 0 ? arg0 : Integer.MAX_VALUE - 1;
+    public void setMaxRows(int newMax) {
+        this.resultMaxRowCount = newMax <= 0 ? Integer.MAX_VALUE - 1 : newMax;
     }
 
     /**

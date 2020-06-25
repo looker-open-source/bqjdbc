@@ -24,19 +24,18 @@
  */
 package BQJDBC.QueryResultTest;
 
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.BQSupportMethods;
-
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 //import net.starschema.clouddb.bqjdbc.logging.Logger;
 
 /**
@@ -74,19 +73,21 @@ public class QueryResultTest {
      * Makes a new Bigquery Connection to Hardcoded URL and gives back the
      * Connection to static con member.
      */
-    @Before
-    public void NewConnection() {
+    public void NewConnection(String extraUrl) {
         try {
-            if (QueryResultTest.con == null || !QueryResultTest.con.isValid(0)) {
+            if (QueryResultTest.con == null || !QueryResultTest.con.isValid(0) || extraUrl != null) {
 
                 this.logger.info("Testing the JDBC driver");
                 try {
                     Class.forName("net.starschema.clouddb.jdbc.BQDriver");
+                    String jdbcUrl = BQSupportFuncts
+                            .constructUrlFromPropertiesFile(BQSupportFuncts
+                                    .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile()));
+                    if (extraUrl != null) {
+                        jdbcUrl += extraUrl;
+                    }
                     QueryResultTest.con = DriverManager
-                            .getConnection(
-                                    BQSupportFuncts
-                                            .constructUrlFromPropertiesFile(BQSupportFuncts
-                                                    .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile())),
+                            .getConnection(jdbcUrl,
                                     BQSupportFuncts
                                             .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile()));
                 } catch (Exception e) {
@@ -100,6 +101,11 @@ public class QueryResultTest {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    @Before
+    public void NewConnection() {
+        NewConnection(null);
     }
 
     @Test
@@ -461,6 +467,88 @@ public class QueryResultTest {
         } catch (SQLException e) {
             e.printStackTrace();
             Assert.fail();
+        }
+    }
+
+    @Test
+    public void QueryResultTestAsyncQuery() {
+        NewConnection("&useQueryApi=false");
+        final String sql = "SELECT STRING(ROUND(weight_pounds))  FROM publicdata:samples.natality GROUP BY 1 ORDER BY 1 DESC LIMIT 10;";
+        String[][] expectation = new String[][]{ {
+                "9.000000",
+                "8.000000",
+                "7.000000",
+                "6.000000",
+                "5.000000",
+                "4.000000",
+                "3.000000",
+                "2.000000",
+                "18.000000",
+                "17.000000"}};
+
+        this.logger.info("Running query:" + sql);
+
+        java.sql.ResultSet Result = null;
+        try {
+            Result = QueryResultTest.con.createStatement().executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(Result);
+
+        HelperFunctions.printer(expectation);
+
+        try {
+            Assert.assertTrue(
+                    "Comparing failed in the String[][] array",
+                    this.comparer(expectation,
+                            BQSupportMethods.GetQueryResult(Result)));
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail(e.toString());
+        }
+    }
+
+
+    @Test
+    public void QueryResultTestSyncQuery() {
+        // sync is the default, but let's test it explicitly declared anyway
+        NewConnection("&useQueryApi=true");
+        final String sql = "SELECT STRING(ROUND(weight_pounds))  FROM publicdata:samples.natality GROUP BY 1 ORDER BY 1 DESC LIMIT 10;";
+        String[][] expectation = new String[][]{ {
+                "9.000000",
+                "8.000000",
+                "7.000000",
+                "6.000000",
+                "5.000000",
+                "4.000000",
+                "3.000000",
+                "2.000000",
+                "18.000000",
+                "17.000000"}};
+
+        this.logger.info("Running query:" + sql);
+
+        java.sql.ResultSet Result = null;
+        try {
+            Result = QueryResultTest.con.createStatement().executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(Result);
+
+        HelperFunctions.printer(expectation);
+
+        try {
+            Assert.assertTrue(
+                    "Comparing failed in the String[][] array",
+                    this.comparer(expectation,
+                            BQSupportMethods.GetQueryResult(Result)));
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail(e.toString());
         }
     }
 

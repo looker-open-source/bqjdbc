@@ -31,10 +31,7 @@ import com.google.api.client.json.JsonGenerator;
 import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.Bigquery;
-import com.google.api.services.bigquery.model.GetQueryResultsResponse;
-import com.google.api.services.bigquery.model.Job;
-import com.google.api.services.bigquery.model.TableFieldSchema;
-import com.google.api.services.bigquery.model.TableRow;
+import com.google.api.services.bigquery.model.*;
 import org.apache.log4j.Logger;
 
 import java.io.*;
@@ -68,7 +65,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     protected boolean wasnull = false;
 
     /** The Array which get iterated with cursor it's size can be set with FETCH_SIZE*/
-    protected Object[] RowsofResult;
+    protected List<TableRow> rowsofResult;
+
+    /** True if on init we have been passed all the rows in the result already. */
+    private boolean prefetchedAllRows = false;
 
     /** This holds if the resultset is closed or not */
     protected boolean closed = false;
@@ -76,13 +76,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /**Paging size, the original result will be paged by FETCH_SIZE rows     */
     protected int FETCH_SIZE = 5000;
     /**The Fetched rows count at the original results     */
-    protected BigInteger FETCH_POS = BigInteger.ZERO;
+    protected BigInteger fetchPos = BigInteger.ZERO;
     /** Are we at the first row? */
     protected boolean AT_FIRST = true;
     /** REference for the original statement which created this resultset     */
     private Statement Statementreference;
-    /** First page of the Results */
-    private GetQueryResultsResponse Result;
+    /** schema of results */
+    private TableSchema schema;
     /** BigQuery Client */
     private Bigquery bigquery;
     /** the ProjectId */
@@ -97,35 +97,56 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             .ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
             .withZone(ZoneId.of("UTC"));
 
+    public BQForwardOnlyResultSet(Bigquery bigquery, String projectId,
+                                  Job completedJob, BQStatementRoot bqStatementRoot) throws SQLException {
+        this(bigquery, projectId, completedJob, bqStatementRoot, null, false, null);
+    }
+
     /**
      * Constructor for the forward only resultset
      * @param bigquery - the bigquery client to be used to connect
      * @param projectId - the project which contains the Job
-     * @param completedJob - the Job ID, which will be used to get the results
+     * @param completedJob - the Job ID, which will be used to get the results, can be null if prefetchedAllRows is true
      * @param bqStatementRoot - reference for the Statement which created the result
+     * @param prefetchedRows - array of rows already fetched from BigQuery.
+     * @param prefetchedAllRows - true if all rows have already been fetched and we should not ask for any more.
      * @throws SQLException - if we fail to get the results
      */
     public BQForwardOnlyResultSet(Bigquery bigquery, String projectId,
-                                  Job completedJob, BQStatementRoot bqStatementRoot) throws SQLException {
+                                  Job completedJob, BQStatementRoot bqStatementRoot,
+                                  List<TableRow> prefetchedRows, boolean prefetchedAllRows,
+                                  TableSchema schema
+                                  ) throws SQLException {
         logger.debug("Created forward only resultset TYPE_FORWARD_ONLY");
         this.Statementreference = (Statement) bqStatementRoot;
         this.bigquery = bigquery;
         this.completedJob = completedJob;
         this.projectId = projectId;
-        // initial load
-        try {
-            this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery,
-                    projectId, completedJob, FETCH_POS, FETCH_SIZE);
-        } catch (IOException e) {
-            throw new BQSQLException("Failed to retrieve data", e);
-        } //should not happen
-        if (this.Result == null) {  //if we don't have results at all
-            this.RowsofResult = null;
-        } else if (this.Result.getRows() == null) {  //if we got results, but it was empty
-            this.RowsofResult = null;
-        } else {                        //we got results, it wasn't empty
-            this.RowsofResult = this.Result.getRows().toArray();
-            FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long) this.RowsofResult.length));
+        if (prefetchedRows != null || prefetchedAllRows) {
+            // prefetchedAllRows can be true with rows null for an empty result set
+            this.rowsofResult = prefetchedRows;
+            if (prefetchedRows != null)
+                fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
+            this.prefetchedAllRows = prefetchedAllRows;
+            this.schema = schema;
+        } else {
+            // initial load
+            GetQueryResultsResponse result;
+            try {
+                result = BQSupportFuncts.getQueryResultsDivided(bigquery,
+                        projectId, completedJob, fetchPos, FETCH_SIZE);
+            } catch (IOException e) {
+                throw new BQSQLException("Failed to retrieve data", e);
+            } //should not happen
+            if (result == null) {  //if we don't have results at all
+                this.rowsofResult = null;
+            } else if (result.getRows() == null) {  //if we got results, but it was empty
+                this.rowsofResult = null;
+            } else {                        //we got results, it wasn't empty
+                this.rowsofResult = result.getRows();
+                this.schema = result.getSchema();
+                fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
+            }
         }
     }
 
@@ -143,7 +164,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return null;
         }
 
-        String Columntype = this.Result.getSchema().getFields().get(columnIndex - 1).getType();
+        String Columntype = this.schema.getFields().get(columnIndex - 1).getType();
 
         try {
             if (Columntype.equals("STRING")) {
@@ -239,7 +260,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         return new BigDecimal(value);
     }
 
-    private Date toDate(String value, Calendar cal) throws SQLException {
+    static Date toDate(String value, Calendar cal) throws SQLException {
         // Dates in BigQuery come back in the YYYY-MM-DD format
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         try {
@@ -277,8 +298,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             throw new BQSQLException("ColumnIndex is not valid");
         }
 
-        if (this.RowsofResult == null) throw new BQSQLException("Invalid position!");
-        Object resultObject = ((TableRow) this.RowsofResult[this.Cursor]).getF().get(columnIndex - 1).getV();
+        if (this.rowsofResult == null) throw new BQSQLException("Invalid position!");
+        Object resultObject = this.rowsofResult.get(this.Cursor).getF().get(columnIndex - 1).getV();
         if (Data.isNull(resultObject)) {
             this.wasnull = true;
             return null;
@@ -291,7 +312,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if (resultObject instanceof List || resultObject instanceof Map) {
             Object resultTransformedWithSchema = smartTransformResult(
                     resultObject,
-                    this.Result.getSchema().getFields().get(columnIndex - 1));
+                    schema.getFields().get(columnIndex - 1));
             resultObject = easyToJson(resultTransformedWithSchema);
         }
         return resultObject.toString();
@@ -417,7 +438,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     public void close() throws SQLException {
         // TODO free occupied resources
         this.closed = true;
-        this.RowsofResult = null;
+        this.rowsofResult = null;
     }
 
     /**
@@ -909,7 +930,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if (this.isClosed()) {
             throw new BQSQLException("This Resultset is Closed");
         }
-        return new BQResultsetMetaData(this.Result);
+        return new BQResultsetMetaData(schema, projectId);
     }
 
     /**
@@ -1393,28 +1414,38 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         if (this.isClosed()) {
             throw new BQSQLException("This Resultset is Closed");
         }
-        if (this.RowsofResult == null) {
+        if (this.rowsofResult == null) {
             return false;
         }
-        if (Cursor < FETCH_SIZE && Cursor < RowsofResult.length - 1) {
+        if (Cursor < FETCH_SIZE && Cursor < rowsofResult.size() - 1) {
             if (Cursor == -1) {
                 AT_FIRST = true;
             } else AT_FIRST = false;
            Cursor++;
            return true;
         }
-        try {
-            this.Result = BQSupportFuncts.getQueryResultsDivided(bigquery,
-                    projectId, completedJob, FETCH_POS, FETCH_SIZE);
-        }
-        catch (IOException e) {
-        } //should not happen
-        if (this.Result.getRows() == null) {
-            this.RowsofResult = null;
+
+        if (this.prefetchedAllRows) {
+            // Nothing more to do, we've scrolled through all the rows we have.
+            this.rowsofResult = null; // this is how we remember we are out of rows
             return false;
         }
-        this.RowsofResult = this.Result.getRows().toArray();
-        FETCH_POS = FETCH_POS.add(BigInteger.valueOf((long)this.RowsofResult.length));
+
+        GetQueryResultsResponse result;
+        try {
+             result = BQSupportFuncts.getQueryResultsDivided(bigquery,
+                    projectId, completedJob, fetchPos, FETCH_SIZE);
+        }
+        catch (IOException e) {
+            //should not happen ... according to whoever cooked this up back in the day
+            throw new BQSQLException("failed to fetch more results", e);
+        }
+        if (result.getRows() == null) {
+            this.rowsofResult = null;
+            return false;
+        }
+        this.rowsofResult = result.getRows();
+        fetchPos = fetchPos.add(BigInteger.valueOf((long)this.rowsofResult.size()));
         Cursor = 0;
         return true;
     }

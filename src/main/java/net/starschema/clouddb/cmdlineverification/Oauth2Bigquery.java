@@ -593,10 +593,6 @@ public class Oauth2Bigquery {
 
         public void setOauthToken(String oauthToken) { this.oauthToken = oauthToken; }
 
-        public String getUserAgent() {
-            return this.userAgent;
-        }
-
         public String getOauthToken() {return this.oauthToken; }
 
         @Override
