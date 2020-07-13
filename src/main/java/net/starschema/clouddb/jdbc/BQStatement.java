@@ -135,21 +135,12 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         querySql = parser.parse();
         try {
             if (this.connection.shouldUseQueryApi()) {
-                QueryResponse qr = BQSupportFuncts.runSyncQuery(
-                        this.connection.getBigquery(),
-                        this.ProjectId,
-                        querySql,
-                        connection.getDataSet(),
-                        this.connection.getUseLegacySql(),
-                        !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
-                        SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
-                        (long) getMaxRows()
-                );
+                QueryResponse qr = runSyncQuery(querySql, unlimitedBillingBytes);
                 boolean fetchedAll = qr.getJobComplete() && qr.getTotalRows() != null &&
                         (qr.getTotalRows().equals(BigInteger.ZERO) ||
                                 (qr.getRows() != null && qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))));
                 // Don't look up the job if we have nothing else we need to do
-                referencedJob = fetchedAll ?
+                referencedJob = fetchedAll || this.connection.isClosed() ?
                         null :
                         this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
                 if (qr.getJobComplete()) {
@@ -233,6 +224,20 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         this.cancel();
         throw new BQSQLException(
                 "Query run took more than the specified timeout");
+    }
+
+    /** wrapper that exists for tests to override */
+    protected QueryResponse runSyncQuery(String querySql, boolean unlimitedBillingBytes) throws IOException, SQLException {
+        return BQSupportFuncts.runSyncQuery(
+                this.connection.getBigquery(),
+                this.ProjectId,
+                querySql,
+                connection.getDataSet(),
+                this.connection.getUseLegacySql(),
+                !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
+                SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
+                (long) getMaxRows()
+        );
     }
 
     /**
