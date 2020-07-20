@@ -161,7 +161,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 referencedJob = startQuery(querySql, unlimitedBillingBytes);
             }
         } catch (IOException e) {
-            throw new BQSQLException("Something went wrong creating the query: " + querySql, e);
+            // For the synchronous path, this is the place where the user will encounter errors in their SQL.
+            throw new BQSQLException("Query execution failed: ", e);
         }
 
         try {
