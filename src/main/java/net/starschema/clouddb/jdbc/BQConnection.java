@@ -69,6 +69,8 @@ public class BQConnection implements Connection {
 
     private Long maxBillingBytes;
 
+    private boolean useQueryApi;
+
     private final Set<BQStatementRoot> runningStatements = Collections.synchronizedSet(new HashSet<BQStatementRoot>());
 
     /** Boolean to determine, to use or doesn't use the ANTLR parser */
@@ -163,6 +165,10 @@ public class BQConnection implements Connection {
         // extract withServiceAccount property
         String withServiceAccountParam = caseInsensitiveProps.getProperty("withserviceaccount");
         Boolean serviceAccount = (withServiceAccountParam != null) && Boolean.parseBoolean(withServiceAccountParam);
+
+        // There's really no reason anyone would ever not want to use this... but leave it in for a bit as a bailout switch
+        String useQueryApiParam = caseInsensitiveProps.getProperty("usequeryapi");
+        useQueryApi = useQueryApiParam == null || !useQueryApiParam.equalsIgnoreCase("false");
 
         // extract transformQuery property
         String transformQueryParam = caseInsensitiveProps.getProperty("transformquery");
@@ -1052,5 +1058,15 @@ public class BQConnection implements Connection {
 
     public Long getMaxBillingBytes() {
         return maxBillingBytes;
+    }
+
+    /**
+     * Returns true if queries on this connection should use the synchronous jobs.query api to run queries.
+     *
+     * This is the default, and the old, async API is being left in as a bailout switch in case there is some use case
+     * that only it supports that a client discovers.
+     * */
+    boolean shouldUseQueryApi() {
+        return useQueryApi;
     }
 }

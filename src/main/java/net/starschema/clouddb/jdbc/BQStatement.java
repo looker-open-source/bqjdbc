@@ -28,8 +28,10 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.QueryResponse;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -44,6 +46,11 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
     public static final int MAX_IO_FAILURE_RETRIES = 3;
     private Job job;
+
+    /**
+     * Enough time to give most fast queries time to complete, but not too long so that we worry about
+     * having our socket closed by any reasonable intermediate component. */
+    private static final long SYNC_TIMEOUT_MILLIS = 10 * 1000;
 
     /**
      * Constructor for BQStatement object just initializes local variables
@@ -122,15 +129,42 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         this.starttime = System.currentTimeMillis();
         Job referencedJob;
         int retries = 0;
+        boolean jobAlreadyCompleted = false;
         // ANTLR Parsing
         BQQueryParser parser = new BQQueryParser(querySql, this.connection);
         querySql = parser.parse();
         try {
-            // Gets the Job reference of the completed job with give Query
-            referencedJob = startQuery(querySql, unlimitedBillingBytes);
+            if (this.connection.shouldUseQueryApi()) {
+                QueryResponse qr = runSyncQuery(querySql, unlimitedBillingBytes);
+                boolean fetchedAll = qr.getJobComplete() && qr.getTotalRows() != null &&
+                        (qr.getTotalRows().equals(BigInteger.ZERO) ||
+                                (qr.getRows() != null && qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))));
+                // Don't look up the job if we have nothing else we need to do
+                referencedJob = fetchedAll || this.connection.isClosed() ?
+                        null :
+                        this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
+                if (qr.getJobComplete()) {
+                    if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
+                        return new BQForwardOnlyResultSet(
+                                this.connection.getBigquery(),
+                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                referencedJob, this, qr.getRows(), fetchedAll, qr.getSchema());
+                    } else if (fetchedAll) {
+                        // We can only return scrollable result sets here if we have all the rows: otherwise we'll
+                        // have to go get more below
+                        return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
+                    }
+                    jobAlreadyCompleted = true;
+                }
+            } else {
+                // Run the query async and return a Job that represents the running query
+                referencedJob = startQuery(querySql, unlimitedBillingBytes);
+            }
         } catch (IOException e) {
-            throw new BQSQLException("Something went wrong creating the query: " + querySql, e);
+            // For the synchronous path, this is the place where the user will encounter errors in their SQL.
+            throw new BQSQLException("Query execution failed: ", e);
         }
+
         try {
             do {
                 if (this.connection.isClosed()) {
@@ -138,17 +172,21 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 }
 
                 String status;
-                try {
-                    status = BQSupportFuncts.getQueryState(referencedJob,
-                            this.connection.getBigquery(),
-                            this.ProjectId.replace("__", ":").replace("_", "."));
-                } catch (IOException e) {
-                    if (retries++ < MAX_IO_FAILURE_RETRIES) {
-                       continue;
-                    } else {
-                        throw new BQSQLException(
-                                "Something went wrong getting results for the job " + referencedJob.getId() + ", query: " + querySql,
-                                e);
+                if (jobAlreadyCompleted) {
+                    status = "DONE";
+                } else {
+                    try {
+                        status = BQSupportFuncts.getQueryState(referencedJob,
+                                this.connection.getBigquery(),
+                                this.ProjectId.replace("__", ":").replace("_", "."));
+                    } catch (IOException e) {
+                        if (retries++ < MAX_IO_FAILURE_RETRIES) {
+                            continue;
+                        } else {
+                            throw new BQSQLException(
+                                    "Something went wrong getting results for the job " + referencedJob.getId() + ", query: " + querySql,
+                                    e);
+                        }
                     }
                 }
 
@@ -187,6 +225,20 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         this.cancel();
         throw new BQSQLException(
                 "Query run took more than the specified timeout");
+    }
+
+    /** wrapper that exists for tests to override */
+    protected QueryResponse runSyncQuery(String querySql, boolean unlimitedBillingBytes) throws IOException, SQLException {
+        return BQSupportFuncts.runSyncQuery(
+                this.connection.getBigquery(),
+                this.ProjectId,
+                querySql,
+                connection.getDataSet(),
+                this.connection.getUseLegacySql(),
+                !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
+                SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
+                (long) getMaxRows()
+        );
     }
 
     /**
