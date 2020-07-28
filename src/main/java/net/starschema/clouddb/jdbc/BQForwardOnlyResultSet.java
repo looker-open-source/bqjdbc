@@ -164,6 +164,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return null;
         }
 
+        // for arrays, just return the string result
+        if (this.getBQResultsetMetaData().getColumnMode(columnIndex).equals("REPEATED")) {
+            return result;
+        }
+
         String Columntype = this.schema.getFields().get(columnIndex - 1).getType();
 
         try {
@@ -305,7 +310,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return null;
         }
         this.wasnull = false;
-        if (formatTimestamps && getMetaData().getColumnTypeName(columnIndex).equals("TIMESTAMP")) {
+        if (!this.getBQResultsetMetaData().getColumnMode(columnIndex).equals("REPEATED") && formatTimestamps && getMetaData().getColumnTypeName(columnIndex).equals("TIMESTAMP")) {
             Instant instant = Instant.ofEpochMilli((new BigDecimal((String) resultObject).movePointRight(3)).longValue());
             return TIMESTAMP_FORMATTER.format(instant);
         }
@@ -927,6 +932,15 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      */
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
+        return getBQResultsetMetaData();
+    }
+
+    /**
+     * Get this ResultSet's BQForwardOnlyResultSetMetadata
+     * @return
+     * @throws SQLException
+     */
+    public BQResultsetMetaData getBQResultsetMetaData() throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Resultset is Closed");
         }
