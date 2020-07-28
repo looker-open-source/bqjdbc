@@ -234,7 +234,6 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             long dbValue = new BigDecimal(value).movePointRight(3).longValue(); // movePointRight(3) =  *1000 (done before rounding) - from seconds (BigQuery specifications) to milliseconds (required by java). Precision under millisecond is discarded (BigQuery supports micro-seconds)
             if (cal == null) {
                 cal = Calendar.getInstance(TimeZone.getTimeZone("UTC")); // The time zone of the server that host the JVM should NOT impact the results. Use UTC calendar instead (which wont apply any correction, whatever the time zone of the data)
-
             }
 
             Calendar dbCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -249,11 +248,43 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return new Timestamp(cal.getTime().getTime());
         }
         catch (NumberFormatException e) {
-            throw new BQSQLException(e);
+            // before giving up, check to see if we've been given a 'time' value without a
+            // date, e.g. from current_time(), and if we have, try to parse it
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+                java.util.Date parsedDate = dateFormat.parse(buildFullDateStringFromTime(value));
+                return new java.sql.Timestamp(parsedDate.getTime());
+            }
+            catch (Exception e2) {
+                throw new BQSQLException(e);
+            }
         }
     }
 
     // Secondary converters
+
+    /**
+     * Given some timeStr that represents a timestamp (e.g. 17:33:04.234233), build a full
+     * timestamp string for later parsing into a java.sql.Timestamp
+     * @param timeStr
+     * @return
+     */
+    private String buildFullDateStringFromTime(String timeStr) {
+        Calendar currentDate = Calendar.getInstance();
+
+        int year = currentDate.get(Calendar.YEAR);
+        int month = currentDate.get(Calendar.MONTH) + 1;
+        int day = currentDate.get(Calendar.DAY_OF_MONTH);
+
+        String monthStr = "" + month;
+
+        if (month < 10) {
+            monthStr = "0" + monthStr;
+        }
+
+        String currentDateString = year + "-" + monthStr + "-" + day + " ";
+        return (currentDateString + timeStr).substring(0, 23);
+    }
 
     /** Parse integral or floating types with (virtually) infinite precision */
     private BigDecimal toBigDecimal(String value) {
