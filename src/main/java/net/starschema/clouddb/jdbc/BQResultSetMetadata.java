@@ -187,6 +187,15 @@ class BQResultsetMetaData implements ResultSetMetaData {
     }
 
     /**
+     * Return the "mode" for the given columnIndex
+     * @param columnIndex
+     * @return String: will be "REPEATED" if this column is an array
+     */
+    public String getColumnMode(int columnIndex) {
+        return this.schema.getFields().get(columnIndex - 1).getMode();
+    }
+
+    /**
      * {@inheritDoc} <br>
      * note: see below for BQ type => Java type enum<br>
      * INTEGER => java.sql.Types.BIGINT<br>

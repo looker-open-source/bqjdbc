@@ -26,6 +26,7 @@ package BQJDBC.QueryResultTest;
 
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
+import net.starschema.clouddb.jdbc.BQForwardOnlyResultSet;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -459,6 +460,40 @@ public class BQForwardOnlyResultSetFunctionTest {
         SimpleDateFormat dateDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Date parsedDateDate = new java.sql.Date(dateDateFormat.parse("2011-04-03").getTime());
         Assert.assertEquals(parsedDateDate, result.getObject(4));
+    }
+
+    @Test
+    public void testResultSetArraysInGetObject() throws SQLException, ParseException {
+        final String sql = "SELECT [1, 2, 3], [TIMESTAMP(\"2010-09-07 15:30:00 America/Los_Angeles\")]";
+
+        this.NewConnection(false);
+        java.sql.ResultSet result = null;
+        try {
+            Statement stmt = BQForwardOnlyResultSetFunctionTest.con
+                .createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            stmt.setQueryTimeout(500);
+            result = stmt.executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLException" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.next());
+
+        // for arrays, getObject() and getString() should behave identically, allowing consumers
+        // to interpret/convert types as needed
+        String expected = "[\"1\",\"2\",\"3\"]";
+        Object resultObject = result.getObject(1);
+        String resultString = result.getString(1);
+        Assert.assertEquals(expected, (String) resultObject);
+        Assert.assertEquals(expected, resultString);
+
+        // timestamp conversion should occur consumer-side for arrays
+        String expectedTwo = "[\"1.2838986E9\"]";
+        Object resultObjectTwo = result.getObject(2);
+        String resultStringTwo = result.getString(2);
+        Assert.assertEquals(expectedTwo, (String) resultObjectTwo);
+        Assert.assertEquals(expectedTwo, resultStringTwo);
     }
 
     @Test
