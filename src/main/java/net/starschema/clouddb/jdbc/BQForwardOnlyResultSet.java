@@ -256,7 +256,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             // before giving up, check to see if we've been given a 'time' value without a
             // date, e.g. from current_time(), and if we have, try to parse it
             try {
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 java.util.Date parsedDate = dateFormat.parse(buildFullDateStringFromTime(value));
                 return new java.sql.Timestamp(parsedDate.getTime());
             }
@@ -275,20 +275,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      * @return
      */
     private String buildFullDateStringFromTime(String timeStr) {
-        Calendar currentDate = Calendar.getInstance();
-
-        int year = currentDate.get(Calendar.YEAR);
-        int month = currentDate.get(Calendar.MONTH) + 1;
-        int day = currentDate.get(Calendar.DAY_OF_MONTH);
-
-        String monthStr = "" + month;
-
-        if (month < 10) {
-            monthStr = "0" + monthStr;
-        }
-
-        String currentDateString = year + "-" + monthStr + "-" + day + " ";
-        return (currentDateString + timeStr).substring(0, 23);
+        String currentDateString = "1970-01-01 ";
+        return (currentDateString + timeStr).substring(0, 19);
     }
 
     /** Parse integral or floating types with (virtually) infinite precision */
