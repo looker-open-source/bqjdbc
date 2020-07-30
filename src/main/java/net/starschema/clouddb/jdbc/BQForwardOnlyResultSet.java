@@ -257,7 +257,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             // date, e.g. from current_time(), and if we have, try to parse it
             try {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                java.util.Date parsedDate = dateFormat.parse(buildFullDateStringFromTime(value));
+                String dateStringFromValue = ("1970-01-01 " + value).substring(0, 19);
+                java.util.Date parsedDate = dateFormat.parse(dateStringFromValue);
                 return new java.sql.Timestamp(parsedDate.getTime());
             }
             catch (Exception e2) {
@@ -267,17 +268,6 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     }
 
     // Secondary converters
-
-    /**
-     * Given some timeStr that represents a timestamp (e.g. 17:33:04.234233), build a full
-     * timestamp string for later parsing into a java.sql.Timestamp
-     * @param timeStr
-     * @return
-     */
-    private String buildFullDateStringFromTime(String timeStr) {
-        String currentDateString = "1970-01-01 ";
-        return (currentDateString + timeStr).substring(0, 19);
-    }
 
     /** Parse integral or floating types with (virtually) infinite precision */
     private BigDecimal toBigDecimal(String value) {
