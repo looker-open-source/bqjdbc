@@ -544,4 +544,35 @@ public class BQForwardOnlyResultSetFunctionTest {
         Assert.assertEquals(expectedTwo, resultStringTwo);
     }
 
+    @Test
+    public void testResultSetTimeType() throws SQLException, ParseException {
+        final String sql = "select current_time(), CAST('00:00:02.123455' AS TIME)";
+        this.NewConnection(false);
+        java.sql.ResultSet result = null;
+        try {
+            Statement stmt = BQForwardOnlyResultSetFunctionTest.con
+                .createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            stmt.setQueryTimeout(500);
+            result = stmt.executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.next());
+
+        java.sql.Time resultTime = result.getTime(1);
+        Object resultObject = result.getObject(1);
+        String resultString = result.getString(1);
+
+        // getObject() and getString() should behave the same for TIME
+        Assert.assertEquals(resultString, (String) resultObject);
+
+        // getTime() will return a 'time' without milliseconds
+        Assert.assertTrue(resultString.startsWith(resultTime.toString()));
+
+        // also check that explicit casts to TIME work as expected
+        Assert.assertEquals(result.getTime(2).toString(), "00:00:02");
+    }
+
 }

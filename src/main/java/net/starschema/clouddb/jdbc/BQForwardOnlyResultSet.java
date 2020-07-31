@@ -239,7 +239,6 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             long dbValue = new BigDecimal(value).movePointRight(3).longValue(); // movePointRight(3) =  *1000 (done before rounding) - from seconds (BigQuery specifications) to milliseconds (required by java). Precision under millisecond is discarded (BigQuery supports micro-seconds)
             if (cal == null) {
                 cal = Calendar.getInstance(TimeZone.getTimeZone("UTC")); // The time zone of the server that host the JVM should NOT impact the results. Use UTC calendar instead (which wont apply any correction, whatever the time zone of the data)
-
             }
 
             Calendar dbCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -254,7 +253,17 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return new Timestamp(cal.getTime().getTime());
         }
         catch (NumberFormatException e) {
-            throw new BQSQLException(e);
+            // before giving up, check to see if we've been given a 'time' value without a
+            // date, e.g. from current_time(), and if we have, try to parse it
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String dateStringFromValue = ("1970-01-01 " + value).substring(0, 19);
+                java.util.Date parsedDate = dateFormat.parse(dateStringFromValue);
+                return new java.sql.Timestamp(parsedDate.getTime());
+            }
+            catch (Exception e2) {
+                throw new BQSQLException(e);
+            }
         }
     }
 
