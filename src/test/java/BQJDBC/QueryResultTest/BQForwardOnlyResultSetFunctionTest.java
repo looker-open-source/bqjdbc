@@ -49,7 +49,7 @@ import java.util.Properties;
 public class BQForwardOnlyResultSetFunctionTest {
 
     private static java.sql.Connection con = null;
-    private static java.sql.ResultSet Result = null;
+    private java.sql.ResultSet resultForTest = null;
 
     Logger logger = Logger.getLogger(BQForwardOnlyResultSetFunctionTest.class.getName());
     private Integer maxRows = null;
@@ -59,41 +59,41 @@ public class BQForwardOnlyResultSetFunctionTest {
         this.QueryLoad();
         this.logger.info("ChainedFunctionTest");
         try {
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("you",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
+                    resultForTest.getString(1));
 
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
         try {
-            BQForwardOnlyResultSetFunctionTest.Result.absolute(10);
+            resultForTest.absolute(10);
         } catch (SQLException e) {
             Assert.assertTrue(true);
         }
 
         try {
             for (int i = 0; i < 9; i++) {
-                Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+                Assert.assertTrue(resultForTest.next());
             }
-            Assert.assertFalse(BQForwardOnlyResultSetFunctionTest.Result.next());
+            Assert.assertFalse(resultForTest.next());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            Assert.assertEquals("", BQForwardOnlyResultSetFunctionTest.Result.getString(1));
+            Assert.assertEquals("", resultForTest.getString(1));
         } catch (SQLException e) {
             Assert.assertTrue(true);
         }
 
         QueryLoad();
         try {
-            Result.next();
+            resultForTest.next();
             Assert.assertEquals("you",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
+                    resultForTest.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -224,20 +224,21 @@ public class BQForwardOnlyResultSetFunctionTest {
             if (this.maxRows != null) {
                 stmt.setMaxRows(this.maxRows);
             }
-            BQForwardOnlyResultSetFunctionTest.Result = stmt.executeQuery(sql);
+            resultForTest = stmt.executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
-        Assert.assertNotNull(BQForwardOnlyResultSetFunctionTest.Result);
+        Assert.assertNotNull(resultForTest);
     }
 
     @Test
     public void ResultSetMetadata() {
+        QueryLoad();
         try {
-            this.logger.debug(BQForwardOnlyResultSetFunctionTest.Result.getMetaData()
+            this.logger.debug(resultForTest.getMetaData()
                     .getSchemaName(1));
-            this.logger.debug(BQForwardOnlyResultSetFunctionTest.Result.getMetaData()
+            this.logger.debug(resultForTest.getMetaData()
                     .getScale(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -249,7 +250,7 @@ public class BQForwardOnlyResultSetFunctionTest {
     public void TestResultIndexOutofBound() {
         this.QueryLoad();
         try {
-            this.logger.debug(BQForwardOnlyResultSetFunctionTest.Result.getBoolean(99));
+            this.logger.debug(resultForTest.getBoolean(99));
         } catch (SQLException e) {
             Assert.assertTrue(true);
             this.logger.error("SQLexception" + e.toString());
@@ -261,9 +262,9 @@ public class BQForwardOnlyResultSetFunctionTest {
     public void TestResultSetFirst() {
         this.QueryLoad();
         try {
-//            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.first());
-            Result.next();
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.isFirst());
+//            Assert.assertTrue(resultForTest.first());
+            resultForTest.next();
+            Assert.assertTrue(resultForTest.isFirst());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -274,9 +275,9 @@ public class BQForwardOnlyResultSetFunctionTest {
     public void TestResultSetgetBoolean() {
         this.QueryLoad();
         try {
-            Assert.assertTrue(Result.next());
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals(Boolean.parseBoolean("42"),
-                    BQForwardOnlyResultSetFunctionTest.Result.getBoolean(2));
+                    resultForTest.getBoolean(2));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -287,9 +288,9 @@ public class BQForwardOnlyResultSetFunctionTest {
     public void TestResultSetgetFloat() {
         this.QueryLoad();
         try {
-            Assert.assertTrue(Result.next());
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals(new Float(42),
-                    BQForwardOnlyResultSetFunctionTest.Result.getFloat(2));
+                    resultForTest.getFloat(2));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -300,8 +301,8 @@ public class BQForwardOnlyResultSetFunctionTest {
     public void TestResultSetgetInteger() {
         this.QueryLoad();
         try {
-            Assert.assertTrue(Result.next());
-            Assert.assertEquals(42, BQForwardOnlyResultSetFunctionTest.Result.getInt(2));
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertEquals(42, resultForTest.getInt(2));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -312,8 +313,8 @@ public class BQForwardOnlyResultSetFunctionTest {
     public void TestResultSetgetRow() {
         this.QueryLoad();
         try {
-            Assert.assertTrue(Result.next());
-            BQForwardOnlyResultSetFunctionTest.Result.getRow();
+            Assert.assertTrue(resultForTest.next());
+            resultForTest.getRow();
         } catch (SQLException e) {
             Assert.assertTrue(true);
         }
@@ -323,9 +324,9 @@ public class BQForwardOnlyResultSetFunctionTest {
     public void TestResultSetgetString() {
         this.QueryLoad();
         try {
-            Assert.assertTrue(Result.next());
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("you",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
+                    resultForTest.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -342,43 +343,90 @@ public class BQForwardOnlyResultSetFunctionTest {
     public void TestResultSetNext() {
         this.QueryLoad();
         try {
-//            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.first());
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+//            Assert.assertTrue(resultForTest.first());
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("yet",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("would",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("world",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("without",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("with",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("will",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("why",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("whose",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.Result.next());
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
             Assert.assertEquals("whom",
-                    BQForwardOnlyResultSetFunctionTest.Result.getString(1));
-            Assert.assertFalse(BQForwardOnlyResultSetFunctionTest.Result.next());
+                    resultForTest.getString(1));
+            Assert.assertFalse(resultForTest.next());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            Assert.assertEquals("", BQForwardOnlyResultSetFunctionTest.Result.getString(1));
+            Assert.assertEquals("", resultForTest.getString(1));
+        } catch (SQLException e) {
+            Assert.assertTrue(true);
+        }
+    }
+
+    @Test
+    public void TestResultSetNextWhenFetchSizeExceeded() throws SQLException {
+        this.QueryLoad();
+       resultForTest.setFetchSize(2);
+        try {
+//            Assert.assertTrue(resultForTest.first());
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertEquals("yet",
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertEquals("would",
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertEquals("world",
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertEquals("without",
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertEquals("with",
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertEquals("will",
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertEquals("why",
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertEquals("whose",
+                    resultForTest.getString(1));
+            Assert.assertTrue(resultForTest.next());
+            Assert.assertEquals("whom",
+                    resultForTest.getString(1));
+            Assert.assertFalse(resultForTest.next());
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+
+        try {
+            Assert.assertEquals("", resultForTest.getString(1));
         } catch (SQLException e) {
             Assert.assertTrue(true);
         }
