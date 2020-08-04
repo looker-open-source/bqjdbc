@@ -26,6 +26,7 @@ package BQJDBC.QueryResultTest;
 
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
+import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.BQSupportMethods;
 import org.apache.log4j.Logger;
@@ -36,6 +37,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 //import net.starschema.clouddb.bqjdbc.logging.Logger;
 
 /**
@@ -60,7 +62,7 @@ public class QueryResultTest {
     private boolean comparer(String[][] expected, String[][] reality) {
         for (int i = 0; i < expected.length; i++) {
             for (int j = 0; j < expected[i].length; j++) {
-                if (expected[i][j].toString().equals(reality[i][j]) == false) {
+                if (!(reality[i][j] == null && expected[i][j] == null) && !expected[i][j].equals(reality[i][j])) {
                     return false;
                 }
             }
@@ -576,6 +578,39 @@ public class QueryResultTest {
                     "Comparing failed in the String[][] array",
                     this.comparer(expectation,
                             BQSupportMethods.GetQueryResult(Result)));
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail(e.toString());
+        }
+    }
+
+    @Test
+    public void QueryResultTestTokyoForceFetchMoreRowsPath() {
+        NewConnection("&useLegacySql=false");
+        final String sql = "SELECT meaning FROM tokyo_star.meaning_of_life GROUP BY ROLLUP(meaning);";
+        String[][] expectation = new String[][]{ {null, "42"} };
+
+        this.logger.info("Test Tokyo number: 1");
+        this.logger.info("Running query:" + sql);
+
+        java.sql.ResultSet Result = null;
+        try {
+            Statement s = QueryResultTest.con.createStatement();
+            s.setMaxRows(1);
+            Result = s.executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(Result);
+
+        HelperFunctions.printer(expectation);
+
+        try {
+            String[][] res = BQSupportMethods.GetQueryResult(Result);
+            Assert.assertTrue(
+                    "Comparing failed in the String[][] array " + Arrays.deepToString(res),
+                    this.comparer(expectation, res));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail(e.toString());

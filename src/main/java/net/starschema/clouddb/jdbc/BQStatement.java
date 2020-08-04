@@ -142,7 +142,11 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 // Don't look up the job if we have nothing else we need to do
                 referencedJob = fetchedAll || this.connection.isClosed() ?
                         null :
-                        this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
+                        this.connection.getBigquery()
+                                .jobs()
+                                .get(this.ProjectId, qr.getJobReference().getJobId())
+                                .setLocation(qr.getJobReference().getLocation())
+                                .execute();
                 if (qr.getJobComplete()) {
                     if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
                         return new BQForwardOnlyResultSet(
