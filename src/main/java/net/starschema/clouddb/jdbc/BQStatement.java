@@ -51,6 +51,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
      * Enough time to give most fast queries time to complete, but not too long so that we worry about
      * having our socket closed by any reasonable intermediate component. */
     private static final long SYNC_TIMEOUT_MILLIS = 10 * 1000;
+    private Long maxQueryApiInitialFetchRows = null;
 
     /**
      * Constructor for BQStatement object just initializes local variables
@@ -142,7 +143,11 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 // Don't look up the job if we have nothing else we need to do
                 referencedJob = fetchedAll || this.connection.isClosed() ?
                         null :
-                        this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
+                        this.connection.getBigquery()
+                                .jobs()
+                                .get(this.ProjectId, qr.getJobReference().getJobId())
+                                .setLocation(qr.getJobReference().getLocation())
+                                .execute();
                 if (qr.getJobComplete()) {
                     if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
                         return new BQForwardOnlyResultSet(
@@ -237,8 +242,18 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 this.connection.getUseLegacySql(),
                 !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
                 SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
-                (long) getMaxRows()
+                maxQueryApiInitialFetchRows != null ? maxQueryApiInitialFetchRows : (long) getMaxRows()
         );
+    }
+
+    /**
+     *  Sets the max rows in [runSyncQuery] to something other than [getMaxRows()].
+     *  Can be zero. Can be null to unset.
+     *
+     *  Exposed for a test use case right now but in theory useful to other consumers. Not part of JDBC spec of course.
+     *  */
+    public void setQueryApiInitialFetchMaxRows(Long maxRows) {
+        this.maxQueryApiInitialFetchRows = maxRows;
     }
 
     /**

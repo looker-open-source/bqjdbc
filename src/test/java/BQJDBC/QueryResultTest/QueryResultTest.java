@@ -26,6 +26,7 @@ package BQJDBC.QueryResultTest;
 
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
+import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.BQSupportMethods;
 import org.apache.log4j.Logger;
@@ -563,6 +564,38 @@ public class QueryResultTest {
         java.sql.ResultSet Result = null;
         try {
             Result = QueryResultTest.con.createStatement().executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(Result);
+
+        HelperFunctions.printer(expectation);
+
+        try {
+            Assert.assertTrue(
+                    "Comparing failed in the String[][] array",
+                    this.comparer(expectation,
+                            BQSupportMethods.GetQueryResult(Result)));
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail(e.toString());
+        }
+    }
+
+    @Test
+    public void QueryResultTestTokyoForceFetchMoreRowsPath() {
+        final String sql = "SELECT meaning FROM tokyo_star.meaning_of_life;";
+        String[][] expectation = new String[][]{ {"42"} };
+
+        this.logger.info("Test Tokyo number: 1");
+        this.logger.info("Running query:" + sql);
+
+        java.sql.ResultSet Result = null;
+        try {
+            Statement s = QueryResultTest.con.createStatement();
+            ((BQStatement) s).setQueryApiInitialFetchMaxRows((long) 0);
+            Result = s.executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
