@@ -52,9 +52,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     private AtomicReference<QueryResponse> lastSyncResponse = new AtomicReference<>();
 
     /**
-     * Enough time to give most fast queries time to complete, but not too long so that we worry about
-     * having our socket closed by any reasonable intermediate component. */
-    private static final long SYNC_TIMEOUT_MILLIS = 10 * 1000;
+     * Enough time to give fast queries time to complete, but fast enough that if we want to cancel the query
+     * (for which we have to wait at least this long), we don't have to wait too long. */
+    private static final long SYNC_TIMEOUT_MILLIS = 5 * 1000;
 
     /**
      * Constructor for BQStatement object just initializes local variables
