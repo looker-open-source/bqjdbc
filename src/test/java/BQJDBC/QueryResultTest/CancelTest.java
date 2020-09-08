@@ -2,6 +2,7 @@ package BQJDBC.QueryResultTest;
 
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.QueryResponse;
+import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
@@ -11,19 +12,20 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
 
 /**
  * Created by steven on 11/2/15.
  */
 public class CancelTest {
 
-    private Throwable diedWith;
+    private AtomicReference<Throwable> unexpectedDiedWith = new AtomicReference<>();
+    private AtomicReference<SQLException> expectedSqlException = new AtomicReference<>();
 
     private BQConnection conn(boolean useQueryApi)  throws SQLException, IOException {
         String url = BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
@@ -38,8 +40,8 @@ public class CancelTest {
 
     @After
     public void teardown() throws Throwable {
-        if (this.diedWith != null) {
-            throw this.diedWith;
+        if (this.unexpectedDiedWith.get() != null) {
+            throw this.unexpectedDiedWith.get();
         }
     }
 
@@ -47,7 +49,7 @@ public class CancelTest {
         final CancelTest thisTest = this;
         Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
             public void uncaughtException(Thread th, Throwable ex) {
-                thisTest.diedWith = ex;
+                thisTest.unexpectedDiedWith.set(ex);
             }
         };
         Runnable background = new Runnable() {
@@ -69,7 +71,9 @@ public class CancelTest {
                             "  (SELECT 391174 AS num))\n" +
                             "SELECT count(*) from d d1, d d2, d d3, d d4, d d5, d d6, d d7, d d8, d d9 LIMIT " + limit;
                     stmt.executeQuery(longQuery);
-                } catch (SQLException e) {}
+                } catch (SQLException e) {
+                    expectedSqlException.set(e);
+                }
             }
         };
         Thread backgroundThread = new Thread(background);
@@ -79,7 +83,24 @@ public class CancelTest {
     }
 
     @org.junit.Test
-    public void cancelWorks() throws SQLException, InterruptedException, IOException {
+    public void syncQueryCancel() throws SQLException, InterruptedException, IOException {
+        // Harder to check cancel worked in sync case, but it should work so long as we are sure to add the stmt
+        // to the running queries to be cancelled (which we did not in the initial impl)
+        BQConnection bq = conn(true);
+        TestableBQStatement stmt = new TestableBQStatement(bq.getProjectId(), bq);
+        stmt.setTestPoint();
+        Thread backgroundThread = getAndRunBackgroundQuery(stmt);
+        stmt.waitForTestPoint();
+        assertEquals(1, bq.getNumberRunningQueries());
+        stmt.cancel();
+        backgroundThread.join();
+        SQLException exception = expectedSqlException.get();
+        Assert.assertEquals("Job execution was cancelled: User requested cancellation",
+                ((com.google.api.client.googleapis.json.GoogleJsonResponseException) exception.getCause()).getDetails().getMessage());
+    }
+
+    @org.junit.Test
+    public void testAsyncQueryCancel() throws SQLException, InterruptedException, IOException {
         BQConnection bq = conn(false);
         TestableBQStatement stmt = new TestableBQStatement(bq.getProjectId(), bq);
         stmt.setTestPoint();
@@ -89,10 +110,9 @@ public class CancelTest {
         // This will throw error if it tries to cancel a nonexistent job
         stmt.cancel();
         backgroundThread.join();
-        // TODO: better checks that cancel worked
-        // Right now, there seems to be no reliable indication in the API that a job was cancelled (status is always 'DONE'),
-        // and even if the cancel signal was received the result is likely to come back successfully with all its rows.
-        // If the Google folks change the API to add a status like 'CANCEL_RECEIVED', we should check for that here
+        SQLException exception = expectedSqlException.get();
+        Assert.assertEquals("Job execution was cancelled: User requested cancellation",
+                ((com.google.api.client.googleapis.json.GoogleJsonResponseException) exception.getCause()).getDetails().getMessage());
     }
 
     @org.junit.Test
@@ -166,7 +186,7 @@ public class CancelTest {
                 @Override
                 public void run() {
                     try {
-                        Thread.sleep(1); // make absolutely sure we yield to the execution below so it gets through first
+                        Thread.sleep(1000); // make absolutely sure we yield to the execution below so it gets through first
                     } catch (InterruptedException e) {
                         throw new RuntimeException();
                     }

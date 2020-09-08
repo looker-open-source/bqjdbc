@@ -28,12 +28,14 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.QueryResponse;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This class implements java.sql.Statement
@@ -46,6 +48,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
     public static final int MAX_IO_FAILURE_RETRIES = 3;
     private Job job;
+    private AtomicReference<Thread> runningSyncThread = new AtomicReference<>();
+    private AtomicReference<QueryResponse> lastSyncResponse = new AtomicReference<>();
 
     /**
      * Enough time to give most fast queries time to complete, but not too long so that we worry about
@@ -231,18 +235,53 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 "Query run took more than the specified timeout");
     }
 
-    /** wrapper that exists for tests to override */
+    /**
+     * Runs a query synchronously.
+     *
+     * Assumes will only be called once for a given statement. Runs the sync query in a thread and sets that thread
+     * in [runningSyncThread], storing the result in [lastSyncResponse], so that cancel code can wait for a long
+     * running job to time out on the sync response and then cancel it. */
     protected QueryResponse runSyncQuery(String querySql, boolean unlimitedBillingBytes) throws IOException, SQLException {
-        return BQSupportFuncts.runSyncQuery(
-                this.connection.getBigquery(),
-                this.ProjectId,
-                querySql,
-                connection.getDataSet(),
-                this.connection.getUseLegacySql(),
-                !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
-                SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
-                (long) getMaxRows()
-        );
+        final AtomicReference<Exception> diedWith = new AtomicReference<>();
+        Runnable runSync = () -> {
+            try {
+                QueryResponse resp = BQSupportFuncts.runSyncQuery(
+                        this.connection.getBigquery(),
+                        this.ProjectId,
+                        querySql,
+                        connection.getDataSet(),
+                        this.connection.getUseLegacySql(),
+                        !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
+                        SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
+                        (long) getMaxRows()
+                );
+                lastSyncResponse.set(resp);
+            } catch (Exception e) {
+                diedWith.set(e);
+            }
+        };
+        Thread syncThread = new Thread(runSync);
+        runningSyncThread.set(syncThread);
+        syncThread.start();
+        try {
+            syncThread.join();
+        } catch (InterruptedException e) {
+            throw new IOException(e);
+        }
+        runningSyncThread.set(null);
+
+        Exception e = diedWith.get();
+        if (e != null) {
+            if (e instanceof IOException) {
+                throw (IOException) e;
+            } else if (e instanceof SQLException) {
+                throw (SQLException) e;
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return lastSyncResponse.get();
     }
 
     /**
@@ -269,12 +308,32 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
     @Override
     public void cancel() throws SQLException {
-        if (this.job == null) {
+        Thread currentlyRunningSyncThread = runningSyncThread.get();
+        JobReference jobRefToCancel = null;
+        if (currentlyRunningSyncThread != null) {
+            try {
+                currentlyRunningSyncThread.join(SYNC_TIMEOUT_MILLIS);
+                QueryResponse resp = lastSyncResponse.get();
+                if (resp != null) {
+                    jobRefToCancel = resp.getJobReference();
+                }
+            } catch (InterruptedException e) {
+                // Do nothing
+            }
+        }
+
+        if (jobRefToCancel == null && this.job != null) {
+            // the async case
+            jobRefToCancel = this.job.getJobReference();
+        }
+
+        if (jobRefToCancel == null) {
+            this.logger.info("No currently running job to cancel.");
             return;
         }
 
         try {
-            BQSupportFuncts.cancelQuery(this.job, this.connection.getBigquery(), this.ProjectId.replace("__", ":").replace("_", "."));
+            BQSupportFuncts.cancelQuery(jobRefToCancel, this.connection.getBigquery(), this.ProjectId.replace("__", ":").replace("_", "."));
         } catch (IOException e) {
             throw new SQLException("Failed to kill query");
         }
