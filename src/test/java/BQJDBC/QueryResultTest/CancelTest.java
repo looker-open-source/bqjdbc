@@ -84,8 +84,6 @@ public class CancelTest {
 
     @org.junit.Test
     public void syncQueryCancel() throws SQLException, InterruptedException, IOException {
-        // Harder to check cancel worked in sync case, but it should work so long as we are sure to add the stmt
-        // to the running queries to be cancelled (which we did not in the initial impl)
         BQConnection bq = conn(true);
         TestableBQStatement stmt = new TestableBQStatement(bq.getProjectId(), bq);
         stmt.setTestPoint();
