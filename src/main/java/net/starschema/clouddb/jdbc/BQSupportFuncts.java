@@ -430,12 +430,11 @@ public class BQSupportFuncts {
     /**
      * Cancels a job. Uses the fact that it returns a JobCancelResponse to help enforce actually calling .execute().
      *
-     * @param job     Instance of Job
+     * @param jobReference  Instance of JobReference to cancel
      * @param bigquery  Instance of authorized Bigquery client
      * @param projectId The id of the Project the job is contained in
      */
-    public static JobCancelResponse cancelQuery(Job job, Bigquery bigquery, String projectId) throws IOException {
-        JobReference jobReference = job.getJobReference();
+    public static JobCancelResponse cancelQuery(JobReference jobReference, Bigquery bigquery, String projectId) throws IOException {
         return bigquery.jobs().cancel(projectId, jobReference.getJobId()).setLocation(jobReference.getLocation()).execute();
     }
 
