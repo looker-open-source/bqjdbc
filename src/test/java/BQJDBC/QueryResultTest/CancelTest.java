@@ -98,6 +98,22 @@ public class CancelTest {
     }
 
     @org.junit.Test
+    public void syncQueryCancel2() throws SQLException, InterruptedException, IOException {
+        BQConnection bq = conn(true);
+        TestableBQStatement stmt = new TestableBQStatement(bq.getProjectId(), bq);
+        stmt.setTestPoint();
+        Thread backgroundThread = getAndRunBackgroundQuery(stmt);
+        stmt.waitForTestPoint();
+        Thread.sleep(BQStatement.SYNC_TIMEOUT_MILLIS + 1000); // wait for the sync part of the query to definitely finish
+        assertEquals(1, bq.getNumberRunningQueries());
+        stmt.cancel();
+        backgroundThread.join();
+        SQLException exception = expectedSqlException.get();
+        Assert.assertEquals("Job execution was cancelled: User requested cancellation",
+                ((com.google.api.client.googleapis.json.GoogleJsonResponseException) exception.getCause()).getDetails().getMessage());
+    }
+
+    @org.junit.Test
     public void testAsyncQueryCancel() throws SQLException, InterruptedException, IOException {
         BQConnection bq = conn(false);
         TestableBQStatement stmt = new TestableBQStatement(bq.getProjectId(), bq);
