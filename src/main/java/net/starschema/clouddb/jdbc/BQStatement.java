@@ -54,7 +54,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     /**
      * Enough time to give fast queries time to complete, but fast enough that if we want to cancel the query
      * (for which we have to wait at least this long), we don't have to wait too long. */
-    private static final long SYNC_TIMEOUT_MILLIS = 5 * 1000;
+    public static final long SYNC_TIMEOUT_MILLIS = 5 * 1000;
 
     /**
      * Constructor for BQStatement object just initializes local variables
@@ -309,8 +309,15 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     @Override
     public void cancel() throws SQLException {
         Thread currentlyRunningSyncThread = runningSyncThread.get();
+        QueryResponse maybeAlreadyComplete = lastSyncResponse.get();
+
         JobReference jobRefToCancel = null;
-        if (currentlyRunningSyncThread != null) {
+        // Check if we're in the synchronous path
+        if (maybeAlreadyComplete != null) {
+            // The sync part of the query already completed: we know which job we need to cancel
+            jobRefToCancel = maybeAlreadyComplete.getJobReference();
+        } else if (currentlyRunningSyncThread != null) {
+            // The sync part of the query has not completed yet: wait for it so we can find the job to cancel
             try {
                 currentlyRunningSyncThread.join(SYNC_TIMEOUT_MILLIS);
                 QueryResponse resp = lastSyncResponse.get();
@@ -351,7 +358,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
     @Override
     public void close() throws SQLException {
-        this.cancel();
+        if (!this.connection.isClosed()) {
+            this.cancel();
+        }
         super.close();
     }
 
