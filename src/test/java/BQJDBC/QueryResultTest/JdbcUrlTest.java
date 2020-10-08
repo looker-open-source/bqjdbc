@@ -6,6 +6,7 @@ import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -122,6 +123,8 @@ public class JdbcUrlTest {
         stmt.executeQuery("SELECT * FROM orders limit 1");
     }
 
+    // fmzakari: Ignored until i get a working oauthaccount.properties file.
+    @Ignore
     @Test
     public void canConnectWithOAuthAccessToken() throws SQLException, IOException, GeneralSecurityException {
         // generate access token from service account credentials
