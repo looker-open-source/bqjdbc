@@ -249,9 +249,6 @@ public abstract class BQStatementRoot {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
         }
-        if (!connection.shouldUseQueryApi()) {
-            throw new BQSQLFeatureNotSupportedException("Only Query API is supported");
-        }
         if (connection.getUseLegacySql()) {
             throw new BQSQLFeatureNotSupportedException("Legacy SQL does not support DML");
         }
