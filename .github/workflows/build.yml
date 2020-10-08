@@ -29,6 +29,7 @@ jobs:
           echo "$PROTECTEDACCOUNT_JSON_PROPERTIES" > src/test/resources/protectedaccount-json.properties
           echo "$PROTECTEDACCOUNT_PROPERTIES" > src/test/resources/protectedaccount.properties
           echo "$SERVICE_ACCOUNT_PROPERTIES" > src/test/resources/serviceaccount.properties
+          echo "$OAUTHACCOUNT_PROPERTIES" > src/test/resources/oauthaccount.properties
           echo "Secrets loaded!"
         shell: bash
         env:
@@ -40,6 +41,7 @@ jobs:
           PROTECTEDACCOUNT_JSON_PROPERTIES: ${{ secrets.PROTECTEDACCOUNT_JSON_PROPERTIES }}
           PROTECTEDACCOUNT_PROPERTIES: ${{ secrets.PROTECTEDACCOUNT_PROPERTIES }}
           SERVICE_ACCOUNT_PROPERTIES: ${{ secrets.SERVICE_ACCOUNT_PROPERTIES }}
+          OAUTHACCOUNT_PROPERTIES: ${{ secrets.OAUTHACCOUNT_PROPERTIES }}
       - name: Build with Maven
         run: mvn -B package --file pom.xml
       - run: mkdir staging && cp target/*.jar staging
