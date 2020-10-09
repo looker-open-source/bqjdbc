@@ -1,11 +1,16 @@
-name: "Build"
+name: Publish Package
 on:
-  pull_request:
+  release:
+    types: [created]
 jobs:
-  test:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Configure Git user
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
       - name: Set up JDK 1.8
         uses: actions/setup-java@v1
         with:
@@ -16,6 +21,13 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
+      - name: Set up Apache Maven Central
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
       - run: |
           echo "Setting up secrets."
           echo "$BIGQUERY_CREDENTIALS_P12" | base64 -d > src/test/resources/bigquery_credentials.p12
@@ -28,6 +40,8 @@ jobs:
           echo "$SERVICE_ACCOUNT_PROPERTIES" > src/test/resources/serviceaccount.properties
           echo "$OAUTHACCOUNT_PROPERTIES" > src/test/resources/oauthaccount.properties
           echo "Secrets loaded!"
+          echo "$MAVEN_PASSWORD" | sha256sum
+          cat ~/.m2/settings.xml
         shell: bash
         env:
           BIGQUERY_CREDENTIALS_P12: ${{ secrets.BIGQUERY_CREDENTIALS_P12 }}
@@ -39,10 +53,9 @@ jobs:
           PROTECTEDACCOUNT_PROPERTIES: ${{ secrets.PROTECTEDACCOUNT_PROPERTIES }}
           SERVICE_ACCOUNT_PROPERTIES: ${{ secrets.SERVICE_ACCOUNT_PROPERTIES }}
           OAUTHACCOUNT_PROPERTIES: ${{ secrets.OAUTHACCOUNT_PROPERTIES }}
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml
-      - run: mkdir staging && cp target/*.jar staging
-      - uses: actions/upload-artifact@v2
-        with:
-          name: Package
-          path: staging
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+      - name: Publish Nexus Package
+        run: mvn -B clean deploy -DskipTests
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}

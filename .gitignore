@@ -3,3 +3,5 @@
 *.iml
 .DS_Store
 /src/test/resources/
+*.releaseBackup
+release.properties
