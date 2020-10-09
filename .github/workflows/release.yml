@@ -42,6 +42,6 @@ jobs:
           SERVICE_ACCOUNT_PROPERTIES: ${{ secrets.SERVICE_ACCOUNT_PROPERTIES }}
           OAUTHACCOUNT_PROPERTIES: ${{ secrets.OAUTHACCOUNT_PROPERTIES }}
       - name: Publish package
-        run: mvn -B deploy -DskipTests=true
+        run: mvn -B deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

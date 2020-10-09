@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.starschema.clouddb.bqjdbc</groupId>
   <artifactId>bqjdbc</artifactId>
-  <version>2.2.0-SNAPSHOT</version>
+  <version>2.2.0</version>
   <name>Big Query over JDBC</name>
   <description>A simple JDBC driver, to reach Google's BigQuery</description>
   <properties>
