@@ -4,7 +4,7 @@ on:
     branches:
       - master
 jobs:
-  test:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -42,6 +42,6 @@ jobs:
           SERVICE_ACCOUNT_PROPERTIES: ${{ secrets.SERVICE_ACCOUNT_PROPERTIES }}
           OAUTHACCOUNT_PROPERTIES: ${{ secrets.OAUTHACCOUNT_PROPERTIES }}
       - name: Publish package
-        run: mvn -B deploy
+        run: mvn -B deploy -DskipTests=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
