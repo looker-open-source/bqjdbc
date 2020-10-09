@@ -1,0 +1,51 @@
+name: "Build"
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - run: |
+          echo "Setting up secrets."
+          echo "$BIGQUERY_CREDENTIALS_P12" | base64 -d > src/test/resources/bigquery_credentials.p12
+          echo "$BIGQUERY_CREDENTIALS_PROTECTED_JSON" > src/test/resources/bigquery_credentials_protected.json
+          echo "$BIGQUERY_CREDENTIALS_PROTECTED_P12" | base64 -d > src/test/resources/bigquery_credentials_protected.p12
+          echo "$INSTALLEDACCOUNT_PROPERTIES" > src/test/resources/installedaccount.properties
+          echo "$INSTALLEDACCOUNT1_PROPERTIES" > src/test/resources/installedaccount1.properties
+          echo "$PROTECTEDACCOUNT_JSON_PROPERTIES" > src/test/resources/protectedaccount-json.properties
+          echo "$PROTECTEDACCOUNT_PROPERTIES" > src/test/resources/protectedaccount.properties
+          echo "$SERVICE_ACCOUNT_PROPERTIES" > src/test/resources/serviceaccount.properties
+          echo "$OAUTHACCOUNT_PROPERTIES" > src/test/resources/oauthaccount.properties
+          echo "Secrets loaded!"
+        shell: bash
+        env:
+          BIGQUERY_CREDENTIALS_P12: ${{ secrets.BIGQUERY_CREDENTIALS_P12 }}
+          BIGQUERY_CREDENTIALS_PROTECTED_JSON: ${{ secrets.BIGQUERY_CREDENTIALS_PROTECTED_JSON }}
+          BIGQUERY_CREDENTIALS_PROTECTED_P12: ${{ secrets.BIGQUERY_CREDENTIALS_PROTECTED_P12 }}
+          INSTALLEDACCOUNT_PROPERTIES: ${{ secrets.INSTALLEDACCOUNT_PROPERTIES  }}
+          INSTALLEDACCOUNT1_PROPERTIES: ${{ secrets.INSTALLEDACCOUNT1_PROPERTIES }}
+          PROTECTEDACCOUNT_JSON_PROPERTIES: ${{ secrets.PROTECTEDACCOUNT_JSON_PROPERTIES }}
+          PROTECTEDACCOUNT_PROPERTIES: ${{ secrets.PROTECTEDACCOUNT_PROPERTIES }}
+          SERVICE_ACCOUNT_PROPERTIES: ${{ secrets.SERVICE_ACCOUNT_PROPERTIES }}
+          OAUTHACCOUNT_PROPERTIES: ${{ secrets.OAUTHACCOUNT_PROPERTIES }}
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+      - run: mkdir staging && cp target/*.jar staging
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Package
+          path: staging

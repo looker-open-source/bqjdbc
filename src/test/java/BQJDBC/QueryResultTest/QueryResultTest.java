@@ -30,6 +30,7 @@ import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.BQSupportMethods;
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -108,6 +109,12 @@ public class QueryResultTest {
     @Before
     public void NewConnection() {
         NewConnection(null);
+    }
+
+    @After
+    public void TeardownConnection() throws SQLException {
+        QueryResultTest.con.close();
+        QueryResultTest.con = null;
     }
 
     @Test
