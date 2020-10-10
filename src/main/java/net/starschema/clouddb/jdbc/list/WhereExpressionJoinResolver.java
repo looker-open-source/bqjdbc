@@ -632,7 +632,6 @@ public class WhereExpressionJoinResolver {
     /**
      * Checks if the BooleanExpressionItem can be used as a JoinTerm
      * @param booleanExpressionItem
-     * @param expression
      * @return
      */
     public static boolean isValidJoinTerm(BooleanExpressionItem booleanExpressionItem) {

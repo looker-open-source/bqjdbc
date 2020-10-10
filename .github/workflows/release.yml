@@ -28,6 +28,8 @@ jobs:
           server-id: ossrh
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }} # Value of the GPG private key to import
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
       - run: |
           echo "Setting up secrets."
           echo "$BIGQUERY_CREDENTIALS_P12" | base64 -d > src/test/resources/bigquery_credentials.p12
@@ -55,7 +57,8 @@ jobs:
           OAUTHACCOUNT_PROPERTIES: ${{ secrets.OAUTHACCOUNT_PROPERTIES }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
       - name: Publish Nexus Package
-        run: mvn -B clean deploy -DskipTests
+        run: mvn -P release -B clean deploy -DskipTests
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}

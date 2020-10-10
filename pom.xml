@@ -4,12 +4,22 @@
        to a groupId that we have ownership over -->
   <groupId>com.github.jonathanswenson</groupId>
   <artifactId>bqjdbc</artifactId>
-  <version>2.2.11-SNAPSHOT</version>
+  <version>2.2.11</version>
   <name>Big Query over JDBC</name>
   <description>A simple JDBC driver, to reach Google's BigQuery</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+  <url>https://github.com/jonathanswenson/starschema-bigquery-jdbc</url>
+
+  <developers>
+    <developer>
+      <name>Looker Inc.</name>
+      <email>jgswenson@google.com</email>
+      <organization>Looker</organization>
+      <organizationUrl>https://looker.com/</organizationUrl>
+    </developer>
+  </developers>
 
   <distributionManagement>
     <repository>
@@ -24,9 +34,11 @@
   </distributionManagement>
 
   <scm>
-    <developerConnection>scm:git:https://github.com/jonathanswenson/starschema-bigquery-jdbc.git</developerConnection>
-    <tag>HEAD</tag>
+    <connection>scm:git:git://github.com/jonathanswenson/starschema-bigquery-jdbc.git</connection>
+    <developerConnection>scm:git:ssh://github.com:jonathanswenson/starschema-bigquery-jdbc.git</developerConnection>
+    <url>http://github.com/jonathanswenson/tarschema-bigquery-jdbc/tree/master</url>
   </scm>
+
   <repositories>
     <repository>
       <id>google-api-services</id>
@@ -36,6 +48,7 @@
       </snapshots>
     </repository>
   </repositories>
+
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
@@ -44,6 +57,39 @@
       <comments />
     </license>
   </licenses>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <!-- Fix signing using Github action
+                    https://stackoverflow.com/questions/53992950/maven-gpg-plugin-failing-with-inappropriate-ioctl-for-device-when-running-unde -->
+                <configuration>
+                  <gpgArguments>
+                    <arg>--pinentry-mode</arg>
+                    <arg>loopback</arg>
+                  </gpgArguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
   <dependencies>
     <dependency>
       <groupId>commons-io</groupId>
@@ -167,6 +213,22 @@
             <phase>verify</phase>
             <goals>
               <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <!-- this project has a lot of incorrect javadoc. punting on it for now fixing it. -->
+          <doclint>none</doclint>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
             </goals>
           </execution>
         </executions>

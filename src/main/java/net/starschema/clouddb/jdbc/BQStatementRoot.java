@@ -34,9 +34,6 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.sql.*;
-import java.time.Duration;
-
-// import net.starschema.clouddb.bqjdbc.logging.Logger;
 
 /**
  * This class partially implements java.sql.Statement, and
@@ -304,8 +301,6 @@ public abstract class BQStatementRoot {
         throw new BQSQLException(
                 "Query run took more than the specified timeout");
     }
-
-    /** {@inheritDoc} */
 
     public ResultSet executeQuery(String querySql, boolean unlimitedBillingBytes) throws SQLException {
         if (this.isClosed()) {
@@ -587,8 +582,6 @@ public abstract class BQStatementRoot {
         }
     }
 
-    /** {@inheritDoc} */
-
     public int getQueryTimeout() throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
@@ -612,7 +605,6 @@ public abstract class BQStatementRoot {
      * Gives back reultset stored in resset
      * </p>
      */
-
     public ResultSet getResultSet() throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
@@ -814,15 +806,14 @@ public abstract class BQStatementRoot {
         throw new BQSQLException("Not implemented." + "setPoolable(bool)");
     }
 
-    /** {@inheritDoc} */
-    public void setQueryTimeout(int arg0) throws SQLException {
+    public void setQueryTimeout(int seconds) throws SQLException {
         if (this.isClosed()) {
             throw new BQSQLException("This Statement is Closed");
         }
-        if (arg0 == 0) {
+        if (seconds == 0) {
             this.querytimeout = Integer.MAX_VALUE;
         } else {
-            this.querytimeout = arg0;
+            this.querytimeout = seconds;
         }
     }
 

@@ -32,9 +32,10 @@ import org.antlr.runtime.tree.Tree;
 /**
  * This class extends the basic Node
  * with the following attributes:
- * <li> order -> we order by DESC or ASC
- * <li> orderByColumn -> the columns to order by
- *
+ * <ol>
+ *  <li> order -&gt; we order by DESC or ASC </li>
+ *  <li> orderByColumn -&gt; the columns to order by </li>
+ * </ol>
  * @author Balazs Gunics, Attila Horvath
  */
 public class OrderbyClause extends Node implements ColumnReferencePlace {

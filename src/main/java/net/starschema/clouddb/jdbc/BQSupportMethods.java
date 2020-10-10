@@ -37,7 +37,7 @@ import java.util.List;
 public class BQSupportMethods {
     /**
      * This method is to get containing data of a java.sql.ResultSet as a
-     * List<List<String>>
+     * List&lt;List&lt;String&gt;&gt;
      *
      * @param result
      *            is a java.sql.ResultSet

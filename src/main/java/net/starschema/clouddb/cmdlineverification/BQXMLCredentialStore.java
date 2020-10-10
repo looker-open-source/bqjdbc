@@ -210,7 +210,7 @@ public class BQXMLCredentialStore implements CredentialStore {
      * Constructor for the class, it just initializes the path to xml file from
      * the given properties file;
      *
-     * @param Path
+     * @param path
      * @throws IOException
      */
     public BQXMLCredentialStore(String path) throws IOException {
