@@ -191,7 +191,7 @@
           </execution>
         </executions>
         <configuration>
-          <finalName>${project.artifactId}-${project.version}</finalName>
+          <shadedArtifactAttached>true</shadedArtifactAttached>
         </configuration>
       </plugin>
       <plugin>
@@ -247,6 +247,5 @@
         </configuration>
       </plugin>
     </plugins>
-    <finalName>${project.artifactId}-${project.version}-thin</finalName>
   </build>
 </project>
