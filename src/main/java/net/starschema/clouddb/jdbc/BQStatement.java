@@ -49,7 +49,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     public static final int MAX_IO_FAILURE_RETRIES = 3;
     private Job job;
     private AtomicReference<Thread> runningSyncThread = new AtomicReference<>();
-    private AtomicReference<QueryResponse> lastSyncResponse = new AtomicReference<>();
+    private AtomicReference<QueryResponse> syncResponseFromCurrentQuery = new AtomicReference<>();
 
     /**
      * Enough time to give fast queries time to complete, but fast enough that if we want to cancel the query
@@ -105,6 +105,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         }
         finally {
             this.job = null;
+            this.syncResponseFromCurrentQuery.set(null);
             this.connection.removeRunningStatement(this);
         }
     }
@@ -255,7 +256,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
                         (long) getMaxRows()
                 );
-                lastSyncResponse.set(resp);
+                syncResponseFromCurrentQuery.set(resp);
             } catch (Exception e) {
                 diedWith.set(e);
             }
@@ -281,7 +282,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             }
         }
 
-        return lastSyncResponse.get();
+        return syncResponseFromCurrentQuery.get();
     }
 
     /**
@@ -309,7 +310,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     @Override
     public void cancel() throws SQLException {
         Thread currentlyRunningSyncThread = runningSyncThread.get();
-        QueryResponse maybeAlreadyComplete = lastSyncResponse.get();
+        QueryResponse maybeAlreadyComplete = syncResponseFromCurrentQuery.get();
 
         JobReference jobRefToCancel = null;
         // Check if we're in the synchronous path
@@ -320,7 +321,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             // The sync part of the query has not completed yet: wait for it so we can find the job to cancel
             try {
                 currentlyRunningSyncThread.join(SYNC_TIMEOUT_MILLIS);
-                QueryResponse resp = lastSyncResponse.get();
+                QueryResponse resp = syncResponseFromCurrentQuery.get();
                 if (resp != null) {
                     jobRefToCancel = resp.getJobReference();
                 }
