@@ -51,9 +51,9 @@
 
   <licenses>
     <license>
-      <name>Apache License, Version 2.0</name>
+      <name>BSD 2-Clause "Simplified" License</name>
       <url>http://opensource.org/licenses/BSD-2-Clause</url>
-      <distribution>manual</distribution>
+      <distribution>repo</distribution>
       <comments />
     </license>
   </licenses>
