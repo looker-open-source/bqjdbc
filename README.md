@@ -2,8 +2,9 @@
 
 ![Maven Central](https://img.shields.io/maven-central/v/com.github.jonathanswenson/bqjdbc)
 
-This is a [JDBC Driver](https://docs.oracle.com/javase/8/docs/technotes/guides/jdbc/) for [BigQuery](https://cloud.google.com/bigquery)
-forked from https://code.google.com/p/starschema-bigquery-jdbc/
+`starschema-bigquery-jdbc` (also known as `bqjdbc`) is a
+[JDBC Driver](https://docs.oracle.com/javase/8/docs/technotes/guides/jdbc/) for
+[Google BigQuery](https://cloud.google.com/bigquery).
 
 You can create a JDBC connection easily for a variety of authentication types.
 For instance for a _service account_ in a properties file:
@@ -23,17 +24,19 @@ public static class Example {
     public static void main(String[] args) {
         // load the class so that it registers itself
         Class.forName("net.starschema.clouddb.jdbc.BQDriver");
-        final String jdbcUrl = BQSupportFuncts.constructUrlFromPropertiesFile(
-                                    BQSupportFuncts.readFromPropFile(
-                                        getClass().getResource("/serviceaccount.properties").getFile()
-                                    ));
+        final String jdbcUrl =
+            BQSupportFuncts.constructUrlFromPropertiesFile(
+                BQSupportFuncts.readFromPropFile(
+                    getClass().getResource("/serviceaccount.properties").getFile()));
         final Connection con = DriverManager.getConnection(jdbcUrl);
         // perform SQL against BigQuery now!
     }
 }
 ```
 
-The dependency is provided at the following coordinates:
+The dependency is provided on
+[Maven central](https://search.maven.org/search?q=a:bqjdbc)
+at the following coordinates:
 ```xml
 <dependency>
     <groupId>com.github.jonathanswenson</groupId>
@@ -42,7 +45,7 @@ The dependency is provided at the following coordinates:
 </dependency>
 ```
 
-A fat (shaded) jar is provided at the following coordinates.
+A fat (shaded) jar is also available:
 ```xml
 <dependency>
     <groupId>com.github.jonathanswenson</groupId>
@@ -53,6 +56,16 @@ A fat (shaded) jar is provided at the following coordinates.
 ```
 
 ## Development
+
+### Download and build
+
+We require Java (JDK 8 through 15) and Apache Maven (3.2.5 or higher).
+
+```
+$ git clone git://github.com/jonathanswenson/starschema-bigquery-jdbc.git
+$ cd starschema-bigquery-jdbc
+$ mvn clean install -DskipTests
+```
 
 ### Releases
 
@@ -73,3 +86,9 @@ Releases are handled through GitHub actions, and kicked off when a release is cr
     ![Verify action is successful](./github_action_success.png)
 
 4. Create a new commit by bumping the version and adding `-SNAPSHOT` to it
+
+## History
+
+`bqjdbc` was 
+forked from https://code.google.com/p/starschema-bigquery-jdbc/ in 2013
+and has since been maintained by a few folks at [Looker](https://github.com/looker).
