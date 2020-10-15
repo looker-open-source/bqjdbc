@@ -341,10 +341,15 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         }
 
         try {
-            BQSupportFuncts.cancelQuery(jobRefToCancel, this.connection.getBigquery(), this.ProjectId.replace("__", ":").replace("_", "."));
+            performQueryCancel(jobRefToCancel);
         } catch (IOException e) {
             throw new SQLException("Failed to kill query");
         }
+    }
+
+    /** Wrap [BQSupportFuncts.cancelQuery] purely for testability purposes. */
+    protected void performQueryCancel(JobReference jobRefToCancel) throws IOException {
+        BQSupportFuncts.cancelQuery(jobRefToCancel, this.connection.getBigquery(), this.ProjectId.replace("__", ":").replace("_", "."));
     }
 
     @Override

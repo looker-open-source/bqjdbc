@@ -1,6 +1,7 @@
 package BQJDBC.QueryResultTest;
 
 import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.QueryResponse;
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
@@ -111,6 +112,20 @@ public class CancelTest {
         SQLException exception = expectedSqlException.get();
         Assert.assertEquals("Job execution was cancelled: User requested cancellation",
                 ((com.google.api.client.googleapis.json.GoogleJsonResponseException) exception.getCause()).getDetails().getMessage());
+    }
+
+    @org.junit.Test
+    public void noCancelOnCloseAfterSyncQueryCompletion() throws SQLException, IOException {
+        BQConnection bq = conn(true);
+        TestableBQStatement stmt = new TestableBQStatement(bq.getProjectId(), bq) {
+            @Override
+            protected void performQueryCancel(JobReference jobRefToCancel) {
+                throw new RuntimeException("don't cancel in this test");
+            }
+        };
+        stmt.executeQuery("SELECT 1");
+        stmt.close();
+        assertTrue(stmt.isClosed());
     }
 
     @org.junit.Test
