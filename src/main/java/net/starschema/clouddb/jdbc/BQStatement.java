@@ -314,15 +314,15 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
         JobReference jobRefToCancel = null;
         // Check if we're in the synchronous path
-        if (maybeAlreadyComplete != null) {
-            // The sync part of the query already completed: we know which job we need to cancel
+        if (maybeAlreadyComplete != null && !maybeAlreadyComplete.getJobComplete()) {
+            // The sync part of the query already completed (but the job is still running): we know which job we need to cancel
             jobRefToCancel = maybeAlreadyComplete.getJobReference();
         } else if (currentlyRunningSyncThread != null) {
             // The sync part of the query has not completed yet: wait for it so we can find the job to cancel
             try {
                 currentlyRunningSyncThread.join(SYNC_TIMEOUT_MILLIS);
                 QueryResponse resp = syncResponseFromCurrentQuery.get();
-                if (resp != null) {
+                if (resp != null && !resp.getJobComplete()) { // Don't bother cancel if the job is complete
                     jobRefToCancel = resp.getJobReference();
                 }
             } catch (InterruptedException e) {
