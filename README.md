@@ -1,8 +1,8 @@
-# starschema-bigquery-jdbc
+# bqjdbc
 
 ![Maven Central](https://img.shields.io/maven-central/v/com.github.jonathanswenson/bqjdbc)
 
-`starschema-bigquery-jdbc` (also known as `bqjdbc`) is a
+`bqjdbc` (also known as `starschema-bigquery-jdbc`) is a
 [JDBC Driver](https://docs.oracle.com/javase/8/docs/technotes/guides/jdbc/) for
 [Google BigQuery](https://cloud.google.com/bigquery).
 
