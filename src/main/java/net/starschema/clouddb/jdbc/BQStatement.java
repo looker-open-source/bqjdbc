@@ -59,12 +59,12 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     /**
      * Constructor for BQStatement object just initializes local variables
      *
-     * @param projectid
+     * @param projectId
      * @param bqConnection
      */
-    public BQStatement(String projectid, BQConnection bqConnection) {
-        logger.debug("Constructor of BQStatement is running projectid is: " + projectid);
-        this.ProjectId = projectid;
+    public BQStatement(String projectId, BQConnection bqConnection) {
+        logger.debug("Constructor of BQStatement is running projectId is: " + projectId);
+        this.projectId = projectId;
         this.connection = bqConnection;
         this.resultSetType = ResultSet.TYPE_FORWARD_ONLY;
         this.resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
@@ -73,15 +73,15 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     /**
      * Constructor for BQStatement object just initializes local variables
      *
-     * @param projectid
+     * @param projectId
      * @param bqConnection
      * @param resultSetType
      * @param resultSetConcurrency
      * @throws BQSQLException
      */
-    public BQStatement(String projectid, BQConnection bqConnection,
+    public BQStatement(String projectId, BQConnection bqConnection,
                        int resultSetType, int resultSetConcurrency) throws BQSQLException {
-        logger.debug("Constructor of BQStatement is running projectid is: " + projectid +
+        logger.debug("Constructor of BQStatement is running projectId is: " + projectId +
                 ",resultSetType is: " + resultSetType +
                 ",resutSetConcurrency is: " + resultSetConcurrency);
         if (resultSetConcurrency == ResultSet.CONCUR_UPDATABLE) {
@@ -89,7 +89,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                     "The Resultset Concurrency can't be ResultSet.CONCUR_UPDATABLE");
         }
 
-        this.ProjectId = projectid;
+        this.projectId = projectId;
         this.connection = bqConnection;
         this.resultSetType = resultSetType;
         this.resultSetConcurrency = resultSetConcurrency;
@@ -146,14 +146,14 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                     null :
                     this.connection.getBigquery()
                             .jobs()
-                            .get(this.ProjectId, qr.getJobReference().getJobId())
+                            .get(projectId, qr.getJobReference().getJobId())
                             .setLocation(qr.getJobReference().getLocation())
                             .execute();
             if (qr.getJobComplete()) {
                 if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
                     return new BQForwardOnlyResultSet(
                             this.connection.getBigquery(),
-                            this.ProjectId.replace("__", ":").replace("_", "."),
+                            projectId,
                             referencedJob, this, qr.getRows(), fetchedAll, qr.getSchema());
                 } else if (fetchedAll) {
                     // We can only return scrollable result sets here if we have all the rows: otherwise we'll
@@ -180,7 +180,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                     try {
                         status = BQSupportFuncts.getQueryState(referencedJob,
                                 this.connection.getBigquery(),
-                                this.ProjectId.replace("__", ":").replace("_", "."));
+                                projectId);
                     } catch (IOException e) {
                         if (retries++ < MAX_IO_FAILURE_RETRIES) {
                             continue;
@@ -196,12 +196,12 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                     if (resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
                         return new BQScrollableResultSet(BQSupportFuncts.getQueryResults(
                                 this.connection.getBigquery(),
-                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                projectId,
                                 referencedJob), this);
                     } else {
                         return new BQForwardOnlyResultSet(
                                 this.connection.getBigquery(),
-                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                projectId,
                                 referencedJob, this);
                     }
                 }
@@ -241,7 +241,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             try {
                 QueryResponse resp = BQSupportFuncts.runSyncQuery(
                         this.connection.getBigquery(),
-                        this.ProjectId,
+                        projectId,
                         querySql,
                         connection.getDataSet(),
                         this.connection.getUseLegacySql(),
@@ -324,7 +324,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
     /** Wrap [BQSupportFuncts.cancelQuery] purely for testability purposes. */
     protected void performQueryCancel(JobReference jobRefToCancel) throws IOException {
-        BQSupportFuncts.cancelQuery(jobRefToCancel, this.connection.getBigquery(), this.ProjectId.replace("__", ":").replace("_", "."));
+        BQSupportFuncts.cancelQuery(jobRefToCancel, this.connection.getBigquery(), projectId);
     }
 
     @Override

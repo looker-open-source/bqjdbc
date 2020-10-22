@@ -72,7 +72,7 @@ public class BQPreparedStatement extends BQStatementRoot implements
         this.logger.debug("Constructor of PreparedStatement Running " +
                 "projectid is:" + projectid + "sqlquery: " + querysql);
 
-        this.ProjectId = projectid;
+        this.projectId = projectid;
         this.connection = bqConnection;
         //this.resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;  //-scrollable
         this.resultSetType = ResultSet.TYPE_FORWARD_ONLY;
@@ -116,7 +116,7 @@ public class BQPreparedStatement extends BQStatementRoot implements
                     "The Resultset Concurrency can't be ResultSet.CONCUR_UPDATABLE");
         }
 
-        this.ProjectId = projectid;
+        this.projectId = projectid;
         this.connection = bqConnection;
         this.resultSetType = resultSetType;
         this.resultSetConcurrency = resultSetConcurrency;
@@ -238,7 +238,7 @@ public class BQPreparedStatement extends BQStatementRoot implements
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(
                     this.connection.getBigquery(),
-                    this.ProjectId.replace("__", ":").replace("_", "."),
+                    this.projectId,
                     this.RunnableStatement,
                     this.connection.getDataSet(),
                     this.connection.getUseLegacySql(),
@@ -252,17 +252,17 @@ public class BQPreparedStatement extends BQStatementRoot implements
             do {
                 if (BQSupportFuncts.getQueryState(referencedJob,
                         this.connection.getBigquery(),
-                        this.ProjectId.replace("__", ":").replace("_", "."))
+                        this.projectId)
                         .equals("DONE")) {
                     if (resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
                         return new BQScrollableResultSet(BQSupportFuncts.getQueryResults(
                                 this.connection.getBigquery(),
-                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                this.projectId,
                                 referencedJob), this);
                     } else {
                         return new BQForwardOnlyResultSet(
                                 this.connection.getBigquery(),
-                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                this.projectId,
                                 referencedJob, this);
                     }
                 }
