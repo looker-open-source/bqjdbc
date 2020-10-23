@@ -251,9 +251,6 @@ public abstract class BQStatementRoot {
             throw new BQSQLFeatureNotSupportedException("Legacy SQL does not support DML");
         }
         this.starttime = System.currentTimeMillis();
-        // ANTLR Parsing
-        BQQueryParser parser = new BQQueryParser(sql, this.connection);
-        sql = parser.parse();
 
         final Job referencedJob;
 
@@ -309,45 +306,29 @@ public abstract class BQStatementRoot {
         }
         this.starttime = System.currentTimeMillis();
         Job referencedJob;
-        // ANTLR Parsing
-        BQQueryParser parser = new BQQueryParser(querySql, this.connection);
-        querySql = parser.parse();
 
         Long billingBytes = !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null;
 
         boolean jobAlreadyCompleted = false;
 
         try {
-            if (this.connection.shouldUseQueryApi()) {
-                QueryResponse qr = BQSupportFuncts.runSyncQuery(
-                        this.connection.getBigquery(),
-                        this.ProjectId,
-                        querySql,
-                        connection.getDataSet(),
-                        this.connection.getUseLegacySql(),
-                        billingBytes,
-                        (long) querytimeout * 1000,
-                        (long) getMaxRows()
-                );
-                if (qr.getJobComplete()) {
-                    if (qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))) {
-                        return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
-                    }
-                    jobAlreadyCompleted = true;
+            QueryResponse qr = BQSupportFuncts.runSyncQuery(
+                    this.connection.getBigquery(),
+                    this.ProjectId,
+                    querySql,
+                    connection.getDataSet(),
+                    this.connection.getUseLegacySql(),
+                    billingBytes,
+                    (long) querytimeout * 1000,
+                    (long) getMaxRows()
+            );
+            if (qr.getJobComplete()) {
+                if (qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))) {
+                    return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
                 }
-                referencedJob = this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
-            } else {
-                // Gets the Job reference of the completed job with give Query
-                referencedJob = BQSupportFuncts.startQuery(
-                        this.connection.getBigquery(),
-                        this.ProjectId,
-                        querySql,
-                        connection.getDataSet(),
-                        this.connection.getUseLegacySql(),
-                        billingBytes
-                );
+                jobAlreadyCompleted = true;
             }
-
+            referencedJob = this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
 
             this.logger.info("Executing Query: " + querySql);
         } catch (IOException e) {

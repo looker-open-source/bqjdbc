@@ -39,8 +39,6 @@ import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// import net.starschema.clouddb.bqjdbc.logging.Logger;
-
 /**
  * The connection class which builds the connection between BigQuery and the
  * Driver
@@ -69,20 +67,10 @@ public class BQConnection implements Connection {
 
     private Long maxBillingBytes;
 
-    private boolean useQueryApi;
-
     private final Set<BQStatementRoot> runningStatements = Collections.synchronizedSet(new HashSet<BQStatementRoot>());
 
-    /** Boolean to determine, to use or doesn't use the ANTLR parser */
-    private boolean transformQuery = false;
-
-    /** getter for transformQuery */
-    public boolean getTransformQuery() {
-        return transformQuery;
-    }
-
-    /** Boolean to determine whether or not to use legacy sql (default: true) **/
-    private boolean useLegacySql = true;
+    /** Boolean to determine whether or not to use legacy sql (default: false) **/
+    private boolean useLegacySql = false;
 
     /** getter for useLegacySql */
     public boolean getUseLegacySql() {
@@ -166,17 +154,11 @@ public class BQConnection implements Connection {
         String withServiceAccountParam = caseInsensitiveProps.getProperty("withserviceaccount");
         Boolean serviceAccount = (withServiceAccountParam != null) && Boolean.parseBoolean(withServiceAccountParam);
 
-        // There's really no reason anyone would ever not want to use this... but leave it in for a bit as a bailout switch
-        String useQueryApiParam = caseInsensitiveProps.getProperty("usequeryapi");
-        useQueryApi = useQueryApiParam == null || !useQueryApiParam.equalsIgnoreCase("false");
-
-        // extract transformQuery property
-        String transformQueryParam = caseInsensitiveProps.getProperty("transformquery");
-        this.transformQuery = (transformQueryParam != null) && Boolean.parseBoolean(transformQueryParam);
-
         // extract useLegacySql property
         String legacySqlParam = caseInsensitiveProps.getProperty("uselegacysql");
-        this.useLegacySql = (legacySqlParam == null) || Boolean.parseBoolean(legacySqlParam);
+        if (legacySqlParam != null) {
+            this.useLegacySql = Boolean.parseBoolean(legacySqlParam);
+        }
 
         String jsonAuthContents = caseInsensitiveProps.getProperty("jsonauthcontents");
 
@@ -1057,15 +1039,5 @@ public class BQConnection implements Connection {
 
     public Long getMaxBillingBytes() {
         return maxBillingBytes;
-    }
-
-    /**
-     * Returns true if queries on this connection should use the synchronous jobs.query api to run queries.
-     *
-     * This is the default, and the old, async API is being left in as a bailout switch in case there is some use case
-     * that only it supports that a client discovers.
-     * */
-    boolean shouldUseQueryApi() {
-        return useQueryApi;
     }
 }

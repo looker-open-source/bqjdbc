@@ -234,11 +234,6 @@ public class BQPreparedStatement extends BQStatementRoot implements
         this.starttime = System.currentTimeMillis();
         Job referencedJob;
 
-        // ANTLR Parser
-        BQQueryParser parser = new BQQueryParser(this.RunnableStatement,
-                this.connection);
-        this.RunnableStatement = parser.parse();
-
         try {
             // Gets the Job reference of the completed job with give Query
             referencedJob = BQSupportFuncts.startQuery(

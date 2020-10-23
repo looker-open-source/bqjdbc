@@ -79,9 +79,6 @@ public class BQSupportFuncts {
         String Password = properties.getProperty("password");
         String path = properties.getProperty("path");
         dataset = dataset == null ? properties.getProperty("dataset") : dataset;
-        String transformQuery = null;
-
-        transformQuery = properties.getProperty("transformquery");
 
         String forreturn = "";
 
@@ -133,15 +130,7 @@ public class BQSupportFuncts {
             }
         }
 
-        if (transformQuery != null && !full) {
-            if (properties.getProperty("type").equals("service")) {
-                return forreturn + "&transformQuery=" + transformQuery;
-            }
-            else {
-                return forreturn + "?transformQuery=" + transformQuery;
-            }
-
-        } else return forreturn;
+        return forreturn;
     }
 
     public static String constructUrlFromPropertiesFile(Properties properties) throws UnsupportedEncodingException {
