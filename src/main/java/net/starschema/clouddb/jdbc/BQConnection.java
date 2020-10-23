@@ -26,7 +26,6 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.Bigquery;
-import net.starschema.clouddb.cmdlineverification.Oauth2Bigquery;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -243,8 +242,7 @@ public class BQConnection implements Connection {
             }
         }
         else {
-            this.bigquery = Oauth2Bigquery.authorizeviainstalled(userId, userKey, userAgent);
-            this.logger.info("Authorized with Oauth");
+            throw new IllegalArgumentException("Must provide a valid mechanism to authenticate.");
         }
         logger.debug("The project id for this connections is: " + this.projectId);
     }

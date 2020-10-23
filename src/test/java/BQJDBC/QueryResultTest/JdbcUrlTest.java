@@ -1,7 +1,7 @@
 package BQJDBC.QueryResultTest;
 
 import junit.framework.Assert;
-import net.starschema.clouddb.cmdlineverification.Oauth2Bigquery;
+import net.starschema.clouddb.jdbc.Oauth2Bigquery;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;

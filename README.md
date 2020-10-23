@@ -1,6 +1,7 @@
 # bqjdbc
 
 ![Maven Central](https://img.shields.io/maven-central/v/com.github.jonathanswenson/bqjdbc)
+[![javadoc](https://javadoc.io/badge2/com.github.jonathanswenson/bqjdbc/javadoc.svg)](https://javadoc.io/doc/com.github.jonathanswenson/bqjdbc)
 
 `bqjdbc` (also known as `starschema-bigquery-jdbc`) is a
 [JDBC Driver](https://docs.oracle.com/javase/8/docs/technotes/guides/jdbc/) for
@@ -86,6 +87,9 @@ Releases are handled through GitHub actions, and kicked off when a release is cr
     ![Verify action is successful](./github_action_success.png)
 
 4. Create a new commit by bumping the version and adding `-SNAPSHOT` to it
+
+At the moment, the GitHub Pages URL http://jonathanswenson.github.io/bqjdbc/ is not
+updated automatically but can easily be done.
 
 ## History
 
