@@ -107,7 +107,7 @@ public class QueryResultTest {
 
     @Before
     public void NewConnection() {
-        NewConnection(null);
+        NewConnection("&useLegacySql=true");
     }
 
     @After
