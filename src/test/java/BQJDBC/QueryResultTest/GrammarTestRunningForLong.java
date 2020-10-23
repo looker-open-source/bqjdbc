@@ -33,9 +33,10 @@ import java.sql.Statement;
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 
-import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GrammarTestRunningForLong {
     /** String for System independent newline */
@@ -47,7 +48,7 @@ public class GrammarTestRunningForLong {
     /**
      * Logger initialization
      */
-    Logger logger = Logger.getLogger(this.toString());
+    Logger logger = LoggerFactory.getLogger(GrammarTestRunningForLong.class);
 
     /**
      * Creates a new Connection to bigquery with the jdbc driver
@@ -68,7 +69,7 @@ public class GrammarTestRunningForLong {
             }
             logger.debug("Running the next test");
         } catch (SQLException e) {
-            logger.fatal("Something went wrong", e);
+            logger.error("Something went wrong", e);
         }
     }
 

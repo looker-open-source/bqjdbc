@@ -24,11 +24,12 @@
  */
 package net.starschema.clouddb.jdbc.list;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
-import org.apache.log4j.Logger;
 
 /**
  * The basic Node for the List
@@ -43,7 +44,7 @@ import org.apache.log4j.Logger;
 public class Node implements NodeBuilder {
 
     public static String newline = System.getProperty("line.separator");
-    protected Logger logger = Logger.getLogger(this.getClass().toString());
+    protected Logger logger = LoggerFactory.getLogger(this.getClass());
     protected Node prev = null;
     protected Node next = null;
     protected LinkedList<Node> children = null;

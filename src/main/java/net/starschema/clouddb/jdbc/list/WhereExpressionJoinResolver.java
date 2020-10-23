@@ -29,11 +29,11 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import net.starschema.clouddb.jdbc.JdbcGrammarParser;
 import net.starschema.clouddb.jdbc.antlr.sqlparse.ColumnCallException;
 import net.starschema.clouddb.jdbc.antlr.sqlparse.TreeParsingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The class where we store the resolvers, we need
@@ -43,7 +43,7 @@ import net.starschema.clouddb.jdbc.antlr.sqlparse.TreeParsingException;
  *
  */
 public class WhereExpressionJoinResolver {
-    static Logger logger = Logger.getLogger("net.starschema.clouddb.jdjbc.list.WhereExpressionJoinResolver");
+    static Logger logger = LoggerFactory.getLogger("net.starschema.clouddb.jdjbc.list.WhereExpressionJoinResolver");
 
     /**
      * Creates a SubQuery from a JoinExpression
@@ -700,7 +700,7 @@ public class WhereExpressionJoinResolver {
                             leftColRef.setPointedNode(PointedNodeInSubQuery);
                         }
                     } catch (ColumnCallException e) {
-                        logger.debug(e);
+                        logger.debug("", e);
                     }
                 }
             }
@@ -716,7 +716,7 @@ public class WhereExpressionJoinResolver {
                             rightColRef.setPointedNode(PointedNodeInSubQuery);
                         }
                     } catch (ColumnCallException e) {
-                        logger.debug(e);
+                        logger.debug("", e);
                     }
                 }
             }

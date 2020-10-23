@@ -38,15 +38,13 @@ import java.util.List;
 
 import net.starschema.clouddb.jdbc.DMDResultSet.DMDResultSetType;
 
-import org.apache.log4j.Logger;
-
 import com.google.api.services.bigquery.model.DatasetList;
 import com.google.api.services.bigquery.model.DatasetList.Datasets;
 import com.google.api.services.bigquery.model.ProjectList.Projects;
 import com.google.api.services.bigquery.model.Table;
 import com.google.api.services.bigquery.model.TableFieldSchema;
-
-// import net.starschema.clouddb.bqjdbc.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class implements the DatabaseMetadata interface
@@ -64,8 +62,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
     /**
      * Reference for the Logger Class
      */
-    // static Logger logger = new Logger(BQDatabaseMetadata.class.getName());
-    static Logger logger = Logger.getLogger(BQDatabaseMetadata.class.getName());
+    static Logger logger = LoggerFactory.getLogger(BQDatabaseMetadata.class);
 
     /**
      * We currently doesn't support multiple open resultsets.

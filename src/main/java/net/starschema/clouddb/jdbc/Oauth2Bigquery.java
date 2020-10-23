@@ -44,7 +44,8 @@ import com.google.api.services.iamcredentials.v1.IAMCredentials;
 import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenRequest;
 import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenResponse;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -71,7 +72,7 @@ public class Oauth2Bigquery {
     /**
      * Log4j logger, for debugging.
      */
-    static Logger logger = Logger.getLogger(Oauth2Bigquery.class.getName());
+    static Logger logger = LoggerFactory.getLogger(Oauth2Bigquery.class);
     /**
      * Browsers to try:
      */

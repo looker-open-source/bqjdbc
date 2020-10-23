@@ -30,14 +30,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import junit.framework.Assert;
-//import net.starschema.clouddb.bqjdbc.logging.Logger;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.BQSupportMethods;
 
-import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This Junit test tests functions in BQResultset
@@ -50,7 +50,7 @@ public class BQResultSetFunctionTest {
     private static java.sql.Connection con = null;
     private static java.sql.ResultSet Result = null;
 
-    Logger logger = Logger.getLogger(BQResultSetFunctionTest.class.getName());
+    Logger logger = LoggerFactory.getLogger(BQResultSetFunctionTest.class);
 
     @Test
     public void ChainedCursorFunctionTest() {
@@ -343,7 +343,7 @@ public class BQResultSetFunctionTest {
         try {
             this.logger.debug(BQResultSetFunctionTest.Result.getMetaData()
                     .getSchemaName(1));
-            this.logger.debug(BQResultSetFunctionTest.Result.getMetaData()
+            this.logger.debug("{}", BQResultSetFunctionTest.Result.getMetaData()
                     .getScale(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -354,7 +354,7 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultIndexOutofBound() {
         try {
-            this.logger.debug(BQResultSetFunctionTest.Result.getBoolean(99));
+            this.logger.debug("{}", BQResultSetFunctionTest.Result.getBoolean(99));
         } catch (SQLException e) {
             Assert.assertTrue(true);
             this.logger.error("SQLexception" + e.toString());

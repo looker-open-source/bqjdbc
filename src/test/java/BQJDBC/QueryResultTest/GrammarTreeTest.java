@@ -36,7 +36,6 @@ import net.starschema.clouddb.jdbc.list.SelectStatement;
 import net.starschema.clouddb.jdbc.list.TreeBuilder;
 
 import org.antlr.runtime.RecognitionException;
-import org.apache.log4j.BasicConfigurator;
 
 public class GrammarTreeTest {
 
@@ -55,8 +54,6 @@ public class GrammarTreeTest {
      * @throws RecognitionException
      */
     public static void main(String[] args) throws BQSQLException, RecognitionException {
-        BasicConfigurator.configure();
-
         NewConnection();
 
         TreeBuilder builder = new TreeBuilder(string, con, new CallContainer());

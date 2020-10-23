@@ -88,9 +88,6 @@ Releases are handled through GitHub actions, and kicked off when a release is cr
 
 4. Create a new commit by bumping the version and adding `-SNAPSHOT` to it
 
-At the moment, the GitHub Pages URL http://jonathanswenson.github.io/bqjdbc/ is not
-updated automatically but can easily be done.
-
 ## History
 
 `bqjdbc` was 
