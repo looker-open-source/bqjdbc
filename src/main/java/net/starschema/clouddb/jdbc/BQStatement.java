@@ -278,24 +278,6 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         return syncResponseFromCurrentQuery.get();
     }
 
-    /**
-     * Extracted out so that we can patch it in the tests for
-     * helping to signal timings.
-     */
-    public Job startQuery(String querySql, boolean unlimitedBillingBytes) throws IOException {
-        Long billingBytes = !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null;
-        this.job =  BQSupportFuncts.startQuery(
-                this.connection.getBigquery(),
-                this.ProjectId.replace("__", ":").replace("_", "."),
-                querySql,
-                this.connection.getDataSet(),
-                this.connection.getUseLegacySql(),
-                billingBytes
-        );
-        this.logger.debug("Executing Query: " + querySql);
-        return this.job;
-    }
-
     public Job getJob() {
         return this.job;
     }

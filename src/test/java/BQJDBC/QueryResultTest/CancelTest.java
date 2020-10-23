@@ -207,10 +207,5 @@ public class CancelTest {
             return super.runSyncQuery(querySql, unlimitedBillingBytes);
         }
 
-        public Job startQuery(String querySql, boolean unlimitedBillingBytes) throws IOException {
-            Job result = super.startQuery(querySql, unlimitedBillingBytes);
-            signalTestPoint();
-            return result;
-        }
     }
 }
