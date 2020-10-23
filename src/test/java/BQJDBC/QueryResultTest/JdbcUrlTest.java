@@ -29,7 +29,7 @@ public class JdbcUrlTest {
     @Before
     public void setup() throws SQLException, IOException {
         properties = getProperties("/installedaccount.properties");
-        URL = getUrl("/installedaccount.properties", null);
+        URL = getUrl("/installedaccount.properties", null) + "&useLegacySql=true";;
         this.bq = new BQConnection(URL, new Properties());
     }
 
@@ -157,8 +157,8 @@ public class JdbcUrlTest {
     public void connectionUseLegacySqlValueFromProperties() throws IOException, SQLException {
         String url = getUrl("/protectedaccount.properties", null);
         BQConnection bqConn = new BQConnection(url, new Properties());
-        // default false
-        Assert.assertEquals(bqConn.getUseLegacySql(), true);
+        // default true
+        Assert.assertEquals(bqConn.getUseLegacySql(), false);
 
         String newUrl = url + "&useLegacySql=false";
         BQConnection bqConn2 = new BQConnection(newUrl, new Properties());
@@ -179,7 +179,7 @@ public class JdbcUrlTest {
 
     @Test
     public void maxBillingBytesOverrideWorks() throws IOException, SQLException {
-        String url = getUrl("/protectedaccount.properties", null) + "&maxbillingbytes=1";
+        String url = getUrl("/protectedaccount.properties", null) + "&maxbillingbytes=1" + "&useLegacySql=true";
         BQConnection bqConn = new BQConnection(url, new Properties());
         BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
 
