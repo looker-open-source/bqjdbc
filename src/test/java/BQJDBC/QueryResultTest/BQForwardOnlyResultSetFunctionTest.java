@@ -24,13 +24,15 @@
  */
 package BQJDBC.QueryResultTest;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
-import net.starschema.clouddb.jdbc.BQForwardOnlyResultSet;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
-import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -38,6 +40,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -51,7 +54,7 @@ public class BQForwardOnlyResultSetFunctionTest {
     private static java.sql.Connection con = null;
     private java.sql.ResultSet resultForTest = null;
 
-    Logger logger = Logger.getLogger(BQForwardOnlyResultSetFunctionTest.class.getName());
+    Logger logger = LoggerFactory.getLogger(BQForwardOnlyResultSetFunctionTest.class);
     private Integer maxRows = null;
 
     @Test
@@ -238,7 +241,7 @@ public class BQForwardOnlyResultSetFunctionTest {
         try {
             this.logger.debug(resultForTest.getMetaData()
                     .getSchemaName(1));
-            this.logger.debug(resultForTest.getMetaData()
+            this.logger.debug("{}", resultForTest.getMetaData()
                     .getScale(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -250,7 +253,7 @@ public class BQForwardOnlyResultSetFunctionTest {
     public void TestResultIndexOutofBound() {
         this.QueryLoad();
         try {
-            this.logger.debug(resultForTest.getBoolean(99));
+            this.logger.debug("{}", resultForTest.getBoolean(99));
         } catch (SQLException e) {
             Assert.assertTrue(true);
             this.logger.error("SQLexception" + e.toString());
@@ -433,7 +436,7 @@ public class BQForwardOnlyResultSetFunctionTest {
     }
 
     @Test
-    public void testResultSetTypesInGetString() throws SQLException, ParseException, java.io.IOException {
+    public void testResultSetTypesInGetString() throws SQLException {
         final String sql = "SELECT " +
                 "STRUCT(1 as a, 'hello' as b), " +
                 "['a', 'b', 'c'], " +
@@ -456,22 +459,23 @@ public class BQForwardOnlyResultSetFunctionTest {
         Assert.assertNotNull(result);
         Assert.assertTrue(result.next());
 
-        HashMap hello = new HashMap(){{put("a", "1"); put("b", "hello");}};
-        HashMap goodbye = new HashMap(){{put("a", "2"); put("b", "goodbye");}};
+        HashMap<String, String> hello = new HashMap(){{put("a", "1"); put("b", "hello");}};
+        HashMap<String, String> goodbye = new HashMap(){{put("a", "2"); put("b", "goodbye");}};
 
-        Assert.assertEquals(hello, org.mortbay.util.ajax.JSON.parse(result.getString(1)));
+        Assert.assertEquals(hello,
+                new Gson().fromJson(result.getString(1), new TypeToken<Map<String, String>>(){}.getType()));
 
         Assert.assertEquals("[\"a\",\"b\",\"c\"]", result.getString(2));
 
-        Object[] arrayOfMapsActual = (Object []) org.mortbay.util.ajax.JSON.parse(result.getString(3));
+        Map<String, String>[] arrayOfMapsActual = new Gson().fromJson(result.getString(3), new TypeToken<Map<String, String>[]>(){}.getType());
         Assert.assertEquals(2, arrayOfMapsActual.length);
         Assert.assertEquals(hello, arrayOfMapsActual[0]);
         Assert.assertEquals(goodbye, arrayOfMapsActual[1]);
 
-        HashMap<String, Object> mixedBagActual = (HashMap) org.mortbay.util.ajax.JSON.parse(result.getString(4));
+        Map<String, Object> mixedBagActual = new Gson().fromJson(result.getString(4), new TypeToken<Map<String, Object>>(){}.getType());
         Assert.assertEquals(2, mixedBagActual.size());
         Assert.assertEquals("1", mixedBagActual.get("a"));
-        Assert.assertEquals(org.mortbay.util.ajax.JSON.toString(new String[]{"an", "array"}), org.mortbay.util.ajax.JSON.toString(mixedBagActual.get("b")));
+        Assert.assertEquals(new Gson().toJson(new String[]{"an", "array"}), new Gson().toJson(mixedBagActual.get("b")));
 
         Assert.assertEquals("2012-01-01 00:00:03.032", result.getString(5));
     }

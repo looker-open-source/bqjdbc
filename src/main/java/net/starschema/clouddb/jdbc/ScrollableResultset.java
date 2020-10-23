@@ -27,6 +27,9 @@
 
 package net.starschema.clouddb.jdbc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -53,8 +56,6 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 // import net.starschema.clouddb.bqjdbc.logging.Logger;
 
 /**
@@ -68,8 +69,7 @@ import org.apache.log4j.Logger;
  */
 abstract class ScrollableResultset<T> implements java.sql.ResultSet {
 
-    // Logger logger = new Logger(ScrollableResultset.class.getName());
-    Logger logger = Logger.getLogger(ScrollableResultset.class.getName());
+    Logger logger = LoggerFactory.getLogger(ScrollableResultset.class);
     /** Reference for holding the current InputStream given back by get methods */
     protected InputStream Strm = null;
 

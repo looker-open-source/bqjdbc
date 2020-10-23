@@ -30,12 +30,12 @@ package net.starschema.clouddb.jdbc;
 import java.sql.*;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
 import com.google.api.services.bigquery.model.QueryResponse;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class implements the java.sql.ResultSetMetadata interface
@@ -50,7 +50,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
     QueryResponse result = null;
 
     /** Logger instance */
-    Logger logger = Logger.getLogger(BQResultsetMetaData.class.getName());
+    Logger logger = LoggerFactory.getLogger(BQResultsetMetaData.class);
 
     /**
      * Constructor that initializes variables

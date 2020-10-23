@@ -24,13 +24,14 @@
  */
 package BQJDBC.QueryResultTest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
-
 public class HelperFunctions {
-    static Logger logger = Logger.getLogger("HelperFunctions");
+    static Logger logger = LoggerFactory.getLogger(HelperFunctions.class);
 
     /**
      * Prints a ResultSet QueryResult to Log
@@ -44,7 +45,7 @@ public class HelperFunctions {
                 columnnames += input.getMetaData().getColumnName(i) + "\t";
             }
         } catch (SQLException e) {
-            logger.warn(e);
+            logger.warn("", e);
         }
         logger.debug(columnnames);
         try {

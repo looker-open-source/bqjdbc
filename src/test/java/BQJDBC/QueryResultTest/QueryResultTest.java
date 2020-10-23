@@ -26,20 +26,19 @@ package BQJDBC.QueryResultTest;
 
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection;
-import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.BQSupportMethods;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
-//import net.starschema.clouddb.bqjdbc.logging.Logger;
 
 /**
  * This Junit tests if the query results return as expected
@@ -51,7 +50,7 @@ public class QueryResultTest {
 
     private static java.sql.Connection con = null;
     //Logger logger = new Logger(QueryResultTest.class.getName());
-    Logger logger = Logger.getLogger(QueryResultTest.class.getName());
+    Logger logger = LoggerFactory.getLogger(QueryResultTest.class.getName());
 
     /**
      * Compares two String[][]
@@ -246,7 +245,7 @@ public class QueryResultTest {
         java.sql.ResultSet Result = null;
         try {
             Result = QueryResultTest.con.createStatement().executeQuery(sql);
-            this.logger.debug(Result.getMetaData().getColumnCount());
+            this.logger.debug("{}", Result.getMetaData().getColumnCount());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());

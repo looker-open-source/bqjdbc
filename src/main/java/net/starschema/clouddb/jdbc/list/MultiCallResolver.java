@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.starschema.clouddb.jdbc.JdbcGrammarParser;
-
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Resolves the first SubQuery since its already in a join or union,
@@ -42,7 +42,7 @@ public class MultiCallResolver extends Resolver {
     FromExpression fromExpression;
     MultiCall multiCall;
     Expression parent;
-    Logger logger = Logger.getLogger(this.getClass());
+    Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /**
      * Constructor for MultiCall resolver

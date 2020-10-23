@@ -29,20 +29,19 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import junit.framework.Assert;
-//import net.starschema.clouddb.bqjdbc.logging.Logger;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.BQSupportMethods;
 
-import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Timeouttest {
 
     private static java.sql.Connection con = null;
-    //Logger logger = new Logger(Timeouttest.class.getName());
-    Logger logger = Logger.getLogger(Timeouttest.class.getName());
+    Logger logger = LoggerFactory.getLogger(Timeouttest.class);
 
     /**
      * Compares two String[][]
@@ -244,7 +243,7 @@ public class Timeouttest {
         java.sql.ResultSet Result = null;
         try {
             Result = Timeouttest.con.createStatement().executeQuery(sql);
-            this.logger.debug(Result.getMetaData().getColumnCount());
+            this.logger.debug("{}", Result.getMetaData().getColumnCount());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());

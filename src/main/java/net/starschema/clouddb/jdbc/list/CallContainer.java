@@ -29,7 +29,8 @@ import java.sql.ResultSet;
 import java.util.HashSet;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class that contains a functioncall of databasemetadata and stores the result
@@ -39,7 +40,7 @@ import org.apache.log4j.Logger;
  */
 public class CallContainer {
     HashSet<ContainerResult> list;
-    Logger logger = Logger.getLogger(CallContainer.class.getName());
+    Logger logger = LoggerFactory.getLogger(CallContainer.class);
 
     /**
      * Constructor which makes an empty list

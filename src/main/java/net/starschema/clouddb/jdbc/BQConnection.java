@@ -26,8 +26,8 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.Bigquery;
-import net.starschema.clouddb.cmdlineverification.Oauth2Bigquery;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -107,7 +107,7 @@ public class BQConnection implements Connection {
      * @throws SQLException
      */
     public BQConnection(String url, Properties loginProp) throws SQLException {
-        this.logger = Logger.getLogger(this.getClass());
+        this.logger = LoggerFactory.getLogger(this.getClass());
         this.URLPART = url;
         this.isclosed = false;
 
@@ -243,8 +243,7 @@ public class BQConnection implements Connection {
             }
         }
         else {
-            this.bigquery = Oauth2Bigquery.authorizeviainstalled(userId, userKey, userAgent);
-            this.logger.info("Authorized with Oauth");
+            throw new IllegalArgumentException("Must provide a valid mechanism to authenticate.");
         }
         logger.debug("The project id for this connections is: " + this.projectId);
     }

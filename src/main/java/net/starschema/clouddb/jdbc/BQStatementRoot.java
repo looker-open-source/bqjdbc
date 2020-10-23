@@ -29,7 +29,8 @@ package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.QueryResponse;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -50,8 +51,8 @@ public abstract class BQStatementRoot {
 
     /** String containing the context of the Project */
     String ProjectId = null;
-    // Logger logger = new Logger(BQStatementRoot.class.getName());
-    Logger logger = Logger.getLogger(BQStatementRoot.class.getName());
+
+    Logger logger = LoggerFactory.getLogger(BQStatementRoot.class);
 
     /** Variable that stores the closed state of the statement */
     boolean closed = false;

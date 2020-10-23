@@ -24,17 +24,18 @@
  */
 package net.starschema.clouddb.jdbc.list;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.log4j.Logger;
 
 public class Resolver {
     Connection connection;
     TreeBuilder builder;
     CallContainer container;
-    protected Logger logger = Logger.getLogger(this.getClass());
+    protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public Resolver(TreeBuilder builder) {
 

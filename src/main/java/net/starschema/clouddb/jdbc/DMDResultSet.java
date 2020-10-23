@@ -30,7 +30,8 @@
 package net.starschema.clouddb.jdbc;
 
 import net.starschema.clouddb.jdbc.DMDResultSet.DMDResultSetType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 
@@ -48,9 +49,7 @@ class COLResultSetMetadata implements java.sql.ResultSetMetaData {
     String[] labels;
 
     /** Instance of logger */
-    // static Logger logger = new Logger(COLResultSetMetadata.class.getName());
-    static Logger logger = Logger.getLogger(COLResultSetMetadata.class
-            .getName());
+    static Logger logger = LoggerFactory.getLogger(COLResultSetMetadata.class);
 
     DMDResultSetType MetaDataType;
 
@@ -446,7 +445,7 @@ public class DMDResultSet extends ScrollableResultset<Object> implements
         this.RowsofResult = objects;
         this.Colnames = colnames;
         this.ResultsetType = type;
-        this.logger = Logger.getLogger(DMDResultSet.class.getName());
+        this.logger = LoggerFactory.getLogger(DMDResultSet.class);
     }
 
     /** {@inheritDoc} */

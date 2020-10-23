@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package net.starschema.clouddb.initializer;
+package net.starschema.clouddb.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
