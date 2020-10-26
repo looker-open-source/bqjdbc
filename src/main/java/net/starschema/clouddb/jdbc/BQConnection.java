@@ -429,8 +429,9 @@ public class BQConnection implements Connection {
                 + "createStruct(string,object[])");
     }
 
-    public void setSchema(String schema) throws SQLException {
-        throw new BQSQLException("Not implemented.");
+    @Override
+    public void setSchema(String schema) {
+        this.dataset = schema;
     }
 
     @Override
