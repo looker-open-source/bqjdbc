@@ -8,6 +8,7 @@ import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQStatement;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import org.junit.After;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -28,14 +29,10 @@ public class CancelTest {
     private AtomicReference<Throwable> unexpectedDiedWith = new AtomicReference<>();
     private AtomicReference<SQLException> expectedSqlException = new AtomicReference<>();
 
-    private BQConnection conn(boolean useQueryApi)  throws SQLException, IOException {
+    private BQConnection conn()  throws SQLException, IOException {
         String url = BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
                 .readFromPropFile(getClass().getResource("/installedaccount.properties").getFile()), true, null);
         url += "&useLegacySql=false";
-        if (!useQueryApi) {
-            // this test relies on async to know when to attempt the cancel
-            url += "&useQueryApi=false";
-        }
         return new BQConnection(url, new Properties());
     }
 
@@ -83,9 +80,9 @@ public class CancelTest {
         return backgroundThread;
     }
 
-    @org.junit.Test
+    @Test
     public void syncQueryCancel() throws SQLException, InterruptedException, IOException {
-        BQConnection bq = conn(true);
+        BQConnection bq = conn();
         TestableBQStatement stmt = new TestableBQStatement(bq.getProjectId(), bq);
         stmt.setTestPoint();
         Thread backgroundThread = getAndRunBackgroundQuery(stmt);
@@ -98,9 +95,9 @@ public class CancelTest {
                 ((com.google.api.client.googleapis.json.GoogleJsonResponseException) exception.getCause()).getDetails().getMessage());
     }
 
-    @org.junit.Test
+    @Test
     public void syncQueryCancel2() throws SQLException, InterruptedException, IOException {
-        BQConnection bq = conn(true);
+        BQConnection bq = conn();
         TestableBQStatement stmt = new TestableBQStatement(bq.getProjectId(), bq);
         stmt.setTestPoint();
         Thread backgroundThread = getAndRunBackgroundQuery(stmt);
@@ -114,9 +111,9 @@ public class CancelTest {
                 ((com.google.api.client.googleapis.json.GoogleJsonResponseException) exception.getCause()).getDetails().getMessage());
     }
 
-    @org.junit.Test
+    @Test
     public void noCancelOnCloseAfterSyncQueryCompletion() throws SQLException, IOException {
-        BQConnection bq = conn(true);
+        BQConnection bq = conn();
         TestableBQStatement stmt = new TestableBQStatement(bq.getProjectId(), bq) {
             @Override
             protected void performQueryCancel(JobReference jobRefToCancel) {
@@ -128,25 +125,9 @@ public class CancelTest {
         assertTrue(stmt.isClosed());
     }
 
-    @org.junit.Test
-    public void testAsyncQueryCancel() throws SQLException, InterruptedException, IOException {
-        BQConnection bq = conn(false);
-        TestableBQStatement stmt = new TestableBQStatement(bq.getProjectId(), bq);
-        stmt.setTestPoint();
-        Thread backgroundThread = getAndRunBackgroundQuery(stmt);
-        stmt.waitForTestPoint();
-        assertFalse("Statement must have job", stmt.getJob() == null);
-        // This will throw error if it tries to cancel a nonexistent job
-        stmt.cancel();
-        backgroundThread.join();
-        SQLException exception = expectedSqlException.get();
-        Assert.assertEquals("Job execution was cancelled: User requested cancellation",
-                ((com.google.api.client.googleapis.json.GoogleJsonResponseException) exception.getCause()).getDetails().getMessage());
-    }
-
-    @org.junit.Test
+    @Test
     public void connectionCancelWorks() throws SQLException, InterruptedException, IOException {
-        BQConnection bq = conn(false);
+        BQConnection bq = conn();
         final TestableBQStatement stmt1 = new TestableBQStatement(bq.getProjectId(), bq);
         final TestableBQStatement stmt2 = new TestableBQStatement(bq.getProjectId(), bq);
         stmt1.setTestPoint();
@@ -161,9 +142,9 @@ public class CancelTest {
         backgroundThread2.join();
     }
 
-    @org.junit.Test
+    @Test
     public void connectionCloseWithSyncQueryApi() throws SQLException, InterruptedException, IOException {
-        BQConnection bq = conn(true);
+        BQConnection bq = conn();
         final TestableBQStatement stmt1 = new TestableBQStatement(bq.getProjectId(), bq);
         stmt1.setTestPoint();
         Thread backgroundThread = getAndRunBackgroundQuery(stmt1);
@@ -226,10 +207,5 @@ public class CancelTest {
             return super.runSyncQuery(querySql, unlimitedBillingBytes);
         }
 
-        public Job startQuery(String querySql, boolean unlimitedBillingBytes) throws IOException {
-            Job result = super.startQuery(querySql, unlimitedBillingBytes);
-            signalTestPoint();
-            return result;
-        }
     }
 }

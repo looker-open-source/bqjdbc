@@ -30,7 +30,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import junit.framework.Assert;
-//import net.starschema.clouddb.bqjdbc.logging.Logger;
 import net.starschema.clouddb.jdbc.BQConnection;
 import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import net.starschema.clouddb.jdbc.BQSupportMethods;
@@ -265,10 +264,14 @@ public class BQScrollableResultSetFunctionTest {
                 this.logger.info("Testing the JDBC driver");
                 try {
                     Class.forName("net.starschema.clouddb.jdbc.BQDriver");
-                    BQScrollableResultSetFunctionTest.con = DriverManager.getConnection(
-                            BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
-                                    .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile())),
-                            BQSupportFuncts.readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
+                    String jdbcUrl = BQSupportFuncts
+                            .constructUrlFromPropertiesFile(BQSupportFuncts
+                                    .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
+                    jdbcUrl += "&useLegacySql=true";
+                    BQScrollableResultSetFunctionTest.con = DriverManager
+                            .getConnection(jdbcUrl,
+                                    BQSupportFuncts
+                                            .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
                 } catch (Exception e) {
                     e.printStackTrace();
                     this.logger.error("Error in connection" + e.toString());

@@ -135,39 +135,32 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         Job referencedJob;
         int retries = 0;
         boolean jobAlreadyCompleted = false;
-        // ANTLR Parsing
-        BQQueryParser parser = new BQQueryParser(querySql, this.connection);
-        querySql = parser.parse();
+
         try {
-            if (this.connection.shouldUseQueryApi()) {
-                QueryResponse qr = runSyncQuery(querySql, unlimitedBillingBytes);
-                boolean fetchedAll = qr.getJobComplete() && qr.getTotalRows() != null &&
-                        (qr.getTotalRows().equals(BigInteger.ZERO) ||
-                                (qr.getRows() != null && qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))));
-                // Don't look up the job if we have nothing else we need to do
-                referencedJob = fetchedAll || this.connection.isClosed() ?
-                        null :
-                        this.connection.getBigquery()
-                                .jobs()
-                                .get(this.ProjectId, qr.getJobReference().getJobId())
-                                .setLocation(qr.getJobReference().getLocation())
-                                .execute();
-                if (qr.getJobComplete()) {
-                    if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
-                        return new BQForwardOnlyResultSet(
-                                this.connection.getBigquery(),
-                                this.ProjectId.replace("__", ":").replace("_", "."),
-                                referencedJob, this, qr.getRows(), fetchedAll, qr.getSchema());
-                    } else if (fetchedAll) {
-                        // We can only return scrollable result sets here if we have all the rows: otherwise we'll
-                        // have to go get more below
-                        return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
-                    }
-                    jobAlreadyCompleted = true;
+            QueryResponse qr = runSyncQuery(querySql, unlimitedBillingBytes);
+            boolean fetchedAll = qr.getJobComplete() && qr.getTotalRows() != null &&
+                    (qr.getTotalRows().equals(BigInteger.ZERO) ||
+                            (qr.getRows() != null && qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))));
+            // Don't look up the job if we have nothing else we need to do
+            referencedJob = fetchedAll || this.connection.isClosed() ?
+                    null :
+                    this.connection.getBigquery()
+                            .jobs()
+                            .get(this.ProjectId, qr.getJobReference().getJobId())
+                            .setLocation(qr.getJobReference().getLocation())
+                            .execute();
+            if (qr.getJobComplete()) {
+                if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
+                    return new BQForwardOnlyResultSet(
+                            this.connection.getBigquery(),
+                            this.ProjectId.replace("__", ":").replace("_", "."),
+                            referencedJob, this, qr.getRows(), fetchedAll, qr.getSchema());
+                } else if (fetchedAll) {
+                    // We can only return scrollable result sets here if we have all the rows: otherwise we'll
+                    // have to go get more below
+                    return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
                 }
-            } else {
-                // Run the query async and return a Job that represents the running query
-                referencedJob = startQuery(querySql, unlimitedBillingBytes);
+                jobAlreadyCompleted = true;
             }
         } catch (IOException e) {
             // For the synchronous path, this is the place where the user will encounter errors in their SQL.
@@ -283,24 +276,6 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         }
 
         return syncResponseFromCurrentQuery.get();
-    }
-
-    /**
-     * Extracted out so that we can patch it in the tests for
-     * helping to signal timings.
-     */
-    public Job startQuery(String querySql, boolean unlimitedBillingBytes) throws IOException {
-        Long billingBytes = !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null;
-        this.job =  BQSupportFuncts.startQuery(
-                this.connection.getBigquery(),
-                this.ProjectId.replace("__", ":").replace("_", "."),
-                querySql,
-                this.connection.getDataSet(),
-                this.connection.getUseLegacySql(),
-                billingBytes
-        );
-        this.logger.debug("Executing Query: " + querySql);
-        return this.job;
     }
 
     public Job getJob() {
