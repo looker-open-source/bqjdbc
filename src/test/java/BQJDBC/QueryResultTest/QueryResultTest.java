@@ -117,6 +117,46 @@ public class QueryResultTest {
     }
 
     @Test
+    public void QueryResultTestWithDataset() throws SQLException {
+        NewConnection("&useLegacySql=false");
+
+        QueryResultTest.con.setSchema("foobar");
+        Assert.assertEquals("foobar", QueryResultTest.con.getSchema());
+
+        QueryResultTest.con.setSchema("tokyo_star");
+        Assert.assertEquals("tokyo_star", QueryResultTest.con.getSchema());
+
+        final String sql = "SELECT meaning FROM meaning_of_life GROUP BY ROLLUP(meaning);";
+        String[][] expectation = new String[][]{ {null, "42"} };
+
+        this.logger.info("Test Tokyo number: 1");
+        this.logger.info("Running query:" + sql);
+
+        java.sql.ResultSet Result = null;
+        try {
+            Statement s = QueryResultTest.con.createStatement();
+            s.setMaxRows(1);
+            Result = s.executeQuery(sql);
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        }
+        Assert.assertNotNull(Result);
+
+        HelperFunctions.printer(expectation);
+
+        try {
+            String[][] res = BQSupportMethods.GetQueryResult(Result);
+            Assert.assertTrue(
+                "Comparing failed in the String[][] array " + Arrays.deepToString(res),
+                this.comparer(expectation, res));
+        } catch (SQLException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail(e.toString());
+        }
+    }
+
+    @Test
     public void QueryResultTest01() {
         final String sql = "SELECT TOP(word, 10), COUNT(*) FROM publicdata:samples.shakespeare";
         final String description = "The top 10 word from shakespeare #TOP #COUNT";
