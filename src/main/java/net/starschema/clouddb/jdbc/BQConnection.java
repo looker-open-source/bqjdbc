@@ -429,12 +429,14 @@ public class BQConnection implements Connection {
                 + "createStruct(string,object[])");
     }
 
-    public void setSchema(String schema) throws SQLException {
-        throw new BQSQLException("Not implemented.");
+    @Override
+    public void setSchema(String schema) {
+        this.dataset = schema;
     }
 
-    public String getSchema() throws SQLException {
-        throw new BQSQLException("Not implemented.");
+    @Override
+    public String getSchema() {
+        return this.dataset;
     }
 
     public void abort(Executor executor) throws SQLException {
@@ -539,7 +541,7 @@ public class BQConnection implements Connection {
     }
 
     /**
-     * Getter method for projectid
+     * Getter method for projectId
      */
     public String getProjectId() {
         return this.projectId;
