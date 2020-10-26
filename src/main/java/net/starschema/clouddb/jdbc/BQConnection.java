@@ -433,8 +433,9 @@ public class BQConnection implements Connection {
         throw new BQSQLException("Not implemented.");
     }
 
-    public String getSchema() throws SQLException {
-        throw new BQSQLException("Not implemented.");
+    @Override
+    public String getSchema() {
+        return this.dataset;
     }
 
     public void abort(Executor executor) throws SQLException {
@@ -539,7 +540,7 @@ public class BQConnection implements Connection {
     }
 
     /**
-     * Getter method for projectid
+     * Getter method for projectId
      */
     public String getProjectId() {
         return this.projectId;
