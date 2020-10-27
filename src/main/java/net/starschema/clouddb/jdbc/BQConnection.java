@@ -59,9 +59,10 @@ public class BQConnection implements Connection {
     private String dataset = null;
 
     /**
-     * The projectid which needed for the queries.
+     * The ProjectId for the connection
      */
     private String projectId = null;
+
     /** Boolean to determine if the Connection is closed */
     private boolean isclosed = false;
 
@@ -114,16 +115,14 @@ public class BQConnection implements Connection {
             Matcher matchData = projectAndDatasetMatcher.matcher(pathParams);
 
             if (matchData.find()) {
-                this.projectId = matchData.group(1);
+                this.projectId = CatalogName.toProjectId(matchData.group(1));
                 this.dataset = matchData.group(2);
             } else {
-                this.projectId = pathParams;
+                this.projectId = CatalogName.toProjectId(pathParams);
             }
         } catch (UnsupportedEncodingException e1) {
             throw new BQSQLException(e1);
         }
-        // lets replace the : with __ and . with _
-        this.projectId = this.projectId.replace(":", "__").replace(".", "_");
 
         Properties caseInsensitiveLoginProps = new Properties();
 
@@ -227,7 +226,7 @@ public class BQConnection implements Connection {
         else {
             throw new IllegalArgumentException("Must provide a valid mechanism to authenticate.");
         }
-        logger.debug("The project id for this connections is: " + this.projectId);
+        logger.debug("The project id for this connections is: " + projectId);
     }
 
     /**
@@ -371,7 +370,7 @@ public class BQConnection implements Connection {
         }
         logger.debug("Creating statement with resultsettype: forward only," +
                 " concurrency: read only");
-        return new BQStatement(this.projectId, this);
+        return new BQStatement(projectId, this);
     }
 
     /** {@inheritDoc} */
@@ -383,8 +382,7 @@ public class BQConnection implements Connection {
         }
         logger.debug("Creating statement with resultsettype: " + resultSetType
                 + " concurrency: " + resultSetConcurrency);
-        return new BQStatement(this.projectId, this, resultSetType,
-                resultSetConcurrency);
+        return new BQStatement(projectId, this, resultSetType, resultSetConcurrency);
     }
 
     /** {@inheritDoc} */
@@ -417,8 +415,8 @@ public class BQConnection implements Connection {
     }
 
     @Override
-    public String getSchema() {
-        return this.dataset;
+    public String getSchema() throws SQLException {
+      return getDataSet();
     }
 
     public void abort(Executor executor) throws SQLException {
@@ -464,7 +462,7 @@ public class BQConnection implements Connection {
     @Override
     public String getCatalog() throws SQLException {
         logger.debug("function call getCatalog returning projectId: " + projectId);
-        return this.projectId;
+        return projectId;
     }
 
     /**
@@ -526,7 +524,7 @@ public class BQConnection implements Connection {
      * Getter method for projectId
      */
     public String getProjectId() {
-        return this.projectId;
+        return projectId;
     }
 
     /**
@@ -638,7 +636,7 @@ public class BQConnection implements Connection {
                             + String.valueOf(timeout));
         }
         try {
-            this.bigquery.datasets().list(this.projectId.replace("__", ":").replace("_", ".")).execute();
+            this.bigquery.datasets().list(projectId).execute();
         } catch (IOException e) {
             return false;
         }
@@ -729,10 +727,9 @@ public class BQConnection implements Connection {
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
         this.logger.debug("Creating Prepared Statement project id is: "
-                + this.projectId + " with parameters:");
+                + projectId + " with parameters:");
         this.logger.debug(sql);
-        PreparedStatement stm = new BQPreparedStatement(sql, this.projectId,
-                this);
+        PreparedStatement stm = new BQPreparedStatement(sql, projectId, this);
         return stm;
     }
 
@@ -756,12 +753,12 @@ public class BQConnection implements Connection {
     public PreparedStatement prepareStatement(String sql, int resultSetType,
                                               int resultSetConcurrency) throws SQLException {
         this.logger.debug("Creating Prepared Statement" +
-                " project id is: " + this.projectId +
+                " project id is: " + projectId +
                 ", resultSetType (int) is: " + String.valueOf(resultSetType) +
                 ", resultSetConcurrency (int) is: " + String.valueOf(resultSetConcurrency)
                 + " with parameters:");
         this.logger.debug(sql);
-        PreparedStatement stm = new BQPreparedStatement(sql, this.projectId,
+        PreparedStatement stm = new BQPreparedStatement(sql, projectId,
                 this, resultSetType, resultSetConcurrency);
         return stm;
     }

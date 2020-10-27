@@ -154,8 +154,8 @@ public class CancelTest {
     }
 
     private static class TestableBQStatement extends BQStatement {
-        public TestableBQStatement(String projectid, BQConnection bqConnection) {
-            super(projectid, bqConnection);
+        public TestableBQStatement(String projectId, BQConnection bqConnection) {
+            super(projectId, bqConnection);
         }
         private Condition testPoint;
         private Lock testLock;

@@ -50,7 +50,7 @@ public abstract class BQStatementRoot {
     ResultSet resset = null;
 
     /** String containing the context of the Project */
-    String ProjectId = null;
+    String projectId = null;
 
     Logger logger = LoggerFactory.getLogger(BQStatementRoot.class);
 
@@ -257,7 +257,7 @@ public abstract class BQStatementRoot {
         try {
             QueryResponse qr = BQSupportFuncts.runSyncQuery(
                     this.connection.getBigquery(),
-                    this.ProjectId,
+                    projectId,
                     sql,
                     connection.getDataSet(),
                     this.connection.getUseLegacySql(),
@@ -271,7 +271,7 @@ public abstract class BQStatementRoot {
                 return Math.toIntExact(qr.getNumDmlAffectedRows());
             }
 
-            referencedJob = this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
+            referencedJob = this.connection.getBigquery().jobs().get(projectId, qr.getJobReference().getJobId()).execute();
         } catch (IOException e) {
             throw new BQSQLException("Something went wrong with the query: " + sql, e);
         }
@@ -279,11 +279,11 @@ public abstract class BQStatementRoot {
         try {
             do {
                 if (BQSupportFuncts.getQueryState(referencedJob,
-                        this.connection.getBigquery(), this.ProjectId).equals(
+                        this.connection.getBigquery(), projectId).equals(
                         "DONE")) {
                     return Math.toIntExact(
                                 BQSupportFuncts.getQueryResults(
-                                        this.connection.getBigquery(), this.ProjectId,
+                                        this.connection.getBigquery(), projectId,
                                         referencedJob).getNumDmlAffectedRows()
                             );
                 }
@@ -314,7 +314,7 @@ public abstract class BQStatementRoot {
         try {
             QueryResponse qr = BQSupportFuncts.runSyncQuery(
                     this.connection.getBigquery(),
-                    this.ProjectId,
+                    projectId,
                     querySql,
                     connection.getDataSet(),
                     this.connection.getUseLegacySql(),
@@ -328,7 +328,7 @@ public abstract class BQStatementRoot {
                 }
                 jobAlreadyCompleted = true;
             }
-            referencedJob = this.connection.getBigquery().jobs().get(this.ProjectId, qr.getJobReference().getJobId()).execute();
+            referencedJob = this.connection.getBigquery().jobs().get(projectId, qr.getJobReference().getJobId()).execute();
 
             this.logger.info("Executing Query: " + querySql);
         } catch (IOException e) {
@@ -337,16 +337,16 @@ public abstract class BQStatementRoot {
         try {
             do {
                 if (jobAlreadyCompleted || BQSupportFuncts.getQueryState(referencedJob,
-                        this.connection.getBigquery(), this.ProjectId).equals(
+                        this.connection.getBigquery(), projectId).equals(
                         "DONE")) {
                     if (resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
                         return new BQScrollableResultSet(BQSupportFuncts.getQueryResults(
-                                this.connection.getBigquery(), this.ProjectId,
+                                this.connection.getBigquery(), projectId,
                                 referencedJob), this);
                     } else {
                         return new BQForwardOnlyResultSet(
                                 this.connection.getBigquery(),
-                                this.ProjectId.replace("__", ":").replace("_", "."),
+                                projectId,
                                 referencedJob, this);
                     }
                 }

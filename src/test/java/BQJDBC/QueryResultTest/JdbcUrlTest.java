@@ -40,11 +40,23 @@ public class JdbcUrlTest {
 
     @Test
     public void projectWithColons() throws SQLException {
-        String urlWithColonContainingProject = URL.replace(bq.getProjectId(), "before:after");
+        String urlWithColonContainingProject = URL.replace(bq.getProjectId(), "example.com:project");
         try {
-            BQConnection bq_with_colons = new BQConnection(urlWithColonContainingProject, new Properties());
-            // Some day we'll get rid of the whacky subbing in and out of colons with double underscores, but today is not that day
-            Assert.assertEquals("before__after", bq_with_colons.getProjectId());
+            BQConnection bqWithColons = new BQConnection(urlWithColonContainingProject, new Properties());
+            Assert.assertEquals("example.com:project", bqWithColons.getProjectId());
+            Assert.assertEquals("example.com:project", bqWithColons.getCatalog());
+        } catch (SQLException e){
+            fail("failed to get or parse url: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void mungedProjectName() throws SQLException {
+        String urlWithUnderscoreContainingProject = URL.replace(bq.getProjectId(), "example_com__project");
+        try {
+            BQConnection bqWithUnderscores = new BQConnection(urlWithUnderscoreContainingProject, new Properties());
+            Assert.assertEquals("example.com:project", bqWithUnderscores.getProjectId());
+            Assert.assertEquals("example.com:project", bqWithUnderscores.getCatalog());
         } catch (SQLException e){
             fail("failed to get or parse url: " + e.getMessage());
         }

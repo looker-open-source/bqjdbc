@@ -293,7 +293,7 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 String[] Data = new String[Projects.size()];
                 String toLog = "";
                 for (int i = 0; i < Projects.size(); i++) {
-                    Data[i] = Projects.get(i).getId().replace(":", "__").replace(".", "_");
+                    Data[i] = Projects.get(i).getId();
                     toLog += Data[i] + " , ";
                 }
                 logger.debug("Catalogs are: " + toLog);
@@ -402,11 +402,17 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 (columnNamePattern != null ? columnNamePattern : "null"));
         List<Table> Tables = null;
         try {
-            Tables = BQSupportFuncts.getTables(this.Connection, catalog,
-                    schemaPattern, tableNamePattern);
+            Tables = BQSupportFuncts.getTables(
+                this.Connection,
+                CatalogName.toProjectId(catalog),
+                schemaPattern,
+                tableNamePattern);
             if (Tables == null) { //Because of Crystal Reports It's not elegant, but hey it works!
-                Tables = BQSupportFuncts.getTables(this.Connection, schemaPattern,
-                        catalog, tableNamePattern);
+                Tables = BQSupportFuncts.getTables(
+                    this.Connection,
+                    CatalogName.toProjectId(schemaPattern),
+                    catalog,
+                    tableNamePattern);
             }
         } catch (IOException e) {
             throw new BQSQLException(e);
@@ -415,13 +421,9 @@ class BQDatabaseMetadata implements DatabaseMetaData {
         if (Tables != null) {
             List<String[]> data = new ArrayList<String[]>();
             for (int i = 0; i < Tables.size(); i++) {
-                String UparsedId = Tables.get(i).getId();
-                String ProjectId = BQSupportFuncts
-                        .getProjectIdFromAnyGetId(UparsedId).replace(":", "__").replace(".", "_");
-                String DatasetId = BQSupportFuncts
-                        .getDatasetIdFromTableDotGetId(UparsedId);
-                String TableId = BQSupportFuncts
-                        .getTableIdFromTableDotGetId(UparsedId);
+                String ProjectId = Tables.get(i).getTableReference().getProjectId();
+                String DatasetId = Tables.get(i).getTableReference().getDatasetId();
+                String TableId = Tables.get(i).getTableReference().getTableId();
 
                 List<TableFieldSchema> tblfldschemas = Tables.get(i)
                         .getSchema().getFields();
@@ -1404,10 +1406,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                     data = new String[datasetlist.size()][2];
                     int i = 0;
                     for (Datasets datasets : datasetlist) {
-                        data[i][0] = datasets.getDatasetReference()
-                                .getDatasetId();
-                        data[i][1] = datasets.getDatasetReference()
-                                .getProjectId().replace(".", "_").replace(":", "__");
+                        data[i][0] = datasets.getDatasetReference().getDatasetId();
+                        data[i][1] = datasets.getDatasetReference().getProjectId();
                         i++;
                     }
                 }
@@ -1482,10 +1482,8 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                     data = new String[datasetlist.size()][2];
                     i = 0;
                     for (Datasets datasets : datasetlist) {
-                        String schema = datasets.getDatasetReference()
-                                .getDatasetId();
-                        String projnm = datasets.getDatasetReference()
-                                .getProjectId();
+                        String schema = datasets.getDatasetReference().getDatasetId();
+                        String projnm = datasets.getDatasetReference().getProjectId();
                         logger.debug("We search for catalog/project: " + catalog);
                         if ((schema.equals(schemaPattern) || schemaPattern == null)
                                 && (projnm.equals(catalog) || catalog == null)) {
@@ -1744,11 +1742,17 @@ class BQDatabaseMetadata implements DatabaseMetaData {
                 + ", types: " + typesToLog + ")");
         List<Table> tables = null;
         try {
-            tables = BQSupportFuncts.getTables(this.Connection, catalog,
-                    schemaPattern, tableNamePattern);
+            tables = BQSupportFuncts.getTables(
+                this.Connection,
+                CatalogName.toProjectId(catalog),
+                schemaPattern,
+                tableNamePattern);
             if (tables == null) { //because of crystal reports, It's not elegant but hey, it works!
-                tables = BQSupportFuncts.getTables(this.Connection, tableNamePattern,
-                        schemaPattern, catalog);
+                tables = BQSupportFuncts.getTables(
+                    this.Connection,
+                    CatalogName.toProjectId(tableNamePattern),
+                    schemaPattern,
+                    catalog);
             }
         } catch (IOException e) {
             throw new BQSQLException(e);
@@ -1757,16 +1761,15 @@ class BQDatabaseMetadata implements DatabaseMetaData {
             logger.debug("got result, size: " + tables.size());
             String[][] data = new String[tables.size()][10];
             for (int i = 0; i < tables.size(); i++) {
-                String UparsedId = tables.get(i).getId();
-                data[i][0] = BQSupportFuncts.getProjectIdFromAnyGetId(UparsedId).replace(":", "__").replace(".", "_");
-                data[i][1] = BQSupportFuncts.getDatasetIdFromTableDotGetId(UparsedId);
-                data[i][2] = BQSupportFuncts.getTableIdFromTableDotGetId(UparsedId);
+                data[i][0] = tables.get(i).getTableReference().getProjectId();
+                data[i][1] = tables.get(i).getTableReference().getDatasetId();
+                data[i][2] = tables.get(i).getTableReference().getTableId();
                 data[i][3] = "TABLE";
                 data[i][4] = tables.get(i).getDescription();
                 data[i][5] = null;
-                data[i][6] = BQSupportFuncts.getProjectIdFromAnyGetId(UparsedId).replace(":", "__").replace(".", "_");
-                data[i][7] = BQSupportFuncts.getDatasetIdFromTableDotGetId(UparsedId);
-                data[i][8] = BQSupportFuncts.getTableIdFromTableDotGetId(UparsedId);
+                data[i][6] = tables.get(i).getTableReference().getProjectId();
+                data[i][7] = tables.get(i).getTableReference().getDatasetId();
+                data[i][8] = tables.get(i).getTableReference().getTableId();
                 data[i][9] = null;
             }
             return new DMDResultSet(data, new String[]{"TABLE_CAT",
