@@ -292,7 +292,7 @@ public class BQForwardOnlyResultSetFunctionTest {
         this.QueryLoad();
         try {
             Assert.assertTrue(resultForTest.next());
-            Assert.assertEquals(new Float(42),
+            Assert.assertEquals(42f,
                     resultForTest.getFloat(2));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -486,7 +486,9 @@ public class BQForwardOnlyResultSetFunctionTest {
                 "DATETIME('2012-01-01 00:00:02'), " +
                 "TIMESTAMP('2012-01-01 00:00:03'), " +
                 "CAST('2312412432423423334.234234234' AS NUMERIC), " +
-                "CAST('2011-04-03' AS DATE)";
+                "CAST('2011-04-03' AS DATE), " +
+                "CAST('nan' AS FLOAT)"
+                ;
 
         this.NewConnection(true);
         java.sql.ResultSet result = null;
@@ -512,6 +514,8 @@ public class BQForwardOnlyResultSetFunctionTest {
         SimpleDateFormat dateDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Date parsedDateDate = new java.sql.Date(dateDateFormat.parse("2011-04-03").getTime());
         Assert.assertEquals(parsedDateDate, result.getObject(4));
+
+        Assert.assertEquals(Double.NaN, result.getObject(5));
     }
 
     @Test
