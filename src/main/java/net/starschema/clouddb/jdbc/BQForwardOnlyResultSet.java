@@ -215,18 +215,17 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** Parse floating point types */
     private Double toDouble(String value) throws SQLException {
         try {
-            return Double.valueOf(new BigDecimal(value).doubleValue());
+            return Double.parseDouble(value);
         }
         catch (NumberFormatException e) {
             throw new BQSQLException(e);
         }
     }
 
-
     /** Parse integral types */
     private Long toLong(String value) throws SQLException {
         try {
-            return Long.valueOf(new BigDecimal(value).longValue());
+            return Long.parseLong(value);
         }
         catch (NumberFormatException e) {
             throw new BQSQLException(e);
