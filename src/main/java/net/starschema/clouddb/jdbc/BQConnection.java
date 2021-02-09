@@ -26,6 +26,7 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.Bigquery;
+import com.google.common.base.Splitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +68,8 @@ public class BQConnection implements Connection {
     private boolean isclosed = false;
 
     private Long maxBillingBytes;
+
+    private final Map<String, String> labels;
 
     private final Set<BQStatementRoot> runningStatements = Collections.synchronizedSet(new HashSet<BQStatementRoot>());
 
@@ -199,6 +202,10 @@ public class BQConnection implements Connection {
         // extract UA String
         String userAgent = caseInsensitiveProps.getProperty("useragent");
 
+        // extract any labels
+        String labels = caseInsensitiveLoginProps.getProperty("labels");
+        this.labels = Splitter.on(",").withKeyValueSeparator("=").split(labels);
+
         // Create Connection to BigQuery
         if (serviceAccount) {
             try {
@@ -241,6 +248,17 @@ public class BQConnection implements Connection {
             throw new BQSQLException("Connection is closed.");
         }
         this.SQLWarningList.clear();
+    }
+
+    /**
+     * Returns a series of labels to add to every query.
+     * https://cloud.google.com/bigquery/docs/adding-labels#job-label
+     *
+     * A label that has a key with an empty value is used as a tag.
+     * https://cloud.google.com/bigquery/docs/adding-labels#adding_a_tag
+     */
+    public Map<String, String> getLabels() {
+        return this.labels;
     }
 
     /**

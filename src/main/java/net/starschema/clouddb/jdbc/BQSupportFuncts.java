@@ -35,6 +35,7 @@ import com.google.api.services.bigquery.model.DatasetList.Datasets;
 import com.google.api.services.bigquery.model.*;
 import com.google.api.services.bigquery.model.ProjectList.Projects;
 import com.google.api.services.bigquery.model.TableList.Tables;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +47,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -568,10 +570,12 @@ public class BQSupportFuncts {
      * @throws IOException
      */
     static QueryResponse runSyncQuery(Bigquery bigquery, String projectId,
-                                              String querySql, String dataSet, Boolean useLegacySql,
-                                              Long maxBillingBytes, Long queryTimeoutMs, Long maxResults
+                                      String querySql, String dataSet, Boolean useLegacySql,
+                                      Long maxBillingBytes, Long queryTimeoutMs, Long maxResults,
+                                      Map<String, String> labels
     ) throws IOException {
         QueryRequest qr = new QueryRequest()
+                .setLabels(labels)
                 .setTimeoutMs(queryTimeoutMs)
                 .setQuery(querySql)
                 .setUseLegacySql(useLegacySql)
