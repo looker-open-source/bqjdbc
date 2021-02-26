@@ -1,4 +1,4 @@
-package BQJDBC.QueryResultTest;
+package net.starschema.clouddb.jdbc;
 
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.Oauth2Bigquery;

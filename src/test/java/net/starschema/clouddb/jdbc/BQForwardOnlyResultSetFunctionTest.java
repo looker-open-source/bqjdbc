@@ -22,13 +22,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package BQJDBC.QueryResultTest;
+package net.starschema.clouddb.jdbc;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import junit.framework.Assert;
-import net.starschema.clouddb.jdbc.BQConnection;
-import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;

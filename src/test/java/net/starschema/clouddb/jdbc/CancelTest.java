@@ -1,12 +1,8 @@
-package BQJDBC.QueryResultTest;
+package net.starschema.clouddb.jdbc;
 
-import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.QueryResponse;
 import junit.framework.Assert;
-import net.starschema.clouddb.jdbc.BQConnection;
-import net.starschema.clouddb.jdbc.BQStatement;
-import net.starschema.clouddb.jdbc.BQSupportFuncts;
 import org.junit.After;
 import org.junit.Test;
 

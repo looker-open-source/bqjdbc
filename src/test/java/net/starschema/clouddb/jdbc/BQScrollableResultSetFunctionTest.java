@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package BQJDBC.QueryResultTest;
+package net.starschema.clouddb.jdbc;
 
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -30,9 +30,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import junit.framework.Assert;
-import net.starschema.clouddb.jdbc.BQConnection;
-import net.starschema.clouddb.jdbc.BQSupportFuncts;
-import net.starschema.clouddb.jdbc.BQSupportMethods;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -45,43 +42,44 @@ import org.slf4j.LoggerFactory;
  * @author Horváth Attila
  * @author Gunics Balazs
  */
-public class BQResultSetFunctionTest {
+public class BQScrollableResultSetFunctionTest {
 
     private static java.sql.Connection con = null;
     private static java.sql.ResultSet Result = null;
 
-    Logger logger = LoggerFactory.getLogger(BQResultSetFunctionTest.class);
+    Logger logger = LoggerFactory.getLogger(BQScrollableResultSetFunctionTest.class);
 
     @Test
     public void ChainedCursorFunctionTest() {
         this.logger.info("ChainedFunctionTest");
         try {
-            BQResultSetFunctionTest.Result.beforeFirst();
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
-            Assert.assertEquals("you", BQResultSetFunctionTest.Result.getString(1));
+            BQScrollableResultSetFunctionTest.Result.beforeFirst();
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
+            Assert.assertEquals("you",
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
 
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(10));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(10));
             Assert.assertEquals("whom",
-                    BQResultSetFunctionTest.Result.getString(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            Assert.assertFalse(BQResultSetFunctionTest.Result.next());
+            Assert.assertFalse(BQScrollableResultSetFunctionTest.Result.next());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            Assert.assertEquals("", BQResultSetFunctionTest.Result.getString(1));
+            Assert.assertEquals("", BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             boolean ct = e.toString().contains(
                     "Cursor is not in a valid Position");
@@ -95,38 +93,38 @@ public class BQResultSetFunctionTest {
         }
 
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.first());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.first());
             Assert.assertEquals("you",
-                    BQResultSetFunctionTest.Result.getString(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.isFirst());
-            Assert.assertFalse(BQResultSetFunctionTest.Result.previous());
-            BQResultSetFunctionTest.Result.afterLast();
-            Assert.assertTrue(BQResultSetFunctionTest.Result.isAfterLast());
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(-1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.isFirst());
+            Assert.assertFalse(BQScrollableResultSetFunctionTest.Result.previous());
+            BQScrollableResultSetFunctionTest.Result.afterLast();
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.isAfterLast());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(-1));
             Assert.assertEquals("whom",
-                    BQResultSetFunctionTest.Result.getString(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.relative(-5));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.relative(-5));
             Assert.assertEquals("without",
-                    BQResultSetFunctionTest.Result.getString(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            Assert.assertFalse(BQResultSetFunctionTest.Result.relative(6));
+            Assert.assertFalse(BQScrollableResultSetFunctionTest.Result.relative(6));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -134,7 +132,7 @@ public class BQResultSetFunctionTest {
 
         try {
             Assert.assertEquals("without",
-                    BQResultSetFunctionTest.Result.getString(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             boolean ct = e.toString().contains(
                     "Cursor is not in a valid Position");
@@ -212,37 +210,37 @@ public class BQResultSetFunctionTest {
     @Test
     public void isClosedValidtest() {
         try {
-            Assert.assertEquals(true, BQResultSetFunctionTest.con.isValid(0));
+            Assert.assertEquals(true, BQScrollableResultSetFunctionTest.con.isValid(0));
         } catch (SQLException e) {
             Assert.fail("Got an exception" + e.toString());
             e.printStackTrace();
         }
         try {
-            Assert.assertEquals(true, BQResultSetFunctionTest.con.isValid(10));
+            Assert.assertEquals(true, BQScrollableResultSetFunctionTest.con.isValid(10));
         } catch (SQLException e) {
             Assert.fail("Got an exception" + e.toString());
             e.printStackTrace();
         }
         try {
-            BQResultSetFunctionTest.con.isValid(-10);
+            BQScrollableResultSetFunctionTest.con.isValid(-10);
         } catch (SQLException e) {
             Assert.assertTrue(true);
             // e.printStackTrace();
         }
 
         try {
-            BQResultSetFunctionTest.con.close();
+            BQScrollableResultSetFunctionTest.con.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.con.isClosed());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.con.isClosed());
         } catch (SQLException e1) {
             e1.printStackTrace();
         }
 
         try {
-            BQResultSetFunctionTest.con.isValid(0);
+            BQScrollableResultSetFunctionTest.con.isValid(0);
         } catch (SQLException e) {
             Assert.assertTrue(true);
             e.printStackTrace();
@@ -258,8 +256,8 @@ public class BQResultSetFunctionTest {
     public void NewConnection() {
 
         try {
-            if (BQResultSetFunctionTest.con == null
-                    || !BQResultSetFunctionTest.con.isValid(0)) {
+            if (BQScrollableResultSetFunctionTest.con == null
+                    || !BQScrollableResultSetFunctionTest.con.isValid(0)) {
                 this.logger.info("Testing the JDBC driver");
                 try {
                     Class.forName("net.starschema.clouddb.jdbc.BQDriver");
@@ -267,7 +265,7 @@ public class BQResultSetFunctionTest {
                             .constructUrlFromPropertiesFile(BQSupportFuncts
                                     .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
                     jdbcUrl += "&useLegacySql=true";
-                    BQResultSetFunctionTest.con = DriverManager
+                    BQScrollableResultSetFunctionTest.con = DriverManager
                             .getConnection(jdbcUrl,
                                     BQSupportFuncts
                                             .readFromPropFile(getClass().getResource("/installedaccount1.properties").getFile()));
@@ -276,7 +274,7 @@ public class BQResultSetFunctionTest {
                     this.logger.error("Error in connection" + e.toString());
                     Assert.fail("General Exception:" + e.toString());
                 }
-                this.logger.info(((BQConnection) BQResultSetFunctionTest.con)
+                this.logger.info(((BQConnection) BQScrollableResultSetFunctionTest.con)
                         .getURLPART());
             }
         } catch (SQLException e) {
@@ -287,55 +285,34 @@ public class BQResultSetFunctionTest {
 
     // Comprehensive Tests:
 
-    /**
-     * Prints a String[][] QueryResult to Log
-     *
-     * @param input
-     */
-    private void printer(String[][] input) {
-        for (int s = 0; s < input[0].length; s++) {
-            String Output = "";
-            for (int i = 0; i < input.length; i++) {
-                if (i == input.length - 1) {
-                    Output += input[i][s];
-                } else {
-                    Output += input[i][s] + "\t";
-                }
-            }
-            this.logger.debug(Output);
-        }
-    }
-
     public void QueryLoad() {
         final String sql = "SELECT TOP(word,10) AS word, COUNT(*) as count FROM publicdata:samples.shakespeare";
         final String description = "The top 10 word from shakespeare #TOP #COUNT";
         String[][] expectation = new String[][]{
-         { "you", "yet", "would", "world", "without", "with", "will",
-         "why", "whose", "whom" },
-         { "42", "42", "42", "42", "42", "42", "42", "42", "42", "42" } };
-
+                { "you", "yet", "would", "world", "without", "with", "will", "why", "whose", "whom" },
+                { "42", "42", "42", "42", "42", "42", "42", "42", "42", "42" } };
         this.logger.info("Test number: 01");
         this.logger.info("Running query:" + sql);
 
         try {
-            Statement stmt = BQResultSetFunctionTest.con.createStatement(
-                    ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            Statement stmt = BQScrollableResultSetFunctionTest.con
+                    .createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             stmt.setQueryTimeout(500);
-            BQResultSetFunctionTest.Result = stmt.executeQuery(sql);
+            BQScrollableResultSetFunctionTest.Result = stmt.executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
-        Assert.assertNotNull(BQResultSetFunctionTest.Result);
+        Assert.assertNotNull(BQScrollableResultSetFunctionTest.Result);
 
         this.logger.debug(description);
-        this.printer(expectation);
+        HelperFunctions.printer(expectation);
 
 
         try {
             Assert.assertTrue("Comparing failed in the String[][] array", this
                     .comparer(expectation, BQSupportMethods
-                            .GetQueryResult(BQResultSetFunctionTest.Result)));
+                            .GetQueryResult(BQScrollableResultSetFunctionTest.Result)));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail(e.toString());
@@ -345,9 +322,9 @@ public class BQResultSetFunctionTest {
     @Test
     public void ResultSetMetadata() {
         try {
-            this.logger.debug(BQResultSetFunctionTest.Result.getMetaData()
+            this.logger.debug(BQScrollableResultSetFunctionTest.Result.getMetaData()
                     .getSchemaName(1));
-            this.logger.debug("{}", BQResultSetFunctionTest.Result.getMetaData()
+            this.logger.debug("{}", BQScrollableResultSetFunctionTest.Result.getMetaData()
                     .getScale(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -358,7 +335,7 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultIndexOutofBound() {
         try {
-            this.logger.debug("{}", BQResultSetFunctionTest.Result.getBoolean(99));
+            this.logger.debug("{}", BQScrollableResultSetFunctionTest.Result.getBoolean(99));
         } catch (SQLException e) {
             Assert.assertTrue(true);
             this.logger.error("SQLexception" + e.toString());
@@ -368,44 +345,44 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetAbsolute() {
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(1));
             Assert.assertEquals("you",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(2));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(2));
             Assert.assertEquals("yet",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(3));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(3));
             Assert.assertEquals("would",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(4));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(4));
             Assert.assertEquals("world",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(5));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(5));
             Assert.assertEquals("without",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(6));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(6));
             Assert.assertEquals("with",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(7));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(7));
             Assert.assertEquals("will",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(8));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(8));
             Assert.assertEquals("why",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(9));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(9));
             Assert.assertEquals("whose",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(10));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(10));
             Assert.assertEquals("whom",
-                    BQResultSetFunctionTest.Result.getString(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            Assert.assertFalse(BQResultSetFunctionTest.Result.absolute(0));
-            Assert.assertEquals("", BQResultSetFunctionTest.Result.getString(1));
+            Assert.assertFalse(BQScrollableResultSetFunctionTest.Result.absolute(0));
+            Assert.assertEquals("", BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             boolean ct = e.toString().contains(
                     "Cursor is not in a valid Position");
@@ -418,8 +395,8 @@ public class BQResultSetFunctionTest {
         }
 
         try {
-            Assert.assertFalse(BQResultSetFunctionTest.Result.absolute(11));
-            Assert.assertEquals("", BQResultSetFunctionTest.Result.getString(1));
+            Assert.assertFalse(BQScrollableResultSetFunctionTest.Result.absolute(11));
+            Assert.assertEquals("", BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             boolean ct = e.toString().contains(
                     "Cursor is not in a valid Position");
@@ -435,18 +412,18 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetAfterlast() {
         try {
-            BQResultSetFunctionTest.Result.afterLast();
-            Assert.assertTrue(BQResultSetFunctionTest.Result.previous());
+            BQScrollableResultSetFunctionTest.Result.afterLast();
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("whom",
-                    BQResultSetFunctionTest.Result.getString(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            BQResultSetFunctionTest.Result.afterLast();
-            Assert.assertEquals("", BQResultSetFunctionTest.Result.getString(1));
+            BQScrollableResultSetFunctionTest.Result.afterLast();
+            Assert.assertEquals("", BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             boolean ct = e.toString().contains(
                     "Cursor is not in a valid Position");
@@ -462,18 +439,18 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetBeforeFirst() {
         try {
-            BQResultSetFunctionTest.Result.beforeFirst();
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
+            BQScrollableResultSetFunctionTest.Result.beforeFirst();
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
             Assert.assertEquals("you",
-                    BQResultSetFunctionTest.Result.getString(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            BQResultSetFunctionTest.Result.beforeFirst();
-            Assert.assertEquals("", BQResultSetFunctionTest.Result.getString(1));
+            BQScrollableResultSetFunctionTest.Result.beforeFirst();
+            Assert.assertEquals("", BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             boolean ct = e.toString().contains(
                     "Cursor is not in a valid Position");
@@ -489,8 +466,8 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetFirst() {
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.first());
-            Assert.assertTrue(BQResultSetFunctionTest.Result.isFirst());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.first());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.isFirst());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -500,9 +477,9 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetgetBoolean() {
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(1));
             Assert.assertEquals(Boolean.parseBoolean("42"),
-                    BQResultSetFunctionTest.Result.getBoolean(2));
+                    BQScrollableResultSetFunctionTest.Result.getBoolean(2));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -512,9 +489,9 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetgetFloat() {
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(1));
             Assert.assertEquals(new Float(42),
-                    BQResultSetFunctionTest.Result.getFloat(2));
+                    BQScrollableResultSetFunctionTest.Result.getFloat(2));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -524,8 +501,8 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetgetInteger() {
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(1));
-            Assert.assertEquals(42, BQResultSetFunctionTest.Result.getInt(2));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(1));
+            Assert.assertEquals(42, BQScrollableResultSetFunctionTest.Result.getInt(2));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -536,19 +513,19 @@ public class BQResultSetFunctionTest {
     public void TestResultSetgetRow() {
 
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(1));
-            Assert.assertEquals(1, BQResultSetFunctionTest.Result.getRow());
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(10));
-            Assert.assertEquals(10, BQResultSetFunctionTest.Result.getRow());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(1));
+            Assert.assertEquals(1, BQScrollableResultSetFunctionTest.Result.getRow());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(10));
+            Assert.assertEquals(10, BQScrollableResultSetFunctionTest.Result.getRow());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
         try {
-            BQResultSetFunctionTest.Result.beforeFirst();
-            Assert.assertEquals(0, BQResultSetFunctionTest.Result.getRow());
-            BQResultSetFunctionTest.Result.afterLast();
-            Assert.assertEquals(0, BQResultSetFunctionTest.Result.getRow());
+            BQScrollableResultSetFunctionTest.Result.beforeFirst();
+            Assert.assertEquals(0, BQScrollableResultSetFunctionTest.Result.getRow());
+            BQScrollableResultSetFunctionTest.Result.afterLast();
+            Assert.assertEquals(0, BQScrollableResultSetFunctionTest.Result.getRow());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -558,12 +535,12 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetgetString() {
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.first());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.first());
             Assert.assertEquals("you",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.last());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.last());
             Assert.assertEquals("whom",
-                    BQResultSetFunctionTest.Result.getString(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -573,8 +550,8 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetLast() {
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.last());
-            Assert.assertTrue(BQResultSetFunctionTest.Result.isLast());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.last());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.isLast());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -584,42 +561,42 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetNext() {
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.first());
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.first());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
             Assert.assertEquals("yet",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
             Assert.assertEquals("would",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
             Assert.assertEquals("world",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
             Assert.assertEquals("without",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
             Assert.assertEquals("with",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
             Assert.assertEquals("will",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
             Assert.assertEquals("why",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
             Assert.assertEquals("whose",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.next());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.next());
             Assert.assertEquals("whom",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertFalse(BQResultSetFunctionTest.Result.next());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertFalse(BQScrollableResultSetFunctionTest.Result.next());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
 
         try {
-            Assert.assertEquals("", BQResultSetFunctionTest.Result.getString(1));
+            Assert.assertEquals("", BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             boolean ct = e.toString().contains(
                     "Cursor is not in a valid Position");
@@ -635,41 +612,41 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetPrevious() {
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.last());
-            Assert.assertTrue(BQResultSetFunctionTest.Result.previous());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.last());
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("whose",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.previous());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("why",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.previous());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("will",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.previous());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("with",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.previous());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("without",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.previous());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("world",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.previous());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("would",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.previous());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("yet",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.previous());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.previous());
             Assert.assertEquals("you",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertFalse(BQResultSetFunctionTest.Result.previous());
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertFalse(BQScrollableResultSetFunctionTest.Result.previous());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
         try {
-            Assert.assertEquals("", BQResultSetFunctionTest.Result.getString(1));
+            Assert.assertEquals("", BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             boolean ct = e.toString().contains(
                     "Cursor is not in a valid Position");
@@ -685,35 +662,35 @@ public class BQResultSetFunctionTest {
     @Test
     public void TestResultSetRelative() {
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.absolute(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.absolute(1));
             Assert.assertEquals("you",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.relative(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.relative(1));
             Assert.assertEquals("yet",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.relative(2));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.relative(2));
             Assert.assertEquals("world",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.relative(5));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.relative(5));
             Assert.assertEquals("whose",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.relative(-5));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.relative(-5));
             Assert.assertEquals("world",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.relative(-2));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.relative(-2));
             Assert.assertEquals("yet",
-                    BQResultSetFunctionTest.Result.getString(1));
-            Assert.assertTrue(BQResultSetFunctionTest.Result.relative(-1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.relative(-1));
             Assert.assertEquals("you",
-                    BQResultSetFunctionTest.Result.getString(1));
+                    BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
         }
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.first());
-            Assert.assertFalse(BQResultSetFunctionTest.Result.relative(-1));
-            Assert.assertEquals("", BQResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.first());
+            Assert.assertFalse(BQScrollableResultSetFunctionTest.Result.relative(-1));
+            Assert.assertEquals("", BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             boolean ct = e.toString().contains(
                     "Cursor is not in a valid Position");
@@ -726,9 +703,9 @@ public class BQResultSetFunctionTest {
         }
 
         try {
-            Assert.assertTrue(BQResultSetFunctionTest.Result.last());
-            Assert.assertFalse(BQResultSetFunctionTest.Result.relative(1));
-            Assert.assertEquals("", BQResultSetFunctionTest.Result.getString(1));
+            Assert.assertTrue(BQScrollableResultSetFunctionTest.Result.last());
+            Assert.assertFalse(BQScrollableResultSetFunctionTest.Result.relative(1));
+            Assert.assertEquals("", BQScrollableResultSetFunctionTest.Result.getString(1));
         } catch (SQLException e) {
             boolean ct = e.toString().contains(
                     "Cursor is not in a valid Position");
