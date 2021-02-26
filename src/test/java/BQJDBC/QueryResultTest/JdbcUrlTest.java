@@ -1,6 +1,5 @@
 package BQJDBC.QueryResultTest;
 
-import com.google.api.services.bigquery.Bigquery;
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.Oauth2Bigquery;
 import net.starschema.clouddb.jdbc.BQConnection;
@@ -33,7 +32,7 @@ public class JdbcUrlTest {
         URL = getUrl("/installedaccount.properties", null) + "&useLegacySql=true";;
         this.bq = new BQConnection(URL, new Properties());
     }
-    
+
     @Test
     public void urlWithDefaultDatasetShouldWork() throws SQLException {
         Assert.assertEquals(properties.getProperty("dataset"), bq.getDataSet());
