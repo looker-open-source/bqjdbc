@@ -73,39 +73,26 @@ public class TimeoutTest {
      * Connection to static con member.
      */
     @Before
-    public void NewConnection() {
+    public void NewConnection() throws Exception {
+        if (TimeoutTest.con == null || !TimeoutTest.con.isValid(0)) {
+            this.logger.info("Testing the JDBC driver");
+            try {
 
-        try {
-            if (TimeoutTest.con == null || !TimeoutTest.con.isValid(0)) {
-                this.logger.info("Testing the JDBC driver");
-                try {
-
-                    Class.forName("net.starschema.clouddb.jdbc.BQDriver");
-                    TimeoutTest.con = DriverManager
-                            .getConnection(
-                                    BQSupportFuncts
-                                            .constructUrlFromPropertiesFile(BQSupportFuncts
-                                                    .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile())
-                                            ) + "&useLegacySql=true",
-                                    BQSupportFuncts
-                                            .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile()));
-                } catch (Exception e) {
-                    this.logger.error("Error in connection" + e.toString());
-                    Assert.fail("General Exception:" + e.toString());
-                }
-                this.logger.info(((BQConnection) TimeoutTest.con).getURLPART());
+                Class.forName("net.starschema.clouddb.jdbc.BQDriver");
+                TimeoutTest.con = DriverManager
+                        .getConnection(
+                                BQSupportFuncts
+                                        .constructUrlFromPropertiesFile(BQSupportFuncts
+                                                .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile())
+                                        ) + "&useLegacySql=true",
+                                BQSupportFuncts
+                                        .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile()));
+            } catch (Exception e) {
+                this.logger.error("Error in connection" + e.toString());
+                Assert.fail("General Exception:" + e.toString());
             }
-        } catch (SQLException e1) {
-            e1.printStackTrace();
+            this.logger.info(((BQConnection) TimeoutTest.con).getURLPART());
         }
-        try {
-            this.logger.info("thread will sleep for 1 minute");
-            Thread.sleep(1000 * 1); // 1000milisec = 1 sec * 60 = 1 minute
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
     }
 
     @Test

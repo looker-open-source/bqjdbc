@@ -25,9 +25,6 @@
 package net.starschema.clouddb.jdbc;
 
 import junit.framework.Assert;
-import net.starschema.clouddb.jdbc.BQConnection;
-import net.starschema.clouddb.jdbc.BQSupportFuncts;
-import net.starschema.clouddb.jdbc.BQSupportMethods;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
