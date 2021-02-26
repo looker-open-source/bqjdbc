@@ -40,6 +40,7 @@ import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryRequest;
 import com.google.api.services.bigquery.BigqueryRequestInitializer;
 import com.google.api.services.bigquery.BigqueryScopes;
+import com.google.api.services.bigquery.MinifiedBigquery;
 import com.google.api.services.iamcredentials.v1.IAMCredentials;
 import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenRequest;
 import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenResponse;
@@ -124,7 +125,7 @@ public class Oauth2Bigquery {
         }
         bqBuilder.setBigqueryRequestInitializer(requestInitializer);
 
-        Bigquery bigquery = bqBuilder.build();
+        Bigquery bigquery = new MinifiedBigquery(bqBuilder);
 
         return bigquery;
     }
@@ -234,7 +235,7 @@ public class Oauth2Bigquery {
             bqBuilder.setBigqueryRequestInitializer(requestInitializer);
         }
 
-        return bqBuilder.build();
+        return new MinifiedBigquery(bqBuilder);
     }
 
     /**
