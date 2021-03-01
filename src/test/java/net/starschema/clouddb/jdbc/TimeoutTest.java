@@ -22,26 +22,23 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package BQJDBC.QueryResultTest;
+package net.starschema.clouddb.jdbc;
 
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import junit.framework.Assert;
-import net.starschema.clouddb.jdbc.BQConnection;
-import net.starschema.clouddb.jdbc.BQSupportFuncts;
-import net.starschema.clouddb.jdbc.BQSupportMethods;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Timeouttest {
+public class TimeoutTest {
 
     private static java.sql.Connection con = null;
-    Logger logger = LoggerFactory.getLogger(Timeouttest.class);
+    Logger logger = LoggerFactory.getLogger(TimeoutTest.class);
 
     /**
      * Compares two String[][]
@@ -65,7 +62,7 @@ public class Timeouttest {
     @Test
     public void isvalidtest() {
         try {
-            Assert.assertTrue(Timeouttest.con.isValid(0));
+            Assert.assertTrue(TimeoutTest.con.isValid(0));
         } catch (SQLException e) {
 
         }
@@ -76,38 +73,26 @@ public class Timeouttest {
      * Connection to static con member.
      */
     @Before
-    public void NewConnection() {
+    public void NewConnection() throws Exception {
+        if (TimeoutTest.con == null || !TimeoutTest.con.isValid(0)) {
+            this.logger.info("Testing the JDBC driver");
+            try {
 
-        try {
-            if (Timeouttest.con == null || !Timeouttest.con.isValid(0)) {
-                this.logger.info("Testing the JDBC driver");
-                try {
-
-                    Class.forName("net.starschema.clouddb.jdbc.BQDriver");
-                    Timeouttest.con = DriverManager
-                            .getConnection(
-                                    BQSupportFuncts
-                                            .constructUrlFromPropertiesFile(BQSupportFuncts
-                                                    .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile())),
-                                    BQSupportFuncts
-                                            .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile()));
-                } catch (Exception e) {
-                    this.logger.error("Error in connection" + e.toString());
-                    Assert.fail("General Exception:" + e.toString());
-                }
-                this.logger.info(((BQConnection) Timeouttest.con).getURLPART());
+                Class.forName("net.starschema.clouddb.jdbc.BQDriver");
+                TimeoutTest.con = DriverManager
+                        .getConnection(
+                                BQSupportFuncts
+                                        .constructUrlFromPropertiesFile(BQSupportFuncts
+                                                .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile())
+                                        ) + "&useLegacySql=true",
+                                BQSupportFuncts
+                                        .readFromPropFile(getClass().getResource("/serviceaccount.properties").getFile()));
+            } catch (Exception e) {
+                this.logger.error("Error in connection" + e.toString());
+                Assert.fail("General Exception:" + e.toString());
             }
-        } catch (SQLException e1) {
-            e1.printStackTrace();
+            this.logger.info(((BQConnection) TimeoutTest.con).getURLPART());
         }
-        try {
-            this.logger.info("thread will sleep for 1 minute");
-            Thread.sleep(1000 * 1); // 1000milisec = 1 sec * 60 = 1 minute
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
     }
 
     @Test
@@ -124,7 +109,7 @@ public class Timeouttest {
 
         java.sql.ResultSet Result = null;
         try {
-            Result = Timeouttest.con.createStatement().executeQuery(sql);
+            Result = TimeoutTest.con.createStatement().executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -157,7 +142,7 @@ public class Timeouttest {
 
         java.sql.ResultSet Result = null;
         try {
-            Result = Timeouttest.con.createStatement().executeQuery(sql);
+            Result = TimeoutTest.con.createStatement().executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -190,11 +175,11 @@ public class Timeouttest {
         this.logger.info("Running query:" + sql);
         this.logger.debug(description);
         try {
-            Timeouttest.con.createStatement().executeQuery(sql);
+            TimeoutTest.con.createStatement().executeQuery(sql);
         } catch (SQLException e) {
             this.logger.debug("SQLexception" + e.toString());
             // fail("SQLException" + e.toString());
-            Assert.assertTrue(e.toString().contains("Not found: Table measurement-lab:m_lab.2010_01"));
+            Assert.assertTrue(e.toString().contains("Not found: Table guid754187384106:m_lab.2010_01"));
         }
     }
 
@@ -210,7 +195,7 @@ public class Timeouttest {
 
         java.sql.ResultSet Result = null;
         try {
-            Result = Timeouttest.con.createStatement().executeQuery(sql);
+            Result = TimeoutTest.con.createStatement().executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -242,7 +227,7 @@ public class Timeouttest {
 
         java.sql.ResultSet Result = null;
         try {
-            Result = Timeouttest.con.createStatement().executeQuery(sql);
+            Result = TimeoutTest.con.createStatement().executeQuery(sql);
             this.logger.debug("{}", Result.getMetaData().getColumnCount());
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
@@ -273,7 +258,7 @@ public class Timeouttest {
 
         java.sql.ResultSet Result = null;
         try {
-            Result = Timeouttest.con.createStatement().executeQuery(sql);
+            Result = TimeoutTest.con.createStatement().executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -309,7 +294,7 @@ public class Timeouttest {
 
         java.sql.ResultSet Result = null;
         try {
-            Result = Timeouttest.con.createStatement().executeQuery(sql);
+            Result = TimeoutTest.con.createStatement().executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -346,7 +331,7 @@ public class Timeouttest {
 
         java.sql.ResultSet Result = null;
         try {
-            Result = Timeouttest.con.createStatement().executeQuery(sql);
+            Result = TimeoutTest.con.createStatement().executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -381,7 +366,7 @@ public class Timeouttest {
 
         java.sql.ResultSet Result = null;
         try {
-            Result = Timeouttest.con.createStatement().executeQuery(sql);
+            Result = TimeoutTest.con.createStatement().executeQuery(sql);
         } catch (SQLException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
