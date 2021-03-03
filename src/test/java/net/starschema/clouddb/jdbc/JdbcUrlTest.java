@@ -1,5 +1,9 @@
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.client.testing.http.MockHttpTransport;
+import com.google.api.client.testing.http.MockLowLevelHttpRequest;
+import com.google.api.client.testing.http.MockLowLevelHttpResponse;
+
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.Oauth2Bigquery;
 import net.starschema.clouddb.jdbc.BQConnection;
@@ -14,8 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Properties;
-
-import static org.junit.Assert.fail;
 
 /**
  * Created by steven on 10/21/15.
@@ -46,7 +48,7 @@ public class JdbcUrlTest {
             Assert.assertEquals("example.com:project", bqWithColons.getProjectId());
             Assert.assertEquals("example.com:project", bqWithColons.getCatalog());
         } catch (SQLException e){
-            fail("failed to get or parse url: " + e.getMessage());
+            throw new AssertionError(e);
         }
     }
 
@@ -58,7 +60,7 @@ public class JdbcUrlTest {
             Assert.assertEquals("example.com:project", bqWithUnderscores.getProjectId());
             Assert.assertEquals("example.com:project", bqWithUnderscores.getCatalog());
         } catch (SQLException e){
-            fail("failed to get or parse url: " + e.getMessage());
+            throw new AssertionError(e);
         }
     }
 
@@ -212,6 +214,31 @@ public class JdbcUrlTest {
 
         // unlimited-bytes query should succeed
         stmt.executeQuery(sqlStmt, true);
+    }
+
+    @Test
+    public void rootUrlOverrideWorks() throws IOException, SQLException {
+        properties = getProperties("/vpcaccount.properties");
+        URL = getUrl("/vpcaccount.properties", null);
+        // Mock a response similar to
+        // https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs/query#response-body
+        String mockResponse =
+            "{ \"jobComplete\": true, "
+            + "\"totalRows\": \"0\", "
+            + "\"rows\": [] }";
+        MockHttpTransport mockTransport =
+            new MockHttpTransport.Builder()
+                .setLowLevelHttpResponse(
+                    new MockLowLevelHttpResponse().setContent(mockResponse))
+                .build();
+        bq = new BQConnection(URL, properties, mockTransport);
+        BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bq);
+        String sqlStmt = "SELECT word from publicdata:samples.shakespeare LIMIT 100";
+
+        stmt.executeQuery(sqlStmt);
+
+        MockLowLevelHttpRequest request = mockTransport.getLowLevelHttpRequest();
+        Assert.assertTrue(request.getUrl().startsWith("https://restricted.googleapis.com/bigquery/v2/"));
     }
 
     private Properties getProperties(String pathToProp) throws IOException {

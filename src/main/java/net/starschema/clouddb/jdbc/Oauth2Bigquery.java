@@ -65,7 +65,7 @@ import java.util.regex.Pattern;
 public class Oauth2Bigquery {
 
     /** Global instance of the HTTP transport. */
-    private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+    static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
     /** Global instance of the JSON factory. */
     private static final JsonFactory JSON_FACTORY = new JacksonFactory();
@@ -97,9 +97,11 @@ public class Oauth2Bigquery {
     public static Bigquery authorizeViaToken(String oauthToken,
                                              String userAgent,
                                              Integer connectTimeout,
-                                             Integer readTimeout) throws SQLException {
+                                             Integer readTimeout,
+                                             String rootUrl,
+                                             HttpTransport httpTransport) throws SQLException {
         GoogleCredential.Builder builder = new GoogleCredential.Builder()
-            .setTransport(HTTP_TRANSPORT)
+            .setTransport(httpTransport)
             .setJsonFactory(JSON_FACTORY);
         GoogleCredential credential = builder.build();
 
@@ -113,7 +115,7 @@ public class Oauth2Bigquery {
 
         logger.debug("Creating a new bigquery client.");
         Builder bqBuilder = new Builder(
-            HTTP_TRANSPORT,
+            httpTransport,
             JSON_FACTORY,
             httpRequestInitializer
         ).setApplicationName(applicationName);
@@ -124,6 +126,10 @@ public class Oauth2Bigquery {
             requestInitializer.setUserAgent(userAgent);
         }
         bqBuilder.setBigqueryRequestInitializer(requestInitializer);
+
+        if (rootUrl != null) {
+            bqBuilder.setRootUrl(rootUrl);
+        }
 
         Bigquery bigquery = new MinifiedBigquery(bqBuilder);
 
@@ -205,11 +211,15 @@ public class Oauth2Bigquery {
      * @throws GeneralSecurityException
      * @throws IOException
      */
-    public static Bigquery authorizeviaservice(String serviceaccountemail,
+    public static Bigquery authorizeViaService(String serviceaccountemail,
                                                String keypath,
                                                String password,
                                                String userAgent,
-                                               String jsonAuthContents, Integer readTimeout, Integer connectTimeout) throws GeneralSecurityException, IOException {
+                                               String jsonAuthContents,
+                                               Integer readTimeout,
+                                               Integer connectTimeout,
+                                               String rootUrl,
+                                               HttpTransport httpTransport) throws GeneralSecurityException, IOException {
         GoogleCredential credential = createServiceAccountCredential(serviceaccountemail, keypath, password, jsonAuthContents, false);
 
         logger.debug("Authorizied?");
@@ -223,7 +233,7 @@ public class Oauth2Bigquery {
         }
 
         Bigquery.Builder bqBuilder = new Builder(
-                HTTP_TRANSPORT,
+                httpTransport,
                 JSON_FACTORY,
                 httpRequestInitializer)
                 .setApplicationName(applicationName);
@@ -233,6 +243,10 @@ public class Oauth2Bigquery {
             requestInitializer.setUserAgent(userAgent);
 
             bqBuilder.setBigqueryRequestInitializer(requestInitializer);
+        }
+
+        if (rootUrl != null) {
+            bqBuilder.setRootUrl(rootUrl);
         }
 
         return new MinifiedBigquery(bqBuilder);

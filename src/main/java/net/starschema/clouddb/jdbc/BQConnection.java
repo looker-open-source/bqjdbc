@@ -25,6 +25,7 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.client.http.HttpTransport;
 import com.google.api.services.bigquery.Bigquery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,6 +97,13 @@ public class BQConnection implements Connection {
      * @throws SQLException
      */
     public BQConnection(String url, Properties loginProp) throws SQLException {
+        this(url, loginProp, Oauth2Bigquery.HTTP_TRANSPORT);
+    }
+
+    /**
+     * Like {@link BQConnection(String,Properties)} but allows setting the {@link HttpTransport} for testing.
+     */
+    public BQConnection(String url, Properties loginProp, HttpTransport httpTransport) throws SQLException {
         this.logger = LoggerFactory.getLogger(this.getClass());
         this.URLPART = url;
         this.isclosed = false;
@@ -199,6 +207,9 @@ public class BQConnection implements Connection {
         // extract UA String
         String userAgent = caseInsensitiveProps.getProperty("useragent");
 
+        // extract custom endpoint for connections through restricted VPC
+        String rootUrl = caseInsensitiveProps.getProperty("rooturl");
+
         // Create Connection to BigQuery
         if (serviceAccount) {
             try {
@@ -207,7 +218,8 @@ public class BQConnection implements Connection {
                     userPath = userKey;
                     userKey = null;
                 }
-                this.bigquery = Oauth2Bigquery.authorizeviaservice(userId, userPath, userKey, userAgent, jsonAuthContents, readTimeout, connectTimeout);
+                this.bigquery = Oauth2Bigquery.authorizeViaService(
+                        userId, userPath, userKey, userAgent, jsonAuthContents, readTimeout, connectTimeout, rootUrl, httpTransport);
                 this.logger.info("Authorized with service account");
             } catch (GeneralSecurityException e) {
                 throw new BQSQLException(e);
@@ -217,7 +229,8 @@ public class BQConnection implements Connection {
         }
         else if (oAuthAccessToken != null) {
             try {
-                this.bigquery = Oauth2Bigquery.authorizeViaToken(oAuthAccessToken, userAgent, connectTimeout, readTimeout);
+                this.bigquery = Oauth2Bigquery.authorizeViaToken(
+                        oAuthAccessToken, userAgent, connectTimeout, readTimeout, rootUrl, httpTransport);
                 this.logger.info("Authorized with OAuth access token");
             } catch (SQLException e) {
                 throw new BQSQLException(e);
