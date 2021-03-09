@@ -219,7 +219,9 @@ public class JdbcUrlTest {
     @Test
     public void rootUrlOverrideWorks() throws IOException, SQLException {
         properties = getProperties("/vpcaccount.properties");
-        URL = getUrl("/vpcaccount.properties", null);
+        // Add URL-encoded `https://restricted.googleapis.com/` to the JDBC URL.
+        URL = getUrl("/vpcaccount.properties", null)
+            + "&rootUrl=https%3A%2F%2Frestricted.googleapis.com%2F";
         // Mock a response similar to
         // https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs/query#response-body
         String mockResponse =
