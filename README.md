@@ -68,20 +68,6 @@ $ cd starschema-bigquery-jdbc
 $ mvn clean install -DskipTests
 ```
 
-### Local testing
-Testing locally requires access to secret credentials stored in
-[Google Secret Manager](https://console.cloud.google.com/security/secret-manager/secret/bqjdbc-resources-zip/versions?project=346285421363)
-for accessing Looker-owned BigQuery testing tables.
-Once granted access, download and extract the zip file:
-
-```bash
-# Assuming you've already authenticated with `gcloud auth login`:
-$ gcloud config set project secrets-305922
-$ cd src/test/resources
-$ gcloud secrets versions access latest --secret=bqjdbc-resources-zip --format='get(payload.data)' | tr '_-' '/+' | base64 -d > resources.zip
-$ unzip resources.zip
-```
-
 ### Releases
 
 Releases are handled through GitHub actions, and kicked off when a release is created.
