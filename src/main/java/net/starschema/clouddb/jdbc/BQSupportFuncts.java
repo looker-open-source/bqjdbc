@@ -81,6 +81,8 @@ public class BQSupportFuncts {
         dataset = dataset == null ? properties.getProperty("dataset") : dataset;
 
         String forreturn = "";
+        // Set to '?' for the first param and '&' for subsequent params.
+        String paramSep = "?";
 
         if (properties.getProperty("type").equals("installed")) {
             if (User != null && Password != null && projectId != null) {
@@ -95,6 +97,7 @@ public class BQSupportFuncts {
                         + URLEncoder.encode(projectId, "UTF-8")
                         + (dataset != null && full ? "/" + URLEncoder.encode(dataset, "UTF-8") : "")
                         + "?withServiceAccount=true";
+                paramSep = "&";
                 if (full) {
                     forreturn += "&user=" + URLEncoder.encode(User, "UTF-8") + "&password=" + URLEncoder.encode(Password, "UTF-8");
                     if (path != null) {
@@ -112,6 +115,7 @@ public class BQSupportFuncts {
                     + (dataset != null && full ? "/" + URLEncoder.encode(dataset, "UTF-8") : "");
                 if (full) {
                     forreturn += "?oAuthAccessToken=" + URLEncoder.encode(accessToken, "UTF-8");
+                    paramSep = "&";
                 }
             } else {
                 return null;
@@ -122,12 +126,14 @@ public class BQSupportFuncts {
 
         String useLegacySql = properties.getProperty("useLegacySql");
         if (useLegacySql != null) {
-            if (properties.getProperty("type").equals("service")) {
-                forreturn += "&useLegacySql=" + useLegacySql;
-            }
-            else {
-                forreturn += "?useLegacySql=" + useLegacySql;
-            }
+            forreturn += paramSep + "useLegacySql=" + useLegacySql;
+            paramSep = "&";
+        }
+
+        String rootUrl = properties.getProperty("rootUrl");
+        if (rootUrl != null) {
+            forreturn += paramSep + "rootUrl=" + URLEncoder.encode(rootUrl, "UTF-8");
+            paramSep = "&";
         }
 
         return forreturn;

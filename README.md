@@ -62,7 +62,7 @@ A fat (shaded) jar is also available:
 
 We require Java (JDK 8 through 15) and Apache Maven (3.2.5 or higher).
 
-```
+```bash
 $ git clone git://github.com/jonathanswenson/starschema-bigquery-jdbc.git
 $ cd starschema-bigquery-jdbc
 $ mvn clean install -DskipTests
