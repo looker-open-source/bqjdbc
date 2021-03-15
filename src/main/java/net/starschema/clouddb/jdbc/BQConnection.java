@@ -31,6 +31,7 @@ import com.google.common.base.Splitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -211,8 +212,7 @@ public class BQConnection implements Connection {
         String userAgent = caseInsensitiveProps.getProperty("useragent");
 
         // extract any labels
-        String labels = caseInsensitiveLoginProps.getProperty("labels");
-        this.labels = Splitter.on(",").withKeyValueSeparator("=").split(labels);
+        this.labels = tryParseLabels(caseInsensitiveLoginProps.getProperty("labels"));
         // extract custom endpoint for connections through restricted VPC
         String rootUrl = caseInsensitiveProps.getProperty("rooturl");
       
@@ -246,6 +246,17 @@ public class BQConnection implements Connection {
             throw new IllegalArgumentException("Must provide a valid mechanism to authenticate.");
         }
         logger.debug("The project id for this connections is: " + projectId);
+    }
+
+    private static Map<String, String> tryParseLabels(@Nullable String labels) {
+        if (labels == null) {
+            return Collections.emptyMap();
+        }
+        try {
+            return Splitter.on(",").withKeyValueSeparator("=").split(labels);
+        } catch (IllegalArgumentException ex) {
+            return Collections.emptyMap();
+        }
     }
 
     /**
