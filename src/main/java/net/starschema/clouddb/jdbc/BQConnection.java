@@ -27,9 +27,11 @@ package net.starschema.clouddb.jdbc;
 
 import com.google.api.client.http.HttpTransport;
 import com.google.api.services.bigquery.Bigquery;
+import com.google.common.base.Splitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -68,6 +70,8 @@ public class BQConnection implements Connection {
     private boolean isclosed = false;
 
     private Long maxBillingBytes;
+
+    private final Map<String, String> labels;
 
     private final Set<BQStatementRoot> runningStatements = Collections.synchronizedSet(new HashSet<BQStatementRoot>());
 
@@ -207,9 +211,11 @@ public class BQConnection implements Connection {
         // extract UA String
         String userAgent = caseInsensitiveProps.getProperty("useragent");
 
+        // extract any labels
+        this.labels = tryParseLabels(caseInsensitiveLoginProps.getProperty("labels"));
         // extract custom endpoint for connections through restricted VPC
         String rootUrl = caseInsensitiveProps.getProperty("rooturl");
-
+      
         // Create Connection to BigQuery
         if (serviceAccount) {
             try {
@@ -242,6 +248,17 @@ public class BQConnection implements Connection {
         logger.debug("The project id for this connections is: " + projectId);
     }
 
+    private static Map<String, String> tryParseLabels(@Nullable String labels) {
+        if (labels == null) {
+            return Collections.emptyMap();
+        }
+        try {
+            return Splitter.on(",").withKeyValueSeparator("=").split(labels);
+        } catch (IllegalArgumentException ex) {
+            return Collections.emptyMap();
+        }
+    }
+
     /**
      * <p>
      * <h1>Implementation Details:</h1><br>
@@ -254,6 +271,17 @@ public class BQConnection implements Connection {
             throw new BQSQLException("Connection is closed.");
         }
         this.SQLWarningList.clear();
+    }
+
+    /**
+     * Returns a series of labels to add to every query.
+     * https://cloud.google.com/bigquery/docs/adding-labels#job-label
+     *
+     * A label that has a key with an empty value is used as a tag.
+     * https://cloud.google.com/bigquery/docs/adding-labels#adding_a_tag
+     */
+    public Map<String, String> getLabels() {
+        return this.labels;
     }
 
     /**

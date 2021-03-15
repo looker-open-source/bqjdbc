@@ -263,7 +263,8 @@ public abstract class BQStatementRoot {
                     this.connection.getUseLegacySql(),
                     this.connection.getMaxBillingBytes(),
                     (long) querytimeout * 1000,
-                    (long) getMaxRows()
+                    (long) getMaxRows(),
+                    this.connection.getLabels()
             );
 
             if (qr.getJobComplete()) {
@@ -320,7 +321,8 @@ public abstract class BQStatementRoot {
                     this.connection.getUseLegacySql(),
                     billingBytes,
                     (long) querytimeout * 1000,
-                    (long) getMaxRows()
+                    (long) getMaxRows(),
+                    this.connection.getLabels()
             );
             if (qr.getJobComplete()) {
                 if (qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))) {

@@ -247,7 +247,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         this.connection.getUseLegacySql(),
                         !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
                         SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
-                        (long) getMaxRows()
+                        (long) getMaxRows(),
+                        this.connection.getLabels()
                 );
                 syncResponseFromCurrentQuery.set(resp);
             } catch (Exception e) {
