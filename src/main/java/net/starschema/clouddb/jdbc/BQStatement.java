@@ -30,12 +30,16 @@ package net.starschema.clouddb.jdbc;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.QueryResponse;
+import com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.Map;
 
 /**
  * This class implements java.sql.Statement
@@ -46,10 +50,15 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
+    private static final long MAX_LABELS = 64;
     public static final int MAX_IO_FAILURE_RETRIES = 3;
     private Job job;
     private AtomicReference<Thread> runningSyncThread = new AtomicReference<>();
     private AtomicReference<QueryResponse> syncResponseFromCurrentQuery = new AtomicReference<>();
+    private AtomicReference<JobReference> mostRecentJobReference = new AtomicReference<>();
+    // Labels to be sent with the request
+    // (in addition to the ones specified in the connection string).
+    private ImmutableMap<String, String> statementLabels = ImmutableMap.of();
 
     /**
      * Enough time to give fast queries time to complete, but fast enough that if we want to cancel the query
@@ -94,6 +103,10 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         this.resultSetType = resultSetType;
         this.resultSetConcurrency = resultSetConcurrency;
 
+    }
+
+    public void setLabels(Map<String, String> statementLabels) {
+        this.statementLabels = ImmutableMap.copyOf(statementLabels);
     }
 
     /** {@inheritDoc} */
@@ -235,8 +248,26 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
      * Assumes will only be called once for a given statement. Runs the sync query in a thread and sets that thread
      * in [runningSyncThread], storing the result in [lastSyncResponse], so that cancel code can wait for a long
      * running job to time out on the sync response and then cancel it. */
-    protected QueryResponse runSyncQuery(String querySql, boolean unlimitedBillingBytes) throws IOException, SQLException {
+    protected QueryResponse runSyncQuery(String querySql, boolean unlimitedBillingBytes)
+            throws IOException, SQLException {
         final AtomicReference<Exception> diedWith = new AtomicReference<>();
+        // Combine the connection's labels with `statementLabels`, the latter taking precedence.
+        // However, if the total number of labels is greater than `MAX_LABELS`,
+        // truncate the statement labels first, then the connection labels, if necessary.
+        ImmutableMap<String, String> allLabels =
+            ImmutableMap.<String, String>builder()
+                .putAll(
+                    Stream.concat(
+                            this.connection.getLabels()
+                                .entrySet()
+                                .stream()
+                                .filter(entry -> !statementLabels.containsKey(entry.getKey())),
+                            statementLabels
+                                .entrySet()
+                                .stream())
+                        .limit(MAX_LABELS)
+                        .collect(Collectors.toList()))
+                .build();
         Runnable runSync = () -> {
             try {
                 QueryResponse resp = BQSupportFuncts.runSyncQuery(
@@ -248,9 +279,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
                         SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
                         (long) getMaxRows(),
-                        this.connection.getLabels()
-                );
+                        allLabels);
                 syncResponseFromCurrentQuery.set(resp);
+                mostRecentJobReference.set(resp.getJobReference());
             } catch (Exception e) {
                 diedWith.set(e);
             }
@@ -326,6 +357,30 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     /** Wrap [BQSupportFuncts.cancelQuery] purely for testability purposes. */
     protected void performQueryCancel(JobReference jobRefToCancel) throws IOException {
         BQSupportFuncts.cancelQuery(jobRefToCancel, this.connection.getBigquery(), projectId);
+    }
+
+    /** Use the BigQuery API to retrieve the labels sent along with the most recent query job.
+     *
+     * This is mainly useful for testing.
+     * The returned label map may or may not be immutable.
+     * Requires supplying an explicit connection.
+     */
+    public Map<String, String> getLabelsFromMostRecentQuery(BQConnection connection) throws SQLException {
+        JobReference jobReference = mostRecentJobReference.get();
+        if (jobReference != null) {
+            try {
+                return connection.getBigquery()
+                    .jobs()
+                    .get(projectId, jobReference.getJobId())
+                    .setLocation(jobReference.getLocation())
+                    .execute()
+                    .getConfiguration()
+                    .getLabels();
+            } catch (IOException e) {
+                throw new BQSQLException("Job query execution failed: ", e);
+            }
+        }
+        return ImmutableMap.of();
     }
 
     @Override

@@ -212,7 +212,7 @@ public class BQConnection implements Connection {
         String userAgent = caseInsensitiveProps.getProperty("useragent");
 
         // extract any labels
-        this.labels = tryParseLabels(caseInsensitiveLoginProps.getProperty("labels"));
+        this.labels = tryParseLabels(caseInsensitiveProps.getProperty("labels"));
         // extract custom endpoint for connections through restricted VPC
         String rootUrl = caseInsensitiveProps.getProperty("rooturl");
       
