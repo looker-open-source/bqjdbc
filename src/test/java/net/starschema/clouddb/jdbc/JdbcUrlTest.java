@@ -3,6 +3,7 @@ package net.starschema.clouddb.jdbc;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpRequest;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
+import com.google.common.collect.ImmutableMap;
 
 import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.Oauth2Bigquery;
@@ -17,6 +18,7 @@ import java.security.GeneralSecurityException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -241,6 +243,26 @@ public class JdbcUrlTest {
 
         MockLowLevelHttpRequest request = mockTransport.getLowLevelHttpRequest();
         Assert.assertTrue(request.getUrl().startsWith("https://restricted.googleapis.com/bigquery/v2/"));
+    }
+
+    @Test
+    public void setLabelsTest() throws Exception {
+        String url = getUrl("/protectedaccount.properties", null);
+        url += "&labels=this%3Dconnection-label,that%3Danother-connection-label";
+        BQConnection bqConn = new BQConnection(url, new Properties());
+        BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
+        stmt.setLabels(ImmutableMap.of("the-other", "query-label",
+                                       "and-then", "another-query-label"));
+        Map<String, String> sentLabels = ImmutableMap.of();
+
+        stmt.executeQuery("SELECT * FROM orders LIMIT 1");
+
+        sentLabels = stmt.getLabelsFromMostRecentQuery(bqConn);
+        Assert.assertEquals(4, sentLabels.size());
+        Assert.assertEquals("connection-label", sentLabels.get("this"));
+        Assert.assertEquals("another-connection-label", sentLabels.get("that"));
+        Assert.assertEquals("query-label", sentLabels.get("the-other"));
+        Assert.assertEquals("another-query-label", sentLabels.get("and-then"));
     }
 
     private Properties getProperties(String pathToProp) throws IOException {
