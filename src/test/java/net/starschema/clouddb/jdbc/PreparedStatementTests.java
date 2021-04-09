@@ -155,6 +155,7 @@ public class PreparedStatementTests {
                 "SELECT 'test'",
                 "SELECT CAST(CURRENT_TIMESTAMP() AS TIMESTAMP)",
                 "SELECT CAST(CURRENT_DATE() AS DATE)",
+                "SELECT CAST('1' AS NUMERIC)",
                 "SELECT CAST('2021-04-09T20:24:39' AS DATETIME)",
                 "SELECT CAST('1:23:45' AS TIME)",
                 "SELECT CAST('test' AS BYTES)",
