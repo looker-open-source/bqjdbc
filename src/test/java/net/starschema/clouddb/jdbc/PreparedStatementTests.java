@@ -156,9 +156,10 @@ public class PreparedStatementTests {
                 "SELECT CAST(CURRENT_TIMESTAMP() AS TIMESTAMP)",
                 "SELECT CAST(CURRENT_DATE() AS DATE)",
                 "SELECT CAST('1' AS NUMERIC)",
-                "SELECT CAST('1' AS DATETIME)",
-                "SELECT CAST('1' AS TIME)",
-                "SELECT CAST('test' AS BYTES)"
+                "SELECT CAST('2021-04-09T20:24:39' AS DATETIME)",
+                "SELECT CAST('1:23:45' AS TIME)",
+                "SELECT CAST('test' AS BYTES)",
+                "SELECT CAST('123' as BIGNUMERIC)"
         };
         final int[] expectedType = new int[]{
                 java.sql.Types.DOUBLE,
@@ -170,7 +171,8 @@ public class PreparedStatementTests {
                 java.sql.Types.NUMERIC,
                 java.sql.Types.TIMESTAMP,
                 java.sql.Types.TIME,
-                java.sql.Types.VARCHAR
+                java.sql.Types.VARCHAR,
+                java.sql.Types.NUMERIC
         };
 
         for (int i = 0; i < queries.length; i ++) {
