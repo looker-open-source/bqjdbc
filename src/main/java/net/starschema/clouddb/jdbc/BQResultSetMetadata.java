@@ -200,6 +200,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * note: see below for BQ type => Java type enum<br>
      * INTEGER => java.sql.Types.BIGINT<br>
      * NUMERIC => java.sql.Types.NUMERIC<br>
+     * BIGNUMERIC => java.sql.Types.NUMERIC<br>
      * FLOAT => java.sql.Types.DOUBLE<br>
      * BOOLEAN => java.sql.Types.BOOLEAN<br>
      * STRING => java.sql.Types.VARCHAR<br>
@@ -271,6 +272,11 @@ class BQResultsetMetaData implements ResultSetMetaData {
 
         if (Columntype.equals("RECORD") || Columntype.equals("STRUCT")) {
             return java.sql.Types.STRUCT;
+        }
+
+        // BIGDECIMAL is alias of BIGNUMERIC
+        if (Columntype.equals("BIGNUMERIC")) {
+            return Types.NUMERIC;
         }
 
         throw new BQSQLException("Unsupported Type: " + Columntype); // May arise if a new data type is added to BigQuery. A new release of the driver would then be needed in order to map it correctly
