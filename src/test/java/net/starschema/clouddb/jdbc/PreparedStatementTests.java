@@ -35,8 +35,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -148,18 +147,20 @@ public class PreparedStatementTests {
      */
     @Test
     public void ResultSetMetadataFunctionTestTypes() {
-        final String[] queries = new String[]{
-                "SELECT 3.14",
-                "SELECT TRUE",
-                "SELECT 1",
-                "SELECT 'test'",
-                "SELECT CAST(CURRENT_TIMESTAMP() AS TIMESTAMP)",
-                "SELECT CAST(CURRENT_DATE() AS DATE)",
-                "SELECT CAST('1' AS NUMERIC)",
-                "SELECT CAST('1' AS DATETIME)",
-                "SELECT CAST('1' AS TIME)",
-                "SELECT CAST('test' AS BYTES)"
+        final String[][] queries = new String[][] {
+                {"SELECT 3.14", "3.14"},
+                {"SELECT TRUE", "true"},
+                {"SELECT 1", "1"},
+                {"SELECT 'test'", "test"},
+                {"SELECT CAST(CURRENT_TIMESTAMP() AS TIMESTAMP)", null},
+                {"SELECT CAST(CURRENT_DATE() AS DATE)", null},
+                {"SELECT CAST('1' AS NUMERIC)", null},
+                {"SELECT CAST('2021-04-09T20:24:39' AS DATETIME)", "2021-04-09T20:24:39"},
+                {"SELECT CAST('1:23:45' AS TIME)", "01:23:45"},
+                {"SELECT CAST('test' AS BYTES)", "dGVzdA=="},
+                {"SELECT CAST('123' as BIGNUMERIC)", "123"}
         };
+
         final int[] expectedType = new int[]{
                 java.sql.Types.DOUBLE,
                 java.sql.Types.BOOLEAN,
@@ -170,18 +171,30 @@ public class PreparedStatementTests {
                 java.sql.Types.NUMERIC,
                 java.sql.Types.TIMESTAMP,
                 java.sql.Types.TIME,
-                java.sql.Types.VARCHAR
+                java.sql.Types.VARCHAR,
+                java.sql.Types.NUMERIC
         };
 
         for (int i = 0; i < queries.length; i ++) {
             try {
                 PreparedStatement stm = PreparedStatementTests.con
-                        .prepareStatement(queries[i]);
+                        .prepareStatement(queries[i][0]);
+                String expectedStringValue = queries[i][1];
                 java.sql.ResultSet theResult = stm.executeQuery();
+
                 Assert.assertNotNull(theResult);
                 Assert.assertEquals("Expected type was not returned in metadata",
                         expectedType[i],
                         theResult.getMetaData().getColumnType(1));
+                while(theResult.next()){
+                    //should only be one row for each of these, but lets validate that we can read the object and string
+                    Assert.assertNotNull(theResult.getObject(1));
+                    if (expectedStringValue != null) {
+                        Assert.assertEquals( expectedStringValue, theResult.getString(1));
+                    } else {
+                        theResult.getString(1);
+                    }
+                }
             } catch (SQLException e) {
                 Assert.fail(e.toString());
             }
