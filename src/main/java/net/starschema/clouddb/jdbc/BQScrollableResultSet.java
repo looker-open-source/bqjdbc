@@ -62,6 +62,12 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
      */
     private BQStatement Statementreference = null;
 
+    /** The total number of bytes processed while creating this ResultSet */
+    private final long totalBytesProcessed;
+
+    /** Whether the ResultSet came from BigQuery's cache */
+    private final boolean cacheHit;
+
     private TableSchema schema;
 
     /**
@@ -72,7 +78,12 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
      */
     public BQScrollableResultSet(GetQueryResultsResponse bigQueryGetQueryResultResponse,
                                  BQStatementRoot bqStatementRoot) {
-        this(bigQueryGetQueryResultResponse.getRows(), bqStatementRoot, bigQueryGetQueryResultResponse.getSchema());
+        this(
+            bigQueryGetQueryResultResponse.getRows(),
+            bqStatementRoot,
+            bigQueryGetQueryResultResponse.getSchema(),
+            bigQueryGetQueryResultResponse.getTotalBytesProcessed(),
+            bigQueryGetQueryResultResponse.getCacheHit());
 
         BigInteger maxrow;
         try {
@@ -82,7 +93,7 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
         } // Should not happen.
     }
 
-    public BQScrollableResultSet(List<TableRow> rows, BQStatementRoot bqStatementRoot, TableSchema schema) {
+    public BQScrollableResultSet(List<TableRow> rows, BQStatementRoot bqStatementRoot, TableSchema schema, long totalBytesProcessed, boolean cacheHit) {
         logger.debug("Created Scrollable resultset TYPE_SCROLL_INSENSITIVE");
         try {
             maxFieldSize = bqStatementRoot.getMaxFieldSize();
@@ -99,6 +110,8 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
         }
 
         this.schema = schema;
+        this.totalBytesProcessed = totalBytesProcessed;
+        this.cacheHit = cacheHit;
     }
 
     /** {@inheritDoc} */
@@ -241,5 +254,13 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
                 return result;
             }
         }
+    }
+
+    public long getTotalBytesProcessed() {
+        return totalBytesProcessed;
+    }
+
+    public boolean getCacheHit() {
+        return cacheHit;
     }
 }

@@ -326,7 +326,7 @@ public abstract class BQStatementRoot {
             );
             if (qr.getJobComplete()) {
                 if (qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))) {
-                    return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema());
+                    return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema(), qr.getTotalBytesProcessed(), qr.getCacheHit());
                 }
                 jobAlreadyCompleted = true;
             }

@@ -89,6 +89,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     private String projectId;
     /** Reference for the Job */
     private Job completedJob;
+    /** The total number of bytes processed while creating this ResultSet */
+    private final long totalBytesProcessed;
+    /** Whether the ResultSet came from BigQuery's cache */
+    private final boolean cacheHit;
     /** Cursor position which goes from -1 to FETCH_SIZE then 0 to FETCH_SIZE
      * The -1 is needed because of the while(Result.next() == true) { } iterating method*/
     private int Cursor = -1;
@@ -99,7 +103,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
 
     public BQForwardOnlyResultSet(Bigquery bigquery, String projectId,
                                   Job completedJob, BQStatementRoot bqStatementRoot) throws SQLException {
-        this(bigquery, projectId, completedJob, bqStatementRoot, null, false, null);
+        this(bigquery, projectId, completedJob, bqStatementRoot, null, false, null, 0, false);
     }
 
     /**
@@ -115,7 +119,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     public BQForwardOnlyResultSet(Bigquery bigquery, String projectId,
                                   Job completedJob, BQStatementRoot bqStatementRoot,
                                   List<TableRow> prefetchedRows, boolean prefetchedAllRows,
-                                  TableSchema schema
+                                  TableSchema schema,
+                                  long totalBytesProcessed, boolean cacheHit
                                   ) throws SQLException {
         logger.debug("Created forward only resultset TYPE_FORWARD_ONLY");
         this.Statementreference = (Statement) bqStatementRoot;
@@ -129,6 +134,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                 fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
             this.prefetchedAllRows = prefetchedAllRows;
             this.schema = schema;
+            this.totalBytesProcessed = totalBytesProcessed;
+            this.cacheHit = cacheHit;
         } else {
             // initial load
             GetQueryResultsResponse result;
@@ -140,12 +147,18 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             } //should not happen
             if (result == null) {  //if we don't have results at all
                 this.rowsofResult = null;
-            } else if (result.getRows() == null) {  //if we got results, but it was empty
-                this.rowsofResult = null;
-            } else {                        //we got results, it wasn't empty
-                this.rowsofResult = result.getRows();
-                this.schema = result.getSchema();
-                fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
+                this.totalBytesProcessed = totalBytesProcessed;
+                this.cacheHit = cacheHit;
+            } else {
+                if (result.getRows() == null) {  //if we got results, but it was empty
+                    this.rowsofResult = null;
+                } else {                        //we got results, it wasn't empty
+                    this.rowsofResult = result.getRows();
+                    this.schema = result.getSchema();
+                    fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
+                }
+                this.totalBytesProcessed = result.getTotalBytesProcessed();
+                this.cacheHit = result.getCacheHit();
             }
         }
     }
@@ -2716,4 +2729,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         return this.wasnull;
     }
 
+    public long getTotalBytesProcessed() {
+        return totalBytesProcessed;
+    }
+
+    public boolean getCacheHit() {
+        return cacheHit;
+    }
 }

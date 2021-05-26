@@ -185,6 +185,22 @@ public class QueryResultTest {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail(e.toString());
         }
+
+        Assert.assertTrue(Result instanceof BQForwardOnlyResultSet || Result instanceof BQScrollableResultSet);
+
+        long totalBytesProcessed;
+        boolean cacheHit;
+        if (Result instanceof BQForwardOnlyResultSet) {
+            BQForwardOnlyResultSet bqForwardOnlyResultSet = (BQForwardOnlyResultSet)Result;
+            totalBytesProcessed = bqForwardOnlyResultSet.getTotalBytesProcessed();
+            cacheHit = bqForwardOnlyResultSet.getCacheHit();
+        } else {
+            BQScrollableResultSet bqScrollableResultSet = (BQScrollableResultSet)Result;
+            totalBytesProcessed = bqScrollableResultSet.getTotalBytesProcessed();
+            cacheHit = bqScrollableResultSet.getCacheHit();
+        }
+
+        Assert.assertEquals(cacheHit, totalBytesProcessed == 0);
     }
 
     @Test
