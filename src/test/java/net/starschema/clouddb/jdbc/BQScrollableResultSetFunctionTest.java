@@ -37,7 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This Junit test tests functions in BQResultset
+ * This Junit test tests functions in BQScrollableResultSet
  *
  * @author Horváth Attila
  * @author Gunics Balazs
@@ -716,6 +716,13 @@ public class BQScrollableResultSetFunctionTest {
                 Assert.fail("SQLException" + e.toString());
             }
         }
+    }
+
+    @Test
+    public void TestResultSetTotalBytesProcessedCacheHit() {
+        Assert.assertTrue(Result instanceof BQScrollableResultSet);
+        BQScrollableResultSet results = (BQScrollableResultSet)Result;
+        Assert.assertEquals(results.getTotalBytesProcessed() == 0, results.getCacheHit());
     }
 
 }

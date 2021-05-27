@@ -229,7 +229,9 @@ public class JdbcUrlTest {
         String mockResponse =
             "{ \"jobComplete\": true, "
             + "\"totalRows\": \"0\", "
-            + "\"rows\": [] }";
+            + "\"rows\": [], "
+            + "\"totalBytesProcessed\": \"0\", "
+            + "\"cacheHit\": false }";
         MockHttpTransport mockTransport =
             new MockHttpTransport.Builder()
                 .setLowLevelHttpResponse(
