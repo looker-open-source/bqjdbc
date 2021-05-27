@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * This Junit test tests functions in BQResultset
+ * This Junit test tests functions in BQForwardOnlyResultSet
  *
  * @author Horváth Attila
  * @author Gunics Balazs
@@ -579,6 +579,14 @@ public class BQForwardOnlyResultSetFunctionTest {
 
         // also check that explicit casts to TIME work as expected
         Assert.assertEquals(result.getTime(2).toString(), "00:00:02");
+    }
+
+    @Test
+    public void TestResultSetTotalBytesProcessedCacheHit() {
+        QueryLoad();
+        Assert.assertTrue(resultForTest instanceof BQForwardOnlyResultSet);
+        BQForwardOnlyResultSet results = (BQForwardOnlyResultSet)resultForTest;
+        Assert.assertEquals(results.getTotalBytesProcessed() == 0, results.getCacheHit());
     }
 
 }
