@@ -211,7 +211,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
      * TIMESTAMP => java.sql.Types.TIMESTAMP<br>
      * ARRAY => unsupported<br>
      * STRUCT => java.sql.Types.STRUCT<br>
-     * GEOGRAPHY => unsupported<br>
+     * GEOGRAPHY => java.sql.Types.VARCHAR<br>
      *
      * If making changes to this method, please ensure that these types stay 1:1 with the types listed here:
      *   https://cloud.google.com/bigquery/data-types
@@ -279,6 +279,10 @@ class BQResultsetMetaData implements ResultSetMetaData {
             return Types.NUMERIC;
         }
 
+        if (Columntype.equals("GEOGRAPHY")) {
+            return Types.VARCHAR;
+        }
+
         throw new BQSQLException("Unsupported Type: " + Columntype); // May arise if a new data type is added to BigQuery. A new release of the driver would then be needed in order to map it correctly
     }
 
@@ -315,7 +319,7 @@ class BQResultsetMetaData implements ResultSetMetaData {
 
         if (Columntype.equals("FLOAT")) {
             return Float.MAX_EXPONENT;
-        } 
+        }
         if (Columntype.equals("BOOLEAN")) {
             return 1; // A boolean is 1 bit length, but it asks for byte, so
             // 1
