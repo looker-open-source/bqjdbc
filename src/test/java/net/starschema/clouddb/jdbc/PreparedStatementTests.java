@@ -158,7 +158,8 @@ public class PreparedStatementTests {
                 {"SELECT CAST('2021-04-09T20:24:39' AS DATETIME)", "2021-04-09T20:24:39"},
                 {"SELECT CAST('1:23:45' AS TIME)", "01:23:45"},
                 {"SELECT CAST('test' AS BYTES)", "dGVzdA=="},
-                {"SELECT CAST('123' as BIGNUMERIC)", "123"}
+                {"SELECT CAST('123' as BIGNUMERIC)", "123"},
+                {"SELECT ST_GEOGFROMTEXT('LINESTRING(6.2312655 51.9967517, 6.2312606 51.9968043)')", "LINESTRING(6.2312655 51.9967517, 6.2312606 51.9968043)"}
         };
 
         final int[] expectedType = new int[]{
@@ -172,7 +173,8 @@ public class PreparedStatementTests {
                 java.sql.Types.TIMESTAMP,
                 java.sql.Types.TIME,
                 java.sql.Types.VARCHAR,
-                java.sql.Types.NUMERIC
+                java.sql.Types.NUMERIC,
+                java.sql.Types.VARCHAR
         };
 
         for (int i = 0; i < queries.length; i ++) {
