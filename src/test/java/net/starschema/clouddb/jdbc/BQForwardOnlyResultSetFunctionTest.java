@@ -589,4 +589,30 @@ public class BQForwardOnlyResultSetFunctionTest {
         Assert.assertEquals(results.getTotalBytesProcessed() == 0, results.getCacheHit());
     }
 
+	@Test
+	public void testResultSetProcedures() throws SQLException, ParseException {
+		final String sql = "CREATE PROCEDURE looker_test.procedure_test(target_id INT64)\n"
+			+ "BEGIN\n"
+			+ "END;";
+
+		this.NewConnection(false);
+		java.sql.ResultSet result = null;
+		try {
+			Statement stmt = BQForwardOnlyResultSetFunctionTest.con
+				.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			stmt.setQueryTimeout(500);
+			result = stmt.executeQuery(sql);
+		} catch (SQLException e) {
+			this.logger.error("SQLexception" + e.toString());
+			Assert.fail("SQLException" + e.toString());
+		} finally {
+			String cleanupSql = "DROP PROCEDURE looker_test.procedure_test;\n";
+			Statement stmt = BQForwardOnlyResultSetFunctionTest.con
+				.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+			stmt.setQueryTimeout(500);
+			stmt.executeQuery(cleanupSql);
+		}
+
+		System.out.println(result.toString());
+	}
 }
