@@ -27,10 +27,13 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.model.TableSchema;
+import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.QueryResponse;
 import com.google.common.collect.ImmutableMap;
+import com.google.api.services.bigquery.Bigquery;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -40,6 +43,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class implements java.sql.Statement
@@ -164,10 +169,17 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                             .execute();
             if (qr.getJobComplete()) {
                 if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
+                    // For some reason, all of these can return null,
+                    // so make sure to use sensible defaults instead.
+                    Boolean cacheHit = defaultValueIfNull(qr.getCacheHit(), false);
+                    Long totalBytesProcessed = defaultValueIfNull(qr.getTotalBytesProcessed(), 0L);
+                    List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
+                    TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
+
                     return new BQForwardOnlyResultSet(
                             this.connection.getBigquery(),
                             projectId,
-                            referencedJob, this, qr.getRows(), fetchedAll, qr.getSchema(), qr.getTotalBytesProcessed(), qr.getCacheHit());
+                            referencedJob, this, rows, fetchedAll, schema, totalBytesProcessed, cacheHit);
                 } else if (fetchedAll) {
                     // We can only return scrollable result sets here if we have all the rows: otherwise we'll
                     // have to go get more below
@@ -240,6 +252,10 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         this.cancel();
         throw new BQSQLException(
                 "Query run took more than the specified timeout");
+    }
+
+    private static <T> T defaultValueIfNull(T value, T defaultValue) {
+        return value == null ? defaultValue : value;
     }
 
     /**
