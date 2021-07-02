@@ -27,6 +27,8 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.model.TableSchema;
+import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.QueryResponse;
 import org.slf4j.Logger;
@@ -35,6 +37,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class partially implements java.sql.Statement, and
@@ -267,9 +271,9 @@ public abstract class BQStatementRoot {
                     this.connection.getLabels()
             );
 
-            if (qr.getJobComplete()) {
+            if (defaultValueIfNull(qr.getJobComplete(), false)) {
                 // I hope they don't insert more than 2^32-1 :)
-                return Math.toIntExact(qr.getNumDmlAffectedRows());
+                return Math.toIntExact(defaultValueIfNull(qr.getNumDmlAffectedRows(), 0L));
             }
 
             referencedJob = this.connection.getBigquery().jobs().get(projectId, qr.getJobReference().getJobId()).execute();
@@ -324,9 +328,13 @@ public abstract class BQStatementRoot {
                     (long) getMaxRows(),
                     this.connection.getLabels()
             );
-            if (qr.getJobComplete()) {
-                if (qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))) {
-                    return new BQScrollableResultSet(qr.getRows(), this, qr.getSchema(), qr.getTotalBytesProcessed(), qr.getCacheHit());
+            if (defaultValueIfNull(qr.getJobComplete(), false)) {
+                List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
+                if (BigInteger.valueOf(rows.size()).equals(qr.getTotalRows())) {
+                    Boolean cacheHit = defaultValueIfNull(qr.getCacheHit(), false);
+                    Long totalBytesProcessed = defaultValueIfNull(qr.getTotalBytesProcessed(), 0L);
+                    TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
+                    return new BQScrollableResultSet(rows, this, schema, totalBytesProcessed, cacheHit);
                 }
                 jobAlreadyCompleted = true;
             }
@@ -372,6 +380,10 @@ public abstract class BQStatementRoot {
         // support that :(
         throw new BQSQLException(
                 "Query run took more than the specified timeout");
+    }
+
+    private static <T> T defaultValueIfNull(T value, T defaultValue) {
+        return value == null ? defaultValue : value;
     }
 
     /**
