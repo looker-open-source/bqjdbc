@@ -630,7 +630,6 @@ public class BQForwardOnlyResultSetFunctionTest {
             + "BEGIN\n"
             + "END;";
         this.NewConnection(false);
-        java.sql.ResultSet result = null;
 
         try {
             BQConnection bq = conn();
@@ -642,7 +641,7 @@ public class BQForwardOnlyResultSetFunctionTest {
             };
 
             stmt.setQueryTimeout(500);
-            result = stmt.executeQuery(sql);
+            stmt.executeQuery(sql);
         } catch (SQLException | IOException e) {
             this.logger.error("SQLexception" + e.toString());
             Assert.fail("SQLException" + e.toString());
@@ -653,7 +652,5 @@ public class BQForwardOnlyResultSetFunctionTest {
             stmt.setQueryTimeout(500);
             stmt.executeQuery(cleanupSql);
         }
-
-        System.out.println(result.toString());
     }
 }
