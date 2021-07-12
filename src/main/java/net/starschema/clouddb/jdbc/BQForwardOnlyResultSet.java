@@ -158,7 +158,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                     fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
                 }
                 this.totalBytesProcessed = result.getTotalBytesProcessed();
-                this.cacheHit = result.getCacheHit();
+                this.cacheHit = Boolean.TRUE.equals(result.getCacheHit()); // coerce Boolean nullable object to boolean primitive
             }
         }
     }

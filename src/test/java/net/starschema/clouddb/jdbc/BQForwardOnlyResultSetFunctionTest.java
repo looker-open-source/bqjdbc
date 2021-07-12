@@ -26,6 +26,7 @@ package net.starschema.clouddb.jdbc;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import java.io.IOException;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,6 +55,13 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     Logger logger = LoggerFactory.getLogger(BQForwardOnlyResultSetFunctionTest.class);
     private Integer maxRows = null;
+
+    private BQConnection conn()  throws SQLException, IOException {
+        String url = BQSupportFuncts.constructUrlFromPropertiesFile(BQSupportFuncts
+            .readFromPropFile(getClass().getResource("/installedaccount.properties").getFile()), true, null);
+        url += "&useLegacySql=false";
+        return new BQConnection(url, new Properties());
+    }
 
     @Test
     public void ChainedCursorFunctionTest() {
@@ -615,4 +623,34 @@ public class BQForwardOnlyResultSetFunctionTest {
 
 		System.out.println(result.toString());
 	}
+
+    @Test
+    public void testResultSetProceduresAsync() throws SQLException {
+        final String sql = "CREATE PROCEDURE looker_test.long_procedure(target_id INT64)\n"
+            + "BEGIN\n"
+            + "END;";
+        this.NewConnection(false);
+
+        try {
+            BQConnection bq = conn();
+            BQStatement stmt = new BQStatement(bq.getProjectId(), bq, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY) {
+                @Override
+                protected long getSyncTimeoutMillis() {
+                    return 0; // force async condition
+                }
+            };
+
+            stmt.setQueryTimeout(500);
+            stmt.executeQuery(sql);
+        } catch (SQLException | IOException e) {
+            this.logger.error("SQLexception" + e.toString());
+            Assert.fail("SQLException" + e.toString());
+        } finally {
+            String cleanupSql = "DROP PROCEDURE looker_test.long_procedure;\n";
+            Statement stmt = BQForwardOnlyResultSetFunctionTest.con
+                .createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            stmt.setQueryTimeout(500);
+            stmt.executeQuery(cleanupSql);
+        }
+    }
 }

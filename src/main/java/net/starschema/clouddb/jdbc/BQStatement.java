@@ -110,6 +110,10 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
     }
 
+    protected long getSyncTimeoutMillis() {
+        return SYNC_TIMEOUT_MILLIS;
+    }
+
     public void setLabels(Map<String, String> statementLabels) {
         this.statementLabels = ImmutableMap.copyOf(statementLabels);
     }
@@ -297,7 +301,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         connection.getDataSet(),
                         this.connection.getUseLegacySql(),
                         !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
-                        SYNC_TIMEOUT_MILLIS, // we need this to respond fast enough to avoid any socket timeouts
+                        getSyncTimeoutMillis(), // we need this to respond fast enough to avoid any socket timeouts
                         (long) getMaxRows(),
                         allLabels);
                 syncResponseFromCurrentQuery.set(resp);
@@ -347,7 +351,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         } else if (currentlyRunningSyncThread != null) {
             // The sync part of the query has not completed yet: wait for it so we can find the job to cancel
             try {
-                currentlyRunningSyncThread.join(SYNC_TIMEOUT_MILLIS);
+                currentlyRunningSyncThread.join(getSyncTimeoutMillis());
                 QueryResponse resp = syncResponseFromCurrentQuery.get();
                 if (resp != null && !resp.getJobComplete()) { // Don't bother cancel if the job is complete
                     jobRefToCancel = resp.getJobReference();
