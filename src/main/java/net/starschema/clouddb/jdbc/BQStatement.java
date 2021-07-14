@@ -118,6 +118,24 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         this.statementLabels = ImmutableMap.copyOf(statementLabels);
     }
 
+    @Override
+    protected Map<String, String> getAllLabels() {
+        return
+            ImmutableMap.<String, String>builder()
+            .putAll(
+                    Stream.concat(
+                        this.connection.getLabels()
+                        .entrySet()
+                        .stream()
+                        .filter(entry -> !statementLabels.containsKey(entry.getKey())),
+                        statementLabels
+                        .entrySet()
+                        .stream())
+                    .limit(MAX_LABELS)
+                    .collect(Collectors.toList()))
+            .build();
+    }
+
     /** {@inheritDoc} */
     @Override
     public ResultSet executeQuery(String querySql) throws SQLException {
@@ -278,20 +296,6 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         // Combine the connection's labels with `statementLabels`, the latter taking precedence.
         // However, if the total number of labels is greater than `MAX_LABELS`,
         // truncate the statement labels first, then the connection labels, if necessary.
-        ImmutableMap<String, String> allLabels =
-            ImmutableMap.<String, String>builder()
-                .putAll(
-                    Stream.concat(
-                            this.connection.getLabels()
-                                .entrySet()
-                                .stream()
-                                .filter(entry -> !statementLabels.containsKey(entry.getKey())),
-                            statementLabels
-                                .entrySet()
-                                .stream())
-                        .limit(MAX_LABELS)
-                        .collect(Collectors.toList()))
-                .build();
         Runnable runSync = () -> {
             try {
                 QueryResponse resp = BQSupportFuncts.runSyncQuery(
@@ -303,7 +307,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
                         getSyncTimeoutMillis(), // we need this to respond fast enough to avoid any socket timeouts
                         (long) getMaxRows(),
-                        allLabels);
+                        this.getAllLabels(),
+                        this.connection.getUseQueryCache());
                 syncResponseFromCurrentQuery.set(resp);
                 mostRecentJobReference.set(resp.getJobReference());
             } catch (Exception e) {

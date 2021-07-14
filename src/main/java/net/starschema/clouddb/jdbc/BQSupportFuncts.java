@@ -138,6 +138,12 @@ public class BQSupportFuncts {
             paramSep = "&";
         }
 
+        String useQueryCache = properties.getProperty("queryCache");
+        if (useQueryCache != null) {
+            forreturn += paramSep + "queryCache=" + URLEncoder.encode(useQueryCache, "UTF-8");
+            paramSep = "&";
+        }
+
         return forreturn;
     }
 
@@ -578,10 +584,11 @@ public class BQSupportFuncts {
     static QueryResponse runSyncQuery(Bigquery bigquery, String projectId,
                                       String querySql, String dataSet, Boolean useLegacySql,
                                       Long maxBillingBytes, Long queryTimeoutMs, Long maxResults,
-                                      Map<String, String> labels
+                                      Map<String, String> labels, boolean useQueryCache
     ) throws IOException {
         QueryRequest qr = new QueryRequest()
                 .setLabels(labels)
+                .setUseQueryCache(useQueryCache)
                 .setTimeoutMs(queryTimeoutMs)
                 .setQuery(querySql)
                 .setUseLegacySql(useLegacySql)

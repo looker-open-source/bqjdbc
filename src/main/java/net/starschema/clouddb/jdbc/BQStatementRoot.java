@@ -39,6 +39,7 @@ import java.math.BigInteger;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class partially implements java.sql.Statement, and
@@ -268,7 +269,8 @@ public abstract class BQStatementRoot {
                     this.connection.getMaxBillingBytes(),
                     (long) querytimeout * 1000,
                     (long) getMaxRows(),
-                    this.connection.getLabels()
+                    this.getAllLabels(),
+                    this.connection.getUseQueryCache()
             );
 
             if (defaultValueIfNull(qr.getJobComplete(), false)) {
@@ -326,7 +328,8 @@ public abstract class BQStatementRoot {
                     billingBytes,
                     (long) querytimeout * 1000,
                     (long) getMaxRows(),
-                    this.connection.getLabels()
+                    this.getAllLabels(),
+                    this.connection.getUseQueryCache()
             );
             if (defaultValueIfNull(qr.getJobComplete(), false)) {
                 List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
@@ -380,6 +383,10 @@ public abstract class BQStatementRoot {
         // support that :(
         throw new BQSQLException(
                 "Query run took more than the specified timeout");
+    }
+
+    protected Map<String, String> getAllLabels() {
+        return this.connection.getLabels();
     }
 
     private static <T> T defaultValueIfNull(T value, T defaultValue) {

@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
@@ -245,6 +246,44 @@ public class JdbcUrlTest {
 
         MockLowLevelHttpRequest request = mockTransport.getLowLevelHttpRequest();
         Assert.assertTrue(request.getUrl().startsWith("https://restricted.googleapis.com/bigquery/v2/"));
+    }
+
+    @Test
+    public void queryCacheIsOnByDefault() throws Exception {
+        // Sanity check to make sure the queryCache param is not set.
+        Assert.assertFalse(this.URL.toLowerCase().contains("querycache"));
+
+        // It's possible that this may fail for unforeseeable reasons,
+        // but we expect it to be true the vast majority of the time.
+        Assert.assertTrue(runSimpleQueryTwiceAndReturnLastCacheHit());
+    }
+
+    @Test
+    public void queryCacheOverrideWorks() throws Exception {
+        this.URL += "&queryCache=false";
+        this.bq = new BQConnection(URL, new Properties());
+
+        // This should never fail.
+        Assert.assertFalse(runSimpleQueryTwiceAndReturnLastCacheHit());
+    }
+
+    private boolean runSimpleQueryTwiceAndReturnLastCacheHit() throws Exception {
+        String sqlStmt = "SELECT word from publicdata:samples.shakespeare LIMIT 100";
+        boolean lastQueryWasCacheHit = false;
+
+        // Run the same query twice. Expect the second time to be a cache hit.
+        for (int i = 0; i < 2; i++) {
+            BQStatement stmt = new BQStatement(this.properties.getProperty("projectid"), this.bq);
+            ResultSet results = stmt.executeQuery(sqlStmt);
+            if (results instanceof BQForwardOnlyResultSet) {
+                lastQueryWasCacheHit = ((BQForwardOnlyResultSet)results).getCacheHit();
+            } else if (results instanceof BQScrollableResultSet) {
+                lastQueryWasCacheHit = ((BQScrollableResultSet)results).getCacheHit();
+            } else {
+                throw new AssertionError("Unexpected result set: " + results.toString());
+            }
+        }
+        return lastQueryWasCacheHit;
     }
 
     @Test
