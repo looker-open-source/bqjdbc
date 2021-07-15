@@ -288,22 +288,44 @@ public class JdbcUrlTest {
 
     @Test
     public void setLabelsTest() throws Exception {
-        String url = getUrl("/protectedaccount.properties", null);
-        url += "&labels=this%3Dconnection-label,that%3Danother-connection-label";
-        BQConnection bqConn = new BQConnection(url, new Properties());
-        BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
-        stmt.setLabels(ImmutableMap.of("the-other", "query-label",
-                                       "and-then", "another-query-label"));
+        BQStatement stmt = prepareStatementWithLabels();
         Map<String, String> sentLabels = ImmutableMap.of();
 
         stmt.executeQuery("SELECT * FROM orders LIMIT 1");
 
-        sentLabels = stmt.getLabelsFromMostRecentQuery(bqConn);
+        sentLabels = stmt.getLabelsFromMostRecentQuery(this.bq);
         Assert.assertEquals(4, sentLabels.size());
         Assert.assertEquals("connection-label", sentLabels.get("this"));
         Assert.assertEquals("another-connection-label", sentLabels.get("that"));
         Assert.assertEquals("query-label", sentLabels.get("the-other"));
         Assert.assertEquals("another-query-label", sentLabels.get("and-then"));
+    }
+
+    @Test
+    public void setLabelsTestForStatementRoot() throws Exception {
+        BQStatement stmt = prepareStatementWithLabels();
+        Map<String, String> sentLabels = ImmutableMap.of();
+
+        // Use executeUpdate instead of executeQuery to ensure the query
+        // is executed by `BQStatementRoot` and not its child class `BQStatement`.
+        stmt.executeUpdate("SELECT * FROM orders LIMIT 1");
+
+        sentLabels = stmt.getLabelsFromMostRecentQuery(this.bq);
+        Assert.assertEquals(4, sentLabels.size());
+        Assert.assertEquals("connection-label", sentLabels.get("this"));
+        Assert.assertEquals("another-connection-label", sentLabels.get("that"));
+        Assert.assertEquals("query-label", sentLabels.get("the-other"));
+        Assert.assertEquals("another-query-label", sentLabels.get("and-then"));
+    }
+
+    private BQStatement prepareStatementWithLabels() throws Exception {
+        this.URL = getUrl("/protectedaccount.properties", null);
+        this.URL += "&labels=this%3Dconnection-label,that%3Danother-connection-label";
+        this.bq = new BQConnection(this.URL, new Properties());
+        BQStatement stmt = new BQStatement(properties.getProperty("projectid"), this.bq);
+        stmt.setLabels(ImmutableMap.of("the-other", "query-label",
+                                       "and-then", "another-query-label"));
+        return stmt;
     }
 
     private Properties getProperties(String pathToProp) throws IOException {

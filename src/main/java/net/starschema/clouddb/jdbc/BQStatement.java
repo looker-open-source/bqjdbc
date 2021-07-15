@@ -60,7 +60,6 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     private Job job;
     private AtomicReference<Thread> runningSyncThread = new AtomicReference<>();
     private AtomicReference<QueryResponse> syncResponseFromCurrentQuery = new AtomicReference<>();
-    private AtomicReference<JobReference> mostRecentJobReference = new AtomicReference<>();
     // Labels to be sent with the request
     // (in addition to the ones specified in the connection string).
     private ImmutableMap<String, String> statementLabels = ImmutableMap.of();
@@ -310,7 +309,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                         this.getAllLabels(),
                         this.connection.getUseQueryCache());
                 syncResponseFromCurrentQuery.set(resp);
-                mostRecentJobReference.set(resp.getJobReference());
+                this.mostRecentJobReference.set(resp.getJobReference());
             } catch (Exception e) {
                 diedWith.set(e);
             }
@@ -395,7 +394,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
      * Requires supplying an explicit connection.
      */
     public Map<String, String> getLabelsFromMostRecentQuery(BQConnection connection) throws SQLException {
-        JobReference jobReference = mostRecentJobReference.get();
+        JobReference jobReference = this.mostRecentJobReference.get();
         if (jobReference != null) {
             try {
                 return connection.getBigquery()

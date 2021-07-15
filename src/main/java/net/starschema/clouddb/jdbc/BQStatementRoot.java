@@ -30,6 +30,7 @@ package net.starschema.clouddb.jdbc;
 import com.google.api.services.bigquery.model.TableSchema;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.QueryResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This class partially implements java.sql.Statement, and
@@ -92,6 +94,8 @@ public abstract class BQStatementRoot {
      * to be used with setMaxFieldSize
      */
     private int maxFieldSize = 0;
+
+    protected AtomicReference<JobReference> mostRecentJobReference = new AtomicReference<>();
 
     /**
      * <p>
@@ -272,6 +276,7 @@ public abstract class BQStatementRoot {
                     this.getAllLabels(),
                     this.connection.getUseQueryCache()
             );
+            this.mostRecentJobReference.set(qr.getJobReference());
 
             if (defaultValueIfNull(qr.getJobComplete(), false)) {
                 // I hope they don't insert more than 2^32-1 :)
@@ -331,6 +336,8 @@ public abstract class BQStatementRoot {
                     this.getAllLabels(),
                     this.connection.getUseQueryCache()
             );
+            this.mostRecentJobReference.set(qr.getJobReference());
+
             if (defaultValueIfNull(qr.getJobComplete(), false)) {
                 List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
                 if (BigInteger.valueOf(rows.size()).equals(qr.getTotalRows())) {
