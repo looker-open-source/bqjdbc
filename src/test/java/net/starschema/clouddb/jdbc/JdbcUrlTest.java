@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
@@ -248,23 +249,83 @@ public class JdbcUrlTest {
     }
 
     @Test
+    public void queryCacheIsOnByDefault() throws Exception {
+        // Sanity check to make sure the queryCache param is not set.
+        Assert.assertFalse(this.URL.toLowerCase().contains("querycache"));
+
+        // It's possible that this may fail for unforeseeable reasons,
+        // but we expect it to be true the vast majority of the time.
+        Assert.assertTrue(runSimpleQueryTwiceAndReturnLastCacheHit());
+    }
+
+    @Test
+    public void queryCacheOverrideWorks() throws Exception {
+        this.URL += "&queryCache=false";
+        this.bq = new BQConnection(URL, new Properties());
+
+        // This should never fail.
+        Assert.assertFalse(runSimpleQueryTwiceAndReturnLastCacheHit());
+    }
+
+    private boolean runSimpleQueryTwiceAndReturnLastCacheHit() throws Exception {
+        String sqlStmt = "SELECT word from publicdata:samples.shakespeare LIMIT 100";
+        boolean lastQueryWasCacheHit = false;
+
+        // Run the same query twice. Expect the second time to be a cache hit.
+        for (int i = 0; i < 2; i++) {
+            BQStatement stmt = new BQStatement(this.properties.getProperty("projectid"), this.bq);
+            ResultSet results = stmt.executeQuery(sqlStmt);
+            if (results instanceof BQForwardOnlyResultSet) {
+                lastQueryWasCacheHit = ((BQForwardOnlyResultSet)results).getCacheHit();
+            } else if (results instanceof BQScrollableResultSet) {
+                lastQueryWasCacheHit = ((BQScrollableResultSet)results).getCacheHit();
+            } else {
+                throw new AssertionError("Unexpected result set: " + results.toString());
+            }
+        }
+        return lastQueryWasCacheHit;
+    }
+
+    @Test
     public void setLabelsTest() throws Exception {
-        String url = getUrl("/protectedaccount.properties", null);
-        url += "&labels=this%3Dconnection-label,that%3Danother-connection-label";
-        BQConnection bqConn = new BQConnection(url, new Properties());
-        BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bqConn);
-        stmt.setLabels(ImmutableMap.of("the-other", "query-label",
-                                       "and-then", "another-query-label"));
+        BQStatement stmt = prepareStatementWithLabels();
         Map<String, String> sentLabels = ImmutableMap.of();
 
         stmt.executeQuery("SELECT * FROM orders LIMIT 1");
 
-        sentLabels = stmt.getLabelsFromMostRecentQuery(bqConn);
+        sentLabels = stmt.getLabelsFromMostRecentQuery(this.bq);
         Assert.assertEquals(4, sentLabels.size());
         Assert.assertEquals("connection-label", sentLabels.get("this"));
         Assert.assertEquals("another-connection-label", sentLabels.get("that"));
         Assert.assertEquals("query-label", sentLabels.get("the-other"));
         Assert.assertEquals("another-query-label", sentLabels.get("and-then"));
+    }
+
+    @Test
+    public void setLabelsTestForStatementRoot() throws Exception {
+        BQStatement stmt = prepareStatementWithLabels();
+        Map<String, String> sentLabels = ImmutableMap.of();
+
+        // Use executeUpdate instead of executeQuery to ensure the query
+        // is executed by `BQStatementRoot` and not its child class `BQStatement`.
+        stmt.executeUpdate("SELECT * FROM orders LIMIT 1");
+
+        sentLabels = stmt.getLabelsFromMostRecentQuery(this.bq);
+        Assert.assertEquals(4, sentLabels.size());
+        Assert.assertEquals("connection-label", sentLabels.get("this"));
+        Assert.assertEquals("another-connection-label", sentLabels.get("that"));
+        Assert.assertEquals("query-label", sentLabels.get("the-other"));
+        Assert.assertEquals("another-query-label", sentLabels.get("and-then"));
+    }
+
+    private BQStatement prepareStatementWithLabels() throws Exception {
+        this.URL = getUrl("/protectedaccount.properties", null);
+        this.URL += "&labels=this%3Dconnection-label,that%3Danother-connection-label";
+        this.bq = new BQConnection(this.URL, new Properties());
+        BQStatement stmt = new BQStatement(properties.getProperty("projectid"), this.bq);
+        stmt.setLabels(ImmutableMap.of("the-other", "query-label",
+                                       "and-then", "another-query-label"));
+        return stmt;
     }
 
     private Properties getProperties(String pathToProp) throws IOException {

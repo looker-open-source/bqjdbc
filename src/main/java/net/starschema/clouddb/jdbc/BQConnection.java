@@ -73,10 +73,12 @@ public class BQConnection implements Connection {
 
     private final Map<String, String> labels;
 
+    private final boolean useQueryCache;
+
     private final Set<BQStatementRoot> runningStatements = Collections.synchronizedSet(new HashSet<BQStatementRoot>());
 
     /** Boolean to determine whether or not to use legacy sql (default: false) **/
-    private boolean useLegacySql = false;
+    private final boolean useLegacySql;
 
     /** getter for useLegacySql */
     public boolean getUseLegacySql() {
@@ -162,14 +164,10 @@ public class BQConnection implements Connection {
         String oAuthAccessToken = caseInsensitiveProps.getProperty("oauthaccesstoken");
 
         // extract withServiceAccount property
-        String withServiceAccountParam = caseInsensitiveProps.getProperty("withserviceaccount");
-        Boolean serviceAccount = (withServiceAccountParam != null) && Boolean.parseBoolean(withServiceAccountParam);
+        boolean serviceAccount = parseBooleanQueryParam(caseInsensitiveProps.getProperty("withserviceaccount"), false);
 
         // extract useLegacySql property
-        String legacySqlParam = caseInsensitiveProps.getProperty("uselegacysql");
-        if (legacySqlParam != null) {
-            this.useLegacySql = Boolean.parseBoolean(legacySqlParam);
-        }
+        this.useLegacySql = parseBooleanQueryParam(caseInsensitiveProps.getProperty("uselegacysql"), false);
 
         String jsonAuthContents = caseInsensitiveProps.getProperty("jsonauthcontents");
 
@@ -215,6 +213,9 @@ public class BQConnection implements Connection {
         this.labels = tryParseLabels(caseInsensitiveProps.getProperty("labels"));
         // extract custom endpoint for connections through restricted VPC
         String rootUrl = caseInsensitiveProps.getProperty("rooturl");
+        // see if the user wants to use or bypass BigQuery's cache
+        // by default, the cache is enabled
+        this.useQueryCache = parseBooleanQueryParam(caseInsensitiveProps.getProperty("querycache"), true);
       
         // Create Connection to BigQuery
         if (serviceAccount) {
@@ -260,6 +261,14 @@ public class BQConnection implements Connection {
     }
 
     /**
+     * Return {@code defaultValue} if {@code paramValue} is null.
+     * Otherwise, return true iff {@code paramValue} is "true" (case-insensitive).
+     */
+    private static boolean parseBooleanQueryParam(@Nullable String paramValue, boolean defaultValue) {
+        return paramValue == null ? defaultValue : Boolean.parseBoolean(paramValue);
+    }
+
+    /**
      * <p>
      * <h1>Implementation Details:</h1><br>
      * Uses SQLWarningList.clear() to clear all warnings
@@ -282,6 +291,14 @@ public class BQConnection implements Connection {
      */
     public Map<String, String> getLabels() {
         return this.labels;
+    }
+
+    /**
+     * Return whether or not to use BigQuery's cache, as determined by the {@code cache} JDBC parameter.
+     * Note that use of the cache is enabled by default.
+     */
+    public boolean getUseQueryCache() {
+        return this.useQueryCache;
     }
 
     /**
