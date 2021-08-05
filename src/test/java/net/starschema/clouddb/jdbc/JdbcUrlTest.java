@@ -73,14 +73,14 @@ public class JdbcUrlTest {
             String url1 = URL + "&readTimeout=foo";
             new BQConnection(url1, new Properties());
         } catch (SQLException e){
-            Assert.assertEquals("could not parse readTimeout parameter.", e.getMessage());
+            Assert.assertEquals("could not parse readTimeout parameter. - java.lang.NumberFormatException: For input string: \"foo\"", e.getMessage());
         }
 
         try {
             String url1 = URL + "&connectTimeout=foo";
             new BQConnection(url1, new Properties());
         } catch (SQLException e){
-            Assert.assertEquals("could not parse connectTimeout parameter.", e.getMessage());
+            Assert.assertEquals("could not parse connectTimeout parameter. - java.lang.NumberFormatException: For input string: \"foo\"", e.getMessage());
         }
 
         try {

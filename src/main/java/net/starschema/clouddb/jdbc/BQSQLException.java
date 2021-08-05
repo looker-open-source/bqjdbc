@@ -230,6 +230,8 @@ public class BQSQLException extends SQLException {
             if (googleJsonResponseException.getDetails() != null) {
                 return prefix + googleJsonResponseException.getDetails().getMessage();
             }
+        } else {
+            return prefix + cause.toString();
         }
         return reason;
     }
