@@ -71,7 +71,7 @@ public class BQConnection implements Connection {
 
     private Long maxBillingBytes;
 
-    private Integer jobTimeoutMs;
+    private Integer timeoutMs;
 
     private final Map<String, String> labels;
 
@@ -173,8 +173,8 @@ public class BQConnection implements Connection {
 
         String jsonAuthContents = caseInsensitiveProps.getProperty("jsonauthcontents");
 
-        // extract jobTimeoutMs property
-        this.jobTimeoutMs = parseIntQueryParam("jobTimeoutMs", caseInsensitiveProps.getProperty("jobtimeoutms"));
+        // extract timeoutMs property
+        this.timeoutMs = parseIntQueryParam("timeoutMs", caseInsensitiveProps.getProperty("timeoutms"));
 
         // extract readTimeout property
         Integer readTimeout = parseIntQueryParam("readTimeout", caseInsensitiveProps.getProperty("readtimeout"));
@@ -1102,7 +1102,7 @@ public class BQConnection implements Connection {
         return maxBillingBytes;
     }
 
-    public Integer getJobTimeoutMs() {
-        return jobTimeoutMs;
+    public Integer getTimeoutMs() {
+        return timeoutMs;
     }
 }

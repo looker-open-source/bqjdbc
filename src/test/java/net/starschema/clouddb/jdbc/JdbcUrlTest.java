@@ -249,26 +249,26 @@ public class JdbcUrlTest {
     }
 
     @Test
-    public void jobTimeoutMsRejectsBadValues() throws Exception {
+    public void timeoutMsRejectsBadValues() throws Exception {
         try {
-            new BQConnection(URL + "&jobTimeoutMs=-1", new Properties());
+            new BQConnection(URL + "&timeoutMs=-1", new Properties());
         } catch (BQSQLException e) {
             Assert.assertEquals(e.getMessage().contains("jobTimeoutMs must be positive"), true);
         }
         try {
-            new BQConnection(URL + "&jobTimeoutMs=NotANumber", new Properties());
+            new BQConnection(URL + "&timeoutMs=NotANumber", new Properties());
         } catch (BQSQLException e) {
-            Assert.assertEquals(e.getMessage().contains("Bad number for jobTimeoutMs"), true);
+            Assert.assertEquals(e.getMessage().contains("Bad number for timeoutMs"), true);
         }
     }
 
     @Test
-    public void jobTimeoutMsWorks() throws Exception {
+    public void timeoutMsWorks() throws Exception {
         // should immediately kill the job
-        this.URL += "&jobTimeoutMs=1";
+        this.URL += "&timeoutMs=1";
         this.bq = new BQConnection(URL, new Properties());
         // ensure that the url string was parsed properly
-        Assert.assertEquals(this.bq.getJobTimeoutMs(), Integer.valueOf(1));
+        Assert.assertEquals(this.bq.getTimeoutMs(), Integer.valueOf(1));
         // this query takes about 50 second to complete normally
         String sqlStmt = "SELECT * from publicdata:samples.wikipedia";
         BQStatement stmt = new BQStatement(this.properties.getProperty("projectid"), this.bq);
