@@ -253,12 +253,12 @@ public class JdbcUrlTest {
         try {
             new BQConnection(URL + "&timeoutMs=-1", new Properties());
         } catch (BQSQLException e) {
-            Assert.assertEquals(e.getMessage().contains("timeoutMs must be positive"), true);
+            Assert.assertEquals(e.getMessage().contains("timeoutMs must be positive."), true);
         }
         try {
             new BQConnection(URL + "&timeoutMs=NotANumber", new Properties());
         } catch (BQSQLException e) {
-            Assert.assertEquals(e.getMessage().contains("Bad number for timeoutMs"), true);
+            Assert.assertEquals(e.getMessage().contains("could not parse timeoutMs parameter."), true);
         }
     }
 

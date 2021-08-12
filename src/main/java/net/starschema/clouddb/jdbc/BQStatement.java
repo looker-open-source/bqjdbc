@@ -120,7 +120,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     @Override
     public int getQueryTimeout() {
         if (this.connection.getTimeoutMs() != null) {
-            return this.connection.getTimeoutMs().intValue();
+            return this.connection.getTimeoutMs();
         }
         return this.querytimeout * 1000;
     }

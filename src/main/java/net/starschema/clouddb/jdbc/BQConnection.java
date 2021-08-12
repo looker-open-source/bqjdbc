@@ -266,7 +266,7 @@ public class BQConnection implements Connection {
                     throw new BQSQLException(param + " must be positive.");
                 }
             } catch (NumberFormatException e) {
-                throw new BQSQLException("Bad number for " + param, e);
+                throw new BQSQLException("could not parse " + param + " parameter.", e);
             }
         }
         return val;
