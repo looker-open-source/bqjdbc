@@ -118,6 +118,14 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     }
 
     @Override
+    public int getQueryTimeout() {
+        if (this.connection.getTimeoutMs() != null) {
+            return this.connection.getTimeoutMs();
+        }
+        return this.querytimeout * 1000;
+    }
+
+    @Override
     protected Map<String, String> getAllLabels() {
         return
             ImmutableMap.<String, String>builder()
@@ -262,9 +270,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 // application bandwidth.
                 Thread.sleep(500);
                 this.logger.debug("slept for 500" + "ms, querytimeout is: "
-                        + this.querytimeout + "s");
+                        + getQueryTimeout() + "ms");
             }
-            while (System.currentTimeMillis() - this.starttime <= (long) this.querytimeout * 1000);
+            while (System.currentTimeMillis() - this.starttime <= (long) getQueryTimeout());
             // it runs for a minimum of 1 time
         } catch (IOException e) {
             throw new BQSQLException(

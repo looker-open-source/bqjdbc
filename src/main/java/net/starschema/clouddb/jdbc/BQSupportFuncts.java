@@ -144,6 +144,12 @@ public class BQSupportFuncts {
             paramSep = "&";
         }
 
+        String timeoutMs = properties.getProperty("timeoutMs");
+        if (timeoutMs != null) {
+            forreturn += paramSep + "timeoutMs=" + URLEncoder.encode(timeoutMs, "UTF-8");
+            paramSep = "&";
+        }
+
         return forreturn;
     }
 
@@ -175,7 +181,7 @@ public class BQSupportFuncts {
     /**
      * Return a list of Projects which contains the String catalogname
      *
-     * @param projectId The String which the id of the result Projects must contain
+     * @param projectIdFilter The String which the id of the result Projects must contain
      * @param Connection  A valid BQConnection instance
      * @return a list of Projects which contains the String catalogname
      * @throws IOException <p>

@@ -249,6 +249,39 @@ public class JdbcUrlTest {
     }
 
     @Test
+    public void timeoutMsRejectsBadValues() throws Exception {
+        try {
+            new BQConnection(URL + "&timeoutMs=-1", new Properties());
+        } catch (BQSQLException e) {
+            Assert.assertEquals(e.getMessage().contains("timeoutMs must be positive."), true);
+        }
+        try {
+            new BQConnection(URL + "&timeoutMs=NotANumber", new Properties());
+        } catch (BQSQLException e) {
+            Assert.assertEquals(e.getMessage().contains("could not parse timeoutMs parameter."), true);
+        }
+    }
+
+    @Test
+    public void timeoutMsWorks() throws Exception {
+        // should immediately kill the job
+        this.URL += "&timeoutMs=1";
+        this.bq = new BQConnection(URL, new Properties());
+        // ensure that the url string was parsed properly
+        Assert.assertEquals(this.bq.getTimeoutMs(), Integer.valueOf(1));
+        // this query takes about 50 second to complete normally
+        String sqlStmt = "SELECT * from publicdata:samples.wikipedia";
+        BQStatement stmt = new BQStatement(this.properties.getProperty("projectid"), this.bq);
+        try {
+            stmt.executeQuery(sqlStmt);
+            Assert.fail("Query job should have timed out");
+        } catch (BQSQLException e) {
+            Assert.assertEquals(
+                e.getMessage().contains("Query run took more than the specified timeout"), true);
+        }
+    }
+
+    @Test
     public void queryCacheIsOnByDefault() throws Exception {
         // Sanity check to make sure the queryCache param is not set.
         Assert.assertFalse(this.URL.toLowerCase().contains("querycache"));
