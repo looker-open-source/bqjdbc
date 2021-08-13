@@ -71,6 +71,8 @@ public class BQConnection implements Connection {
 
     private Long maxBillingBytes;
 
+    private Integer timeoutMs;
+
     private final Map<String, String> labels;
 
     private final boolean useQueryCache;
@@ -171,31 +173,14 @@ public class BQConnection implements Connection {
 
         String jsonAuthContents = caseInsensitiveProps.getProperty("jsonauthcontents");
 
-        String readTimeoutString = caseInsensitiveProps.getProperty("readtimeout");
-        Integer readTimeout = null;
-        if (readTimeoutString != null) {
-            try {
-                readTimeout = Integer.parseInt(readTimeoutString);
-                if (readTimeout < 0) {
-                    throw new BQSQLException("readTimeout must be positive.");
-                }
-            } catch (NumberFormatException e) {
-                throw new BQSQLException("could not parse readTimeout parameter.", e);
-            }
-        }
+        // extract timeoutMs property
+        this.timeoutMs = parseIntQueryParam("timeoutMs", caseInsensitiveProps.getProperty("timeoutms"));
 
-        String connectTimeoutString = caseInsensitiveProps.getProperty("connecttimeout");
-        Integer connectTimeout = null;
-        if (connectTimeoutString != null) {
-            try {
-                connectTimeout = Integer.parseInt(connectTimeoutString);
-                if (connectTimeout < 0) {
-                    throw new BQSQLException("connectTimeout must be positive.");
-                }
-            } catch (NumberFormatException e) {
-                throw new BQSQLException("could not parse connectTimeout parameter.", e);
-            }
-        }
+        // extract readTimeout property
+        Integer readTimeout = parseIntQueryParam("readTimeout", caseInsensitiveProps.getProperty("readtimeout"));
+
+        // extract connectTimeout property
+        Integer connectTimeout = parseIntQueryParam("connectTimeout", caseInsensitiveProps.getProperty("connecttimeout"));
 
         String maxBillingBytesParam = caseInsensitiveProps.getProperty("maxbillingbytes");
         if (maxBillingBytesParam != null) {
@@ -266,6 +251,25 @@ public class BQConnection implements Connection {
      */
     private static boolean parseBooleanQueryParam(@Nullable String paramValue, boolean defaultValue) {
         return paramValue == null ? defaultValue : Boolean.parseBoolean(paramValue);
+    }
+
+    /**
+     * Return null if {@code paramValue} is null.
+     * Otherwise, return an Integer iff {@code paramValue} can be parsed as a positive int.
+     */
+    private static Integer parseIntQueryParam(String param, @Nullable String paramValue) throws BQSQLException {
+        Integer val = null;
+        if (paramValue != null) {
+            try {
+                val = Integer.parseInt(paramValue);
+                if (val < 0) {
+                    throw new BQSQLException(param + " must be positive.");
+                }
+            } catch (NumberFormatException e) {
+                throw new BQSQLException("could not parse " + param + " parameter.", e);
+            }
+        }
+        return val;
     }
 
     /**
@@ -1096,5 +1100,9 @@ public class BQConnection implements Connection {
 
     public Long getMaxBillingBytes() {
         return maxBillingBytes;
+    }
+
+    public Integer getTimeoutMs() {
+        return timeoutMs;
     }
 }
