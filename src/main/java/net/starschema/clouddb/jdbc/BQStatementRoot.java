@@ -341,10 +341,8 @@ public abstract class BQStatementRoot {
             if (defaultValueIfNull(qr.getJobComplete(), false)) {
                 List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
                 if (BigInteger.valueOf(rows.size()).equals(qr.getTotalRows())) {
-                    Boolean cacheHit = defaultValueIfNull(qr.getCacheHit(), false);
-                    Long totalBytesProcessed = defaultValueIfNull(qr.getTotalBytesProcessed(), 0L);
                     TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
-                    return new BQScrollableResultSet(rows, this, schema, totalBytesProcessed, cacheHit);
+                    return new BQScrollableResultSet(rows, this, schema, qr.getTotalBytesProcessed(), qr.getCacheHit());
                 }
                 jobAlreadyCompleted = true;
             }

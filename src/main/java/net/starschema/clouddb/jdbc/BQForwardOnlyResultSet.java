@@ -35,6 +35,7 @@ import com.google.api.services.bigquery.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -88,11 +89,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     /** the ProjectId */
     private String projectId;
     /** Reference for the Job */
-    private Job completedJob;
+    private @Nullable Job completedJob;
     /** The total number of bytes processed while creating this ResultSet */
-    private final long totalBytesProcessed;
+    private final @Nullable Long totalBytesProcessed;
     /** Whether the ResultSet came from BigQuery's cache */
-    private final boolean cacheHit;
+    private final @Nullable Boolean cacheHit;
     /** Cursor position which goes from -1 to FETCH_SIZE then 0 to FETCH_SIZE
      * The -1 is needed because of the while(Result.next() == true) { } iterating method*/
     private int Cursor = -1;
@@ -102,8 +103,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             .withZone(ZoneId.of("UTC"));
 
     public BQForwardOnlyResultSet(Bigquery bigquery, String projectId,
-                                  Job completedJob, BQStatementRoot bqStatementRoot) throws SQLException {
-        this(bigquery, projectId, completedJob, bqStatementRoot, null, false, null, 0, false);
+                                  @Nullable Job completedJob, BQStatementRoot bqStatementRoot) throws SQLException {
+        this(bigquery, projectId, completedJob, bqStatementRoot, null, false, null, 0L, false);
     }
 
     /**
@@ -117,10 +118,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
      * @throws SQLException - if we fail to get the results
      */
     public BQForwardOnlyResultSet(Bigquery bigquery, String projectId,
-                                  Job completedJob, BQStatementRoot bqStatementRoot,
+                                  @Nullable Job completedJob, BQStatementRoot bqStatementRoot,
                                   List<TableRow> prefetchedRows, boolean prefetchedAllRows,
                                   TableSchema schema,
-                                  long totalBytesProcessed, boolean cacheHit
+                                  @Nullable Long totalBytesProcessed, @Nullable Boolean cacheHit
                                   ) throws SQLException {
         logger.debug("Created forward only resultset TYPE_FORWARD_ONLY");
         this.Statementreference = (Statement) bqStatementRoot;
@@ -138,6 +139,9 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             this.cacheHit = cacheHit;
         } else {
             // initial load
+            if (completedJob == null) {
+                throw new BQSQLException("Cannot poll results without a job reference");
+            }
             GetQueryResultsResponse result;
             try {
                 result = BQSupportFuncts.getQueryResultsDivided(bigquery,
@@ -158,7 +162,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                     fetchPos = fetchPos.add(BigInteger.valueOf(this.rowsofResult.size()));
                 }
                 this.totalBytesProcessed = result.getTotalBytesProcessed();
-                this.cacheHit = Boolean.TRUE.equals(result.getCacheHit()); // coerce Boolean nullable object to boolean primitive
+                this.cacheHit = result.getCacheHit();
             }
         }
     }
@@ -1466,6 +1470,9 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             return false;
         }
 
+        if (completedJob == null) {
+            throw new BQSQLException("Cannot poll results without a job reference");
+        }
         GetQueryResultsResponse result;
         try {
              result = BQSupportFuncts.getQueryResultsDivided(bigquery,
@@ -2729,11 +2736,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         return this.wasnull;
     }
 
-    public long getTotalBytesProcessed() {
+    public @Nullable Long getTotalBytesProcessed() {
         return totalBytesProcessed;
     }
 
-    public boolean getCacheHit() {
+    public @Nullable Boolean getCacheHit() {
         return cacheHit;
     }
 }

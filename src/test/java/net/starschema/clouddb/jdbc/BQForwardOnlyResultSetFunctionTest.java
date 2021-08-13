@@ -24,6 +24,9 @@
  */
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.client.testing.http.MockHttpTransport;
+import com.google.api.client.testing.http.MockLowLevelHttpRequest;
+import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import java.io.IOException;
@@ -594,7 +597,8 @@ public class BQForwardOnlyResultSetFunctionTest {
         QueryLoad();
         Assert.assertTrue(resultForTest instanceof BQForwardOnlyResultSet);
         BQForwardOnlyResultSet results = (BQForwardOnlyResultSet)resultForTest;
-        Assert.assertEquals(results.getTotalBytesProcessed() == 0, results.getCacheHit());
+        final Boolean processedNoBytes = new Long(0L).equals(results.getTotalBytesProcessed());
+        Assert.assertEquals(processedNoBytes, results.getCacheHit());
     }
 
 	@Test
@@ -652,5 +656,46 @@ public class BQForwardOnlyResultSetFunctionTest {
             stmt.setQueryTimeout(500);
             stmt.executeQuery(cleanupSql);
         }
+    }
+
+    @Test
+    public void testHandlesAllNullResponseFields() throws Exception {
+        try {
+            mockResponse("{}");
+        } catch (BQSQLException e) {
+            Assert.assertTrue(e.getMessage().contains("no job reference"));
+            return;
+        }
+        throw new AssertionError("Expected graceful failure due to lack of job reference");
+    }
+
+    @Test
+    public void testHandlesSomeNullResponseFields() throws Exception {
+        // Make sure we don't get any NPE's due to null values;
+        mockResponse(
+            "{ \"jobComplete\": true, "
+            + "\"totalRows\": \"0\", "
+            + "\"rows\": [] }");
+    }
+
+    private void mockResponse(String jsonResponse) throws Exception {
+        Properties properties =
+            BQSupportFuncts.readFromPropFile(
+                getClass().getResource("/installedaccount.properties").getFile());
+        String url = BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null);
+        // Mock an empty response object.
+        MockHttpTransport mockTransport =
+            new MockHttpTransport.Builder()
+                .setLowLevelHttpResponse(
+                    new MockLowLevelHttpResponse().setContent(jsonResponse))
+                .build();
+        BQConnection bq = new BQConnection(url + "&useLegacySql=false", properties, mockTransport);
+        BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bq, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        String sqlStmt = "SELECT word from publicdata:samples.shakespeare LIMIT 100";
+
+        BQForwardOnlyResultSet results = ((BQForwardOnlyResultSet)stmt.executeQuery(sqlStmt));
+
+        results.getTotalBytesProcessed();
+        results.getCacheHit();
     }
 }
