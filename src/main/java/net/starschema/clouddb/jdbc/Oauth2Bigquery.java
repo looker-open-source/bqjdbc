@@ -22,14 +22,13 @@
  */
 package net.starschema.clouddb.jdbc;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson.JacksonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryRequest;
@@ -39,6 +38,10 @@ import com.google.api.services.bigquery.MinifiedBigquery;
 import com.google.api.services.iamcredentials.v1.IAMCredentials;
 import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenRequest;
 import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenResponse;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -98,9 +101,7 @@ public class Oauth2Bigquery {
       String rootUrl,
       HttpTransport httpTransport)
       throws SQLException {
-    GoogleCredential.Builder builder =
-        new GoogleCredential.Builder().setTransport(httpTransport).setJsonFactory(JSON_FACTORY);
-    GoogleCredential credential = builder.build();
+    GoogleCredentials credential = GoogleCredentials.create(new AccessToken(oauthToken, null));
 
     HttpRequestTimeoutInitializer httpRequestInitializer =
         new HttpRequestTimeoutInitializer(credential);
@@ -134,71 +135,68 @@ public class Oauth2Bigquery {
   }
 
   /**
-   * This function gives back an built GoogleCredential Ojbect from a p12 keyfile
+   * This function gives back an built GoogleCredentials Object from a p12 keyfile
    *
    * @param serviceaccountemail
    * @param keypath
-   * @return Built GoogleCredential via serviceaccount e-mail and keypath
+   * @return Built GoogleCredentials via serviceaccount e-mail and keypath
    * @throws GeneralSecurityException
    * @throws IOException
    */
-  private static GoogleCredential createP12Credential(
+  private static GoogleCredentials createP12Credential(
       String serviceaccountemail, String keypath, String password, boolean forTokenGeneration)
       throws GeneralSecurityException, IOException {
     logger.debug("Authorizing with service account.");
-    GoogleCredential.Builder builder =
-        new GoogleCredential.Builder()
-            .setTransport(HTTP_TRANSPORT)
-            .setJsonFactory(JSON_FACTORY)
-            .setServiceAccountId(serviceaccountemail)
+    ServiceAccountCredentials.Builder builder =
+        ServiceAccountCredentials.newBuilder()
+            .setClientEmail(serviceaccountemail)
             // e-mail ADDRESS!!!!
-            .setServiceAccountScopes(GenerateScopes(forTokenGeneration));
+            .setScopes(GenerateScopes(forTokenGeneration));
     // Currently we only want to access bigquery, but it's possible
     // to name more than one service too
 
     if (password == null) {
-      builder = builder.setServiceAccountPrivateKeyFromP12File(new File(keypath));
-    } else {
-      PrivateKey pk = getPrivateKeyFromCredentials(keypath, password);
-      builder = builder.setServiceAccountPrivateKey(pk);
+      password = "notasecret";
     }
+    PrivateKey pk = getPrivateKeyFromCredentials(keypath, password);
+    builder = builder.setPrivateKey(pk);
     return builder.build();
   }
 
   /**
-   * This function gives back an built GoogleCredential Object from a String representing the
+   * This function gives back an built GoogleCredentials Object from a String representing the
    * contents of a JSON keyfile
    *
    * @param jsonAuthContents
-   * @return Built GoogleCredential via and keypath
+   * @return Built GoogleCredentials via and keypath
    * @throws GeneralSecurityException
    * @throws IOException
    */
-  private static GoogleCredential createJsonCredential(
+  private static GoogleCredentials createJsonCredential(
       String jsonAuthContents, boolean forTokenGeneration)
       throws GeneralSecurityException, IOException {
     logger.debug("Authorizing with service account.");
     // For .json load the key via credential.fromStream
     InputStream stringStream = new ByteArrayInputStream(jsonAuthContents.getBytes());
-    return GoogleCredential.fromStream(stringStream, HTTP_TRANSPORT, JSON_FACTORY)
+    return GoogleCredentials.fromStream(stringStream)
         .createScoped(GenerateScopes(forTokenGeneration));
   }
 
   /**
-   * This function gives back an built GoogleCredential Object from a json keyfile
+   * This function gives back an built GoogleCredentials Object from a json keyfile
    *
    * @param keypath
-   * @return Built GoogleCredential via and keypath
+   * @return Built GoogleCredentials via and keypath
    * @throws GeneralSecurityException
    * @throws IOException
    */
-  private static GoogleCredential createJsonCredentialFromKeyfile(
+  private static GoogleCredentials createJsonCredentialFromKeyfile(
       String keypath, boolean forTokenGeneration) throws GeneralSecurityException, IOException {
     logger.debug("Authorizing with service account.");
     // For .json load the key via credential.fromStream
     File jsonKey = new File(keypath);
     InputStream inputStream = new FileInputStream(jsonKey);
-    return GoogleCredential.fromStream(inputStream, HTTP_TRANSPORT, JSON_FACTORY)
+    return GoogleCredentials.fromStream(inputStream)
         .createScoped(GenerateScopes(forTokenGeneration));
   }
 
@@ -224,7 +222,7 @@ public class Oauth2Bigquery {
       String rootUrl,
       HttpTransport httpTransport)
       throws GeneralSecurityException, IOException {
-    GoogleCredential credential =
+    GoogleCredentials credential =
         createServiceAccountCredential(
             serviceaccountemail, keypath, password, jsonAuthContents, false);
 
@@ -272,7 +270,7 @@ public class Oauth2Bigquery {
   public static String generateAccessToken(
       String serviceaccountemail, String keypath, String password, String jsonAuthContents)
       throws GeneralSecurityException, IOException {
-    GoogleCredential credential =
+    GoogleCredentials credential =
         createServiceAccountCredential(
             serviceaccountemail, keypath, password, jsonAuthContents, true);
     HttpRequestTimeoutInitializer httpRequestInitializer =
@@ -295,14 +293,14 @@ public class Oauth2Bigquery {
     return response.getAccessToken();
   }
 
-  private static GoogleCredential createServiceAccountCredential(
+  private static GoogleCredentials createServiceAccountCredential(
       String serviceaccountemail,
       String keypath,
       String password,
       String jsonAuthContents,
       boolean forTokenGeneration)
       throws GeneralSecurityException, IOException {
-    GoogleCredential credential;
+    GoogleCredentials credential;
     // Determine which keyfile we are trying to authenticate with.
     if (jsonAuthContents != null) {
       credential = Oauth2Bigquery.createJsonCredential(jsonAuthContents, forTokenGeneration);
@@ -343,14 +341,10 @@ public class Oauth2Bigquery {
   private static class HttpRequestTimeoutInitializer implements HttpRequestInitializer {
     private Integer readTimeout = null;
     private Integer connectTimeout = null;
-    private GoogleCredential credential = null;
+    private HttpCredentialsAdapter credentialsAdapter = null;
 
-    public HttpRequestTimeoutInitializer(GoogleCredential credential) {
-      this.credential = credential;
-    }
-
-    public void setCredential(GoogleCredential credential) {
-      this.credential = credential;
+    public HttpRequestTimeoutInitializer(GoogleCredentials credential) {
+      this.credentialsAdapter = new HttpCredentialsAdapter(credential);
     }
 
     public void setReadTimeout(Integer timeout) {
@@ -363,7 +357,7 @@ public class Oauth2Bigquery {
 
     @Override
     public void initialize(HttpRequest httpRequest) throws IOException {
-      credential.initialize(httpRequest);
+      credentialsAdapter.initialize(httpRequest);
 
       if (connectTimeout != null) {
         httpRequest.setConnectTimeout(connectTimeout);
