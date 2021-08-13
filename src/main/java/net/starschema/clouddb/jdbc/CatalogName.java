@@ -13,11 +13,11 @@ package net.starschema.clouddb.jdbc;
  * and the colon (`:`) is replaced with two underscores (`__`).
  */
 public final class CatalogName {
-    public static String toProjectId(String encodedCatalogName) {
-        if (encodedCatalogName == null) {
-            return null;
-        } else {
-            return encodedCatalogName.replace("__", ":").replace("_", ".");
-        }
+  public static String toProjectId(String encodedCatalogName) {
+    if (encodedCatalogName == null) {
+      return null;
+    } else {
+      return encodedCatalogName.replace("__", ":").replace("_", ".");
     }
+  }
 }
