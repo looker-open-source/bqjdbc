@@ -191,15 +191,14 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                             (qr.getRows() != null && qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))));
             // Don't look up the job if we have nothing else we need to do
             if (!(fetchedAll || this.connection.isClosed())) {
-                if (qr.getJobReference() == null) {
-                    throw new BQSQLException("Got BQ response with no job reference: " + qr.toString());
+                if (qr.getJobReference() != null) {
+                    referencedJob =
+                        this.connection.getBigquery()
+                            .jobs()
+                            .get(projectId, qr.getJobReference().getJobId())
+                            .setLocation(qr.getJobReference().getLocation())
+                            .execute();
                 }
-                referencedJob =
-                    this.connection.getBigquery()
-                        .jobs()
-                        .get(projectId, qr.getJobReference().getJobId())
-                        .setLocation(qr.getJobReference().getLocation())
-                        .execute();
             }
             if (jobComplete) {
                 if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
