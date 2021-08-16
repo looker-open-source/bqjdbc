@@ -663,7 +663,7 @@ public class BQForwardOnlyResultSetFunctionTest {
         try {
             mockResponse("{}");
         } catch (BQSQLException e) {
-            Assert.assertTrue(e.getMessage().contains("no job reference"));
+            Assert.assertTrue(e.getMessage().contains("without a job reference"));
             return;
         }
         throw new AssertionError("Expected graceful failure due to lack of job reference");
