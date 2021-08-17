@@ -179,7 +179,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
         }
 
         this.starttime = System.currentTimeMillis();
-        Job referencedJob;
+        Job referencedJob = null;
         int retries = 0;
         boolean jobAlreadyCompleted = false;
 
@@ -190,33 +190,30 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                     (qr.getTotalRows().equals(BigInteger.ZERO) ||
                             (qr.getRows() != null && qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))));
             // Don't look up the job if we have nothing else we need to do
-            referencedJob = fetchedAll || this.connection.isClosed() ?
-                    null :
-                    qr.getJobReference() == null ?
-                            null :
-                            this.connection.getBigquery()
-                                    .jobs()
-                                    .get(projectId, qr.getJobReference().getJobId())
-                                    .setLocation(qr.getJobReference().getLocation())
-                                    .execute();
+            if (!(fetchedAll || this.connection.isClosed())) {
+                if (qr.getJobReference() != null) {
+                    referencedJob =
+                        this.connection.getBigquery()
+                            .jobs()
+                            .get(projectId, qr.getJobReference().getJobId())
+                            .setLocation(qr.getJobReference().getLocation())
+                            .execute();
+                }
+            }
             if (jobComplete) {
                 if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
-                    Boolean cacheHit = defaultValueIfNull(qr.getCacheHit(), false);
-                    Long totalBytesProcessed = defaultValueIfNull(qr.getTotalBytesProcessed(), 0L);
                     List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
                     TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
 
                     return new BQForwardOnlyResultSet(
                             this.connection.getBigquery(),
                             projectId,
-                            referencedJob, this, rows, fetchedAll, schema, totalBytesProcessed, cacheHit);
+                            referencedJob, this, rows, fetchedAll, schema, qr.getTotalBytesProcessed(), qr.getCacheHit());
                 } else if (fetchedAll) {
                     // We can only return scrollable result sets here if we have all the rows: otherwise we'll
                     // have to go get more below
-                    Boolean cacheHit = defaultValueIfNull(qr.getCacheHit(), false);
-                    Long totalBytesProcessed = defaultValueIfNull(qr.getTotalBytesProcessed(), 0L);
                     TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
-                    return new BQScrollableResultSet(qr.getRows(), this, schema, totalBytesProcessed, cacheHit);
+                    return new BQScrollableResultSet(qr.getRows(), this, schema, qr.getTotalBytesProcessed(), qr.getCacheHit());
                 }
                 jobAlreadyCompleted = true;
             }
@@ -235,6 +232,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 if (jobAlreadyCompleted) {
                     status = "DONE";
                 } else {
+                    if (referencedJob == null) {
+                        throw new BQSQLException("Cannot poll results without a job reference");
+                    }
                     try {
                         status = BQSupportFuncts.getQueryState(referencedJob,
                                 this.connection.getBigquery(),
@@ -252,6 +252,9 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
 
                 if (status.equals("DONE")) {
                     if (resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE) {
+                        if (referencedJob == null) {
+                            throw new BQSQLException("Cannot poll results without a job reference");
+                        }
                         return new BQScrollableResultSet(BQSupportFuncts.getQueryResults(
                                 this.connection.getBigquery(),
                                 projectId,

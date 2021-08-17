@@ -32,6 +32,7 @@ import com.google.api.services.bigquery.model.TableCell;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.TableSchema;
 
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.ResultSetMetaData;
@@ -63,10 +64,10 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
     private BQStatement Statementreference = null;
 
     /** The total number of bytes processed while creating this ResultSet */
-    private final long totalBytesProcessed;
+    private final @Nullable Long totalBytesProcessed;
 
     /** Whether the ResultSet came from BigQuery's cache */
-    private final boolean cacheHit;
+    private final @Nullable Boolean cacheHit;
 
     private TableSchema schema;
 
@@ -93,7 +94,7 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
         } // Should not happen.
     }
 
-    public BQScrollableResultSet(List<TableRow> rows, BQStatementRoot bqStatementRoot, TableSchema schema, long totalBytesProcessed, boolean cacheHit) {
+    public BQScrollableResultSet(List<TableRow> rows, BQStatementRoot bqStatementRoot, TableSchema schema, @Nullable Long totalBytesProcessed, @Nullable Boolean cacheHit) {
         logger.debug("Created Scrollable resultset TYPE_SCROLL_INSENSITIVE");
         try {
             maxFieldSize = bqStatementRoot.getMaxFieldSize();
@@ -256,11 +257,11 @@ public class BQScrollableResultSet extends ScrollableResultset<Object> implement
         }
     }
 
-    public long getTotalBytesProcessed() {
+    public @Nullable Long getTotalBytesProcessed() {
         return totalBytesProcessed;
     }
 
-    public boolean getCacheHit() {
+    public @Nullable Boolean getCacheHit() {
         return cacheHit;
     }
 }
