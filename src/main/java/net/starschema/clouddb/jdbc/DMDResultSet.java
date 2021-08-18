@@ -485,7 +485,7 @@ public class DMDResultSet extends ScrollableResultset<Object> implements java.sq
   public void close() throws SQLException {
     super.close();
     this.Colnames = null;
-  };
+  }
 
   /** {@inheritDoc} */
   @Override
@@ -506,7 +506,7 @@ public class DMDResultSet extends ScrollableResultset<Object> implements java.sq
   @Override
   public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
     throw new BQSQLException("Not implemented.");
-  };
+  }
 
   /**
    *
