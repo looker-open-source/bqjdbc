@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import junit.framework.Assert;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -162,6 +163,22 @@ public class JdbcUrlTest {
 
     BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
     stmt.executeQuery("SELECT * FROM orders limit 1");
+  }
+
+  @Test
+  public void unauthorizedResponseForInvalidOAuthAccessToken()
+      throws SQLException, IOException, GeneralSecurityException {
+    Properties oauthProps = getProperties("/oauthaccount.properties");
+    oauthProps.setProperty("oauthaccesstoken", "invalid_access_token");
+    String url = BQSupportFuncts.constructUrlFromPropertiesFile(oauthProps, true, null);
+    BQConnection bqConn = new BQConnection(url, new Properties());
+
+    BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
+    try {
+      stmt.executeQuery("SELECT * FROM orders limit 1");
+    } catch (BQSQLException e) {
+      Assertions.assertThat(e.getCause().getMessage()).contains("Unauthorized");
+    }
   }
 
   @Test
