@@ -24,7 +24,7 @@ package net.starschema.clouddb.jdbc;
 
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpRequest;
-import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -338,13 +338,12 @@ public class Oauth2Bigquery {
     return (PrivateKey) keystore.getKey(keystore.aliases().nextElement(), password.toCharArray());
   }
 
-  private static class HttpRequestTimeoutInitializer implements HttpRequestInitializer {
+  private static class HttpRequestTimeoutInitializer extends HttpCredentialsAdapter {
     private Integer readTimeout = null;
     private Integer connectTimeout = null;
-    private HttpCredentialsAdapter credentialsAdapter = null;
 
     public HttpRequestTimeoutInitializer(GoogleCredentials credential) {
-      this.credentialsAdapter = new HttpCredentialsAdapter(credential);
+      super(credential);
     }
 
     public void setReadTimeout(Integer timeout) {
@@ -357,13 +356,28 @@ public class Oauth2Bigquery {
 
     @Override
     public void initialize(HttpRequest httpRequest) throws IOException {
-      credentialsAdapter.initialize(httpRequest);
+      super.initialize(httpRequest);
 
       if (connectTimeout != null) {
         httpRequest.setConnectTimeout(connectTimeout);
       }
       if (readTimeout != null) {
         httpRequest.setReadTimeout(readTimeout);
+      }
+    }
+
+    @Override
+    public boolean handleResponse(
+        HttpRequest request, HttpResponse response, boolean supportsRetry) {
+      try {
+        return super.handleResponse(request, response, supportsRetry);
+      } catch (IllegalStateException ise) {
+        // There's an ugly interaction between HttpCredentialsAdapter and OAuth2Credentials (from
+        // GoogleCredentials).  On a failed request, it will attempt to refresh the access token,
+        // but OAuth2Credentials class doesn't support refresh and will throw an
+        // IllegalStateException instead of returning an Unauthorized response.  Capture that
+        // exception and return false so we don't retry.
+        return false;
       }
     }
   }
