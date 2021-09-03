@@ -39,6 +39,7 @@ jobs:
           PROTECTEDACCOUNT_PROPERTIES: ${{ secrets.PROTECTEDACCOUNT_PROPERTIES }}
           SERVICE_ACCOUNT_PROPERTIES: ${{ secrets.SERVICE_ACCOUNT_PROPERTIES }}
           OAUTHACCOUNT_PROPERTIES: ${{ secrets.OAUTHACCOUNT_PROPERTIES }}
+          GOOGLE_APPLICATION_CREDENTIALS: src/test/resources/bigquery_credentials_protected.json
       - name: Build with Maven
         run: mvn -B package --file pom.xml
       - run: mkdir staging && cp target/*.jar staging

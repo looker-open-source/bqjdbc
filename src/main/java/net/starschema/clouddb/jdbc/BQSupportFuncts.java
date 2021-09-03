@@ -117,6 +117,13 @@ public class BQSupportFuncts {
       } else {
         return null;
       }
+    } else if (properties.getProperty("type").equals("applicationDefault")) {
+      forreturn =
+          BQDriver.getURLPrefix()
+              + URLEncoder.encode(projectId, "UTF-8")
+              + (dataset != null && full ? "/" + URLEncoder.encode(dataset, "UTF-8") : "")
+              + "?withApplicationDefaultCredentials=true";
+      paramSep = "&";
     } else {
       return null;
     }
