@@ -41,7 +41,7 @@ jobs:
           OAUTHACCOUNT_PROPERTIES: ${{ secrets.OAUTHACCOUNT_PROPERTIES }}
       - name: Build with Maven
         env: 
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/bqjdbc/src/test/resources/bigquery_credentials_protected.json
+          GOOGLE_APPLICATION_CREDENTIALS: src/test/resources/bigquery_credentials_protected.json
         run: mvn -B package --file pom.xml
       - run: mkdir staging && cp target/*.jar staging
       - uses: actions/upload-artifact@v2
