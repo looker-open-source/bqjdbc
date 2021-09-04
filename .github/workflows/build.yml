@@ -27,9 +27,11 @@ jobs:
           echo "$PROTECTEDACCOUNT_PROPERTIES" > src/test/resources/protectedaccount.properties
           echo "$SERVICE_ACCOUNT_PROPERTIES" > src/test/resources/serviceaccount.properties
           echo "$OAUTHACCOUNT_PROPERTIES" > src/test/resources/oauthaccount.properties
+          echo "GOOGLE_APPLICATION_CREDENTIALS set to: $GOOGLE_APPLICATION_CREDENTIALS"
           echo "Secrets loaded!"
         shell: bash
         env:
+          GOOGLE_APPLICATION_CREDENTIALS: src/test/resources/bigquery_credentials_protected.json
           BIGQUERY_CREDENTIALS_P12: ${{ secrets.BIGQUERY_CREDENTIALS_P12 }}
           BIGQUERY_CREDENTIALS_PROTECTED_JSON: ${{ secrets.BIGQUERY_CREDENTIALS_PROTECTED_JSON }}
           BIGQUERY_CREDENTIALS_PROTECTED_P12: ${{ secrets.BIGQUERY_CREDENTIALS_PROTECTED_P12 }}
@@ -39,7 +41,6 @@ jobs:
           PROTECTEDACCOUNT_PROPERTIES: ${{ secrets.PROTECTEDACCOUNT_PROPERTIES }}
           SERVICE_ACCOUNT_PROPERTIES: ${{ secrets.SERVICE_ACCOUNT_PROPERTIES }}
           OAUTHACCOUNT_PROPERTIES: ${{ secrets.OAUTHACCOUNT_PROPERTIES }}
-          GOOGLE_APPLICATION_CREDENTIALS: "src/test/resources/bigquery_credentials_protected.json"
       - name: Build with Maven
         run: mvn -B package --file pom.xml
       - run: mkdir staging && cp target/*.jar staging
