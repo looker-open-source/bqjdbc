@@ -182,6 +182,22 @@ public class JdbcUrlTest {
   }
 
   @Test
+  public void canConnectWithApplicationDefaultCredentials() throws SQLException, IOException {
+    // For testing, the `GOOGLE_APPLICATION_ENVIRONMENT` env var is a path to a service account file
+    Properties testProps = getProperties("/protectedaccount-json.properties");
+    String url =
+        BQDriver.getURLPrefix()
+            + testProps.getProperty("projectid")
+            + "/"
+            + testProps.getProperty("dataset");
+    url += "?withApplicationDefaultCredentials=true";
+    BQConnection bqConn = new BQConnection(url, new Properties());
+
+    BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
+    stmt.executeQuery("SELECT * FROM orders limit 1");
+  }
+
+  @Test
   public void gettingUrlComponentsWorks() throws IOException {
     String url = getUrl("/protectedaccount.properties", null);
     Properties protectedProperties = getProperties("/protectedaccount.properties");

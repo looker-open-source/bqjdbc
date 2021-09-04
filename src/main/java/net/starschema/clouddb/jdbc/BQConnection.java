@@ -161,6 +161,11 @@ public class BQConnection implements Connection {
     boolean serviceAccount =
         parseBooleanQueryParam(caseInsensitiveProps.getProperty("withserviceaccount"), false);
 
+    // extract withApplicationDefaultCredentials
+    boolean applicationDefaultCredentials =
+        parseBooleanQueryParam(
+            caseInsensitiveProps.getProperty("withapplicationdefaultcredentials"), false);
+
     // extract useLegacySql property
     this.useLegacySql =
         parseBooleanQueryParam(caseInsensitiveProps.getProperty("uselegacysql"), false);
@@ -231,6 +236,14 @@ public class BQConnection implements Connection {
                 oAuthAccessToken, userAgent, connectTimeout, readTimeout, rootUrl, httpTransport);
         this.logger.info("Authorized with OAuth access token");
       } catch (SQLException e) {
+        throw new BQSQLException(e);
+      }
+    } else if (applicationDefaultCredentials) {
+      try {
+        this.bigquery =
+            Oauth2Bigquery.authorizeViaApplicationDefault(
+                userAgent, connectTimeout, readTimeout, rootUrl, httpTransport);
+      } catch (IOException e) {
         throw new BQSQLException(e);
       }
     } else {

@@ -87,6 +87,62 @@ public class Oauth2Bigquery {
   private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 
   /**
+   * Creates a Bigquery.Builder using the provided GoogleCredential
+   *
+   * @param credential a valid GoogleCredential
+   * @return Bigquery.Builder suitable for initalizing a MinifiedBigquery
+   */
+  private static Bigquery.Builder createBqBuilderForCredential(
+      GoogleCredentials credential,
+      Integer connectTimeout,
+      Integer readTimeout,
+      HttpTransport httpTransport,
+      String userAgent,
+      String rootUrl) {
+
+    HttpRequestTimeoutInitializer httpRequestInitializer =
+        createRequestTimeoutInitalizer(credential, connectTimeout, readTimeout);
+
+    Bigquery.Builder bqBuilder =
+        new Builder(httpTransport, JSON_FACTORY, httpRequestInitializer)
+            .setApplicationName(applicationName);
+
+    if (userAgent != null) {
+      BigQueryRequestUserAgentInitializer requestInitializer =
+          new BigQueryRequestUserAgentInitializer();
+      requestInitializer.setUserAgent(userAgent);
+
+      bqBuilder.setBigqueryRequestInitializer(requestInitializer);
+    }
+
+    if (rootUrl != null) {
+      bqBuilder.setRootUrl(rootUrl);
+    }
+
+    return bqBuilder;
+  }
+
+  /**
+   * Helper method to create a HttpRequestTimeoutInitializer
+   *
+   * @param credential a valid GoogleCredential
+   * @return HttpRequestTimeoutInitializer suitable for use with Bigquery.Builder
+   */
+  private static HttpRequestTimeoutInitializer createRequestTimeoutInitalizer(
+      GoogleCredentials credential, Integer connectTimeout, Integer readTimeout) {
+    HttpRequestTimeoutInitializer httpRequestInitializer =
+        new HttpRequestTimeoutInitializer(credential);
+    if (connectTimeout != null) {
+      httpRequestInitializer.setConnectTimeout(connectTimeout);
+    }
+    if (readTimeout != null) {
+      httpRequestInitializer.setReadTimeout(readTimeout);
+    }
+
+    return httpRequestInitializer;
+  }
+
+  /**
    * Authorizes a bigquery Connection with the given OAuth 2.0 Access Token
    *
    * @param oauthToken
@@ -103,35 +159,13 @@ public class Oauth2Bigquery {
       throws SQLException {
     GoogleCredentials credential = GoogleCredentials.create(new AccessToken(oauthToken, null));
 
-    HttpRequestTimeoutInitializer httpRequestInitializer =
-        new HttpRequestTimeoutInitializer(credential);
-    if (connectTimeout != null) {
-      httpRequestInitializer.setConnectTimeout(connectTimeout);
-    }
-    if (readTimeout != null) {
-      httpRequestInitializer.setReadTimeout(readTimeout);
-    }
-
     logger.debug("Creating a new bigquery client.");
-    Builder bqBuilder =
-        new Builder(httpTransport, JSON_FACTORY, httpRequestInitializer)
-            .setApplicationName(applicationName);
 
-    BigQueryRequestUserAgentInitializer requestInitializer =
-        new BigQueryRequestUserAgentInitializer();
-    requestInitializer.setOauthToken(oauthToken);
-    if (userAgent != null) {
-      requestInitializer.setUserAgent(userAgent);
-    }
-    bqBuilder.setBigqueryRequestInitializer(requestInitializer);
+    Bigquery.Builder bqBuilder =
+        createBqBuilderForCredential(
+            credential, connectTimeout, readTimeout, httpTransport, userAgent, rootUrl);
 
-    if (rootUrl != null) {
-      bqBuilder.setRootUrl(rootUrl);
-    }
-
-    Bigquery bigquery = new MinifiedBigquery(bqBuilder);
-
-    return bigquery;
+    return new MinifiedBigquery(bqBuilder);
   }
 
   /**
@@ -226,32 +260,53 @@ public class Oauth2Bigquery {
         createServiceAccountCredential(
             serviceaccountemail, keypath, password, jsonAuthContents, false);
 
-    logger.debug("Authorizied?");
-
-    HttpRequestTimeoutInitializer httpRequestInitializer =
-        new HttpRequestTimeoutInitializer(credential);
-    if (connectTimeout != null) {
-      httpRequestInitializer.setConnectTimeout(connectTimeout);
-    }
-    if (readTimeout != null) {
-      httpRequestInitializer.setReadTimeout(readTimeout);
-    }
+    logger.debug("Authorized?");
 
     Bigquery.Builder bqBuilder =
-        new Builder(httpTransport, JSON_FACTORY, httpRequestInitializer)
-            .setApplicationName(applicationName);
+        createBqBuilderForCredential(
+            credential, connectTimeout, readTimeout, httpTransport, userAgent, rootUrl);
 
-    if (userAgent != null) {
-      BigQueryRequestUserAgentInitializer requestInitializer =
-          new BigQueryRequestUserAgentInitializer();
-      requestInitializer.setUserAgent(userAgent);
+    return new MinifiedBigquery(bqBuilder);
+  }
 
-      bqBuilder.setBigqueryRequestInitializer(requestInitializer);
-    }
+  /**
+   * This function gives back an Authorized Bigquery Client using the Application Default
+   * Credentials. https://cloud.google.com/docs/authentication/production#automatically
+   *
+   * <p>The following are searched (in order) to find the Application Default Credentials:
+   *
+   * <ol>
+   *   <li>Credentials file pointed to by the {@code GOOGLE_APPLICATION_CREDENTIALS} environment
+   *       variable
+   *   <li>Credentials provided by the Google Cloud SDK.
+   *       <ol>
+   *         <li>{@code gcloud auth application-default login} for user account credentials.
+   *         <li>{@code gcloud auth application-default login --impersonate-service-account} for
+   *             impersonated service account credentials.
+   *       </ol>
+   *   <li>Google App Engine built-in credentials
+   *   <li>Google Cloud Shell built-in credentials
+   *   <li>Google Compute Engine built-in credentials
+   * </ol>
+   *
+   * @return Authorized Bigquery Client via serviceaccount e-mail and keypath
+   * @throws GeneralSecurityException
+   * @throws IOException
+   */
+  public static Bigquery authorizeViaApplicationDefault(
+      String userAgent,
+      Integer connectTimeout,
+      Integer readTimeout,
+      String rootUrl,
+      HttpTransport httpTransport)
+      throws IOException {
+    GoogleCredentials credential = GoogleCredentials.getApplicationDefault();
 
-    if (rootUrl != null) {
-      bqBuilder.setRootUrl(rootUrl);
-    }
+    logger.debug("Authorizing with Application Default Credentials.");
+
+    Bigquery.Builder bqBuilder =
+        createBqBuilderForCredential(
+            credential, connectTimeout, readTimeout, httpTransport, userAgent, rootUrl);
 
     return new MinifiedBigquery(bqBuilder);
   }
