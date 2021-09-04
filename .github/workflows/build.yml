@@ -31,7 +31,7 @@ jobs:
           echo "Secrets loaded!"
         shell: bash
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: src/test/resources/bigquery_credentials_protected.json
+          GOOGLE_APPLICATION_CREDENTIALS: ~/bqjdbc/src/test/resources/bigquery_credentials_protected.json
           BIGQUERY_CREDENTIALS_P12: ${{ secrets.BIGQUERY_CREDENTIALS_P12 }}
           BIGQUERY_CREDENTIALS_PROTECTED_JSON: ${{ secrets.BIGQUERY_CREDENTIALS_PROTECTED_JSON }}
           BIGQUERY_CREDENTIALS_PROTECTED_P12: ${{ secrets.BIGQUERY_CREDENTIALS_PROTECTED_P12 }}
