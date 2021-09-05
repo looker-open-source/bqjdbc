@@ -41,6 +41,7 @@ import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenRespon
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ImpersonatedCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -86,6 +87,8 @@ public class Oauth2Bigquery {
 
   private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 
+  private static final Integer MAX_IMPERSONATION_LIFETIME = 43200;
+
   /**
    * Creates a Bigquery.Builder using the provided GoogleCredential
    *
@@ -98,7 +101,12 @@ public class Oauth2Bigquery {
       Integer readTimeout,
       HttpTransport httpTransport,
       String userAgent,
-      String rootUrl) {
+      String rootUrl,
+      String targetServiceAccount) {
+
+    if (targetServiceAccount != null) {
+      credential = impersonateServiceAccount(credential, targetServiceAccount);
+    }
 
     HttpRequestTimeoutInitializer httpRequestInitializer =
         createRequestTimeoutInitalizer(credential, connectTimeout, readTimeout);
@@ -155,7 +163,8 @@ public class Oauth2Bigquery {
       Integer connectTimeout,
       Integer readTimeout,
       String rootUrl,
-      HttpTransport httpTransport)
+      HttpTransport httpTransport,
+      String targetServiceAccount)
       throws SQLException {
     GoogleCredentials credential = GoogleCredentials.create(new AccessToken(oauthToken, null));
 
@@ -163,7 +172,13 @@ public class Oauth2Bigquery {
 
     Bigquery.Builder bqBuilder =
         createBqBuilderForCredential(
-            credential, connectTimeout, readTimeout, httpTransport, userAgent, rootUrl);
+            credential,
+            connectTimeout,
+            readTimeout,
+            httpTransport,
+            userAgent,
+            rootUrl,
+            targetServiceAccount);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -254,7 +269,8 @@ public class Oauth2Bigquery {
       Integer readTimeout,
       Integer connectTimeout,
       String rootUrl,
-      HttpTransport httpTransport)
+      HttpTransport httpTransport,
+      String targetServiceAccount)
       throws GeneralSecurityException, IOException {
     GoogleCredentials credential =
         createServiceAccountCredential(
@@ -264,7 +280,13 @@ public class Oauth2Bigquery {
 
     Bigquery.Builder bqBuilder =
         createBqBuilderForCredential(
-            credential, connectTimeout, readTimeout, httpTransport, userAgent, rootUrl);
+            credential,
+            connectTimeout,
+            readTimeout,
+            httpTransport,
+            userAgent,
+            rootUrl,
+            targetServiceAccount);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -298,7 +320,8 @@ public class Oauth2Bigquery {
       Integer connectTimeout,
       Integer readTimeout,
       String rootUrl,
-      HttpTransport httpTransport)
+      HttpTransport httpTransport,
+      String targetServiceAccount)
       throws IOException {
     GoogleCredentials credential = GoogleCredentials.getApplicationDefault();
 
@@ -306,7 +329,13 @@ public class Oauth2Bigquery {
 
     Bigquery.Builder bqBuilder =
         createBqBuilderForCredential(
-            credential, connectTimeout, readTimeout, httpTransport, userAgent, rootUrl);
+            credential,
+            connectTimeout,
+            readTimeout,
+            httpTransport,
+            userAgent,
+            rootUrl,
+            targetServiceAccount);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -346,6 +375,17 @@ public class Oauth2Bigquery {
         iamCredentials.projects().serviceAccounts().generateAccessToken(name, request);
     GenerateAccessTokenResponse response = generateAccessToken.execute();
     return response.getAccessToken();
+  }
+
+  private static GoogleCredentials impersonateServiceAccount(
+      GoogleCredentials sourceCredentials, String targetServiceAccount) {
+
+    return ImpersonatedCredentials.create(
+        sourceCredentials,
+        targetServiceAccount,
+        null, // Look into delegates later if necessary
+        GenerateScopes(false),
+        MAX_IMPERSONATION_LIFETIME);
   }
 
   private static GoogleCredentials createServiceAccountCredential(

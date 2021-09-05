@@ -198,6 +198,22 @@ public class JdbcUrlTest {
   }
 
   @Test
+  public void canImpersonateServiceAccountWithApplicationDefaultAsSource()
+      throws IOException, SQLException {
+    Properties testProps = getProperties("/protectedaccount-json.properties");
+    String url =
+        BQDriver.getURLPrefix()
+            + testProps.getProperty("projectid")
+            + "/"
+            + testProps.getProperty("dataset");
+    url += "?withApplicationDefaultCredentials=true&targetServiceAccount=tjbanghart@google.com";
+    BQConnection bqConn = new BQConnection(url, new Properties());
+
+    BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
+    stmt.executeQuery("SELECT * FROM orders limit 1");
+  }
+
+  @Test
   public void gettingUrlComponentsWorks() throws IOException {
     String url = getUrl("/protectedaccount.properties", null);
     Properties protectedProperties = getProperties("/protectedaccount.properties");

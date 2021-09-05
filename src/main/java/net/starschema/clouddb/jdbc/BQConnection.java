@@ -155,6 +155,7 @@ public class BQConnection implements Connection {
     String userKey = caseInsensitiveProps.getProperty("password");
     String userPath = caseInsensitiveProps.getProperty("path");
 
+    String targetServiceAccount = caseInsensitiveProps.getProperty("targetserviceaccount");
     String oAuthAccessToken = caseInsensitiveProps.getProperty("oauthaccesstoken");
 
     // extract withServiceAccount property
@@ -222,7 +223,8 @@ public class BQConnection implements Connection {
                 readTimeout,
                 connectTimeout,
                 rootUrl,
-                httpTransport);
+                httpTransport,
+                targetServiceAccount);
         this.logger.info("Authorized with service account");
       } catch (GeneralSecurityException e) {
         throw new BQSQLException(e);
@@ -233,7 +235,13 @@ public class BQConnection implements Connection {
       try {
         this.bigquery =
             Oauth2Bigquery.authorizeViaToken(
-                oAuthAccessToken, userAgent, connectTimeout, readTimeout, rootUrl, httpTransport);
+                oAuthAccessToken,
+                userAgent,
+                connectTimeout,
+                readTimeout,
+                rootUrl,
+                httpTransport,
+                targetServiceAccount);
         this.logger.info("Authorized with OAuth access token");
       } catch (SQLException e) {
         throw new BQSQLException(e);
@@ -242,7 +250,12 @@ public class BQConnection implements Connection {
       try {
         this.bigquery =
             Oauth2Bigquery.authorizeViaApplicationDefault(
-                userAgent, connectTimeout, readTimeout, rootUrl, httpTransport);
+                userAgent,
+                connectTimeout,
+                readTimeout,
+                rootUrl,
+                httpTransport,
+                targetServiceAccount);
       } catch (IOException e) {
         throw new BQSQLException(e);
       }
