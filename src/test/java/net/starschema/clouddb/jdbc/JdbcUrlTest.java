@@ -206,11 +206,38 @@ public class JdbcUrlTest {
             + testProps.getProperty("projectid")
             + "/"
             + testProps.getProperty("dataset");
-    url += "?withApplicationDefaultCredentials=true&targetServiceAccount=tjbanghart@google.com";
+    String targetServiceAccount = "looker-service-account@looker-test-db.iam.gserviceaccount.com";
+    url += "?withApplicationDefaultCredentials=true&targetServiceAccount=" + targetServiceAccount;
     BQConnection bqConn = new BQConnection(url, new Properties());
 
     BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
     stmt.executeQuery("SELECT * FROM orders limit 1");
+  }
+
+  @Test
+  public void impersonatingServiceAccountWithLimitedPermissionsWorksAsExpected()
+      throws IOException, SQLException {
+    Properties testProps = getProperties("/protectedaccount-json.properties");
+    String url =
+        BQDriver.getURLPrefix()
+            + testProps.getProperty("projectid")
+            + "/"
+            + testProps.getProperty("dataset");
+    // dummy service account that has the BigQuery User role but no access to the orders table
+    String targetServiceAccount = "limited-bq-access@looker-test-db.iam.gserviceaccount.com";
+    url += "?withApplicationDefaultCredentials=true&targetServiceAccount=" + targetServiceAccount;
+    BQConnection bqConn = new BQConnection(url, new Properties());
+
+    BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
+    // Should be fine since it's a public dataset
+    stmt.executeQuery("SELECT * FROM bigquery-public-data.baseball.schedules limit 1");
+    try {
+      stmt.executeQuery("SELECT * FROM orders limit 1");
+      Assert.fail("The impersonated service account should not have access to the orders table");
+    } catch (SQLException e) {
+      Assertions.assertThat(e.getCause().getMessage())
+          .contains("User does not have permission to query table");
+    }
   }
 
   @Test

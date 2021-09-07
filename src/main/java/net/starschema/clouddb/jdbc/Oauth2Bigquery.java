@@ -87,7 +87,7 @@ public class Oauth2Bigquery {
 
   private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 
-  private static final Integer MAX_IMPERSONATION_LIFETIME = 43200;
+  private static final Integer DEFAULT_IMPERSONATION_LIFETIME = 3600;
 
   /**
    * Creates a Bigquery.Builder using the provided GoogleCredential
@@ -385,7 +385,7 @@ public class Oauth2Bigquery {
         targetServiceAccount,
         null, // Look into delegates later if necessary
         GenerateScopes(false),
-        MAX_IMPERSONATION_LIFETIME);
+        DEFAULT_IMPERSONATION_LIFETIME);
   }
 
   private static GoogleCredentials createServiceAccountCredential(
