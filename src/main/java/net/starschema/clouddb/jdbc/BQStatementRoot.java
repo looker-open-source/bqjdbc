@@ -27,6 +27,8 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.model.BiEngineReason;
+import com.google.api.services.bigquery.model.BiEngineStatistics;
 import com.google.api.services.bigquery.model.TableSchema;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.Job;
@@ -337,18 +339,32 @@ public abstract class BQStatementRoot {
                     this.connection.getUseQueryCache()
             );
             this.mostRecentJobReference.set(qr.getJobReference());
-
+            referencedJob = this.connection.getBigquery().jobs().get(projectId, qr.getJobReference().getJobId()).execute();
             if (defaultValueIfNull(qr.getJobComplete(), false)) {
                 List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
                 if (BigInteger.valueOf(rows.size()).equals(qr.getTotalRows())) {
                     Boolean cacheHit = defaultValueIfNull(qr.getCacheHit(), false);
                     Long totalBytesProcessed = defaultValueIfNull(qr.getTotalBytesProcessed(), 0L);
                     TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
-                    return new BQScrollableResultSet(rows, this, schema, totalBytesProcessed, cacheHit);
+
+                    BiEngineStatistics biEngineStatistics = null;
+                    if (referencedJob != null){
+                        biEngineStatistics = referencedJob.getStatistics().getQuery().getBiEngineStatistics();
+                    }
+                    String biEngineMode = null;
+                    List<BiEngineReason> biEngineReasons = null;
+
+                    if(biEngineStatistics != null){
+                        biEngineMode = biEngineStatistics.getBiEngineMode();
+                        biEngineReasons = biEngineStatistics.getBiEngineReasons();
+                    }
+
+
+                    return new BQScrollableResultSet(rows, this, schema, totalBytesProcessed, cacheHit, biEngineMode, biEngineReasons, referencedJob.getJobReference());
                 }
                 jobAlreadyCompleted = true;
             }
-            referencedJob = this.connection.getBigquery().jobs().get(projectId, qr.getJobReference().getJobId()).execute();
+
 
             this.logger.info("Executing Query: " + querySql);
         } catch (IOException e) {

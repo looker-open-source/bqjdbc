@@ -597,6 +597,25 @@ public class BQForwardOnlyResultSetFunctionTest {
         Assert.assertEquals(results.getTotalBytesProcessed() == 0, results.getCacheHit());
     }
 
+    @Test
+    public void TestResultSetJobId() {
+        QueryLoad();
+        Assert.assertTrue(resultForTest instanceof BQForwardOnlyResultSet);
+        BQForwardOnlyResultSet results = (BQForwardOnlyResultSet)resultForTest;
+        Assert.assertFalse(results.getJobId() == null);
+    }
+
+    @Test
+    public void TestResultSetBiEngineStatistics() {
+        QueryLoad();
+        Assert.assertTrue(resultForTest instanceof BQForwardOnlyResultSet);
+        BQForwardOnlyResultSet results = (BQForwardOnlyResultSet)resultForTest;
+        // TEST DB DOES NOT HAVE BI ENGINE ENABLED
+        // This was tested through helltool
+        Assert.assertTrue(results.getBiEngineReasons() == null);
+        Assert.assertTrue(results.getBiEngineMode() == null);
+    }
+
 	@Test
 	public void testResultSetProcedures() throws SQLException, ParseException {
 		final String sql = "CREATE PROCEDURE looker_test.procedure_test(target_id INT64)\n"

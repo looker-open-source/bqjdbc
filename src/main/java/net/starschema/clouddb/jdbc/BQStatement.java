@@ -27,6 +27,10 @@
 
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.model.BiEngineReason;
+import com.google.api.services.bigquery.model.BiEngineStatistics;
+import com.google.api.services.bigquery.model.JobStatistics;
+import com.google.api.services.bigquery.model.JobStatistics2;
 import com.google.api.services.bigquery.model.TableSchema;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.Job;
@@ -181,34 +185,48 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             boolean fetchedAll = jobComplete && qr.getTotalRows() != null &&
                     (qr.getTotalRows().equals(BigInteger.ZERO) ||
                             (qr.getRows() != null && qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))));
-            // Don't look up the job if we have nothing else we need to do
-            referencedJob = fetchedAll || this.connection.isClosed() ?
-                    null :
-                    qr.getJobReference() == null ?
+            referencedJob = qr.getJobReference() == null ?
                             null :
                             this.connection.getBigquery()
                                     .jobs()
                                     .get(projectId, qr.getJobReference().getJobId())
                                     .setLocation(qr.getJobReference().getLocation())
                                     .execute();
+            String biEngineMode;
+            List<BiEngineReason> biEngineReasons;
+            BiEngineStatistics biEngineStatistics = null;
+            if (referencedJob != null){
+                JobStatistics2 statistics2 = referencedJob.getStatistics().getQuery();
+                if (statistics2 != null){
+                    biEngineStatistics = statistics2.getBiEngineStatistics();
+                }
+            }
+            
+            if (biEngineStatistics != null){
+                biEngineMode = biEngineStatistics.getBiEngineMode();
+                biEngineReasons = biEngineStatistics.getBiEngineReasons();
+            } else {
+                biEngineMode = null;
+                biEngineReasons = null;
+            }
+
             if (jobComplete) {
                 if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
                     Boolean cacheHit = defaultValueIfNull(qr.getCacheHit(), false);
                     Long totalBytesProcessed = defaultValueIfNull(qr.getTotalBytesProcessed(), 0L);
                     List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
                     TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
-
                     return new BQForwardOnlyResultSet(
                             this.connection.getBigquery(),
                             projectId,
-                            referencedJob, this, rows, fetchedAll, schema, totalBytesProcessed, cacheHit);
+                            referencedJob, this, rows, fetchedAll, schema, totalBytesProcessed, cacheHit, biEngineMode, biEngineReasons);
                 } else if (fetchedAll) {
                     // We can only return scrollable result sets here if we have all the rows: otherwise we'll
                     // have to go get more below
                     Boolean cacheHit = defaultValueIfNull(qr.getCacheHit(), false);
                     Long totalBytesProcessed = defaultValueIfNull(qr.getTotalBytesProcessed(), 0L);
                     TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
-                    return new BQScrollableResultSet(qr.getRows(), this, schema, totalBytesProcessed, cacheHit);
+                    return new BQScrollableResultSet(qr.getRows(), this, schema, totalBytesProcessed, cacheHit, biEngineMode, biEngineReasons, qr.getJobReference());
                 }
                 jobAlreadyCompleted = true;
             }
@@ -249,6 +267,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                                 projectId,
                                 referencedJob), this);
                     } else {
+                        logger.debug("HERE");
                         return new BQForwardOnlyResultSet(
                                 this.connection.getBigquery(),
                                 projectId,

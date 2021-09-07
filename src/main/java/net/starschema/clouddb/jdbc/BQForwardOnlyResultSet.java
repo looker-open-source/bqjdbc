@@ -93,6 +93,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     private final long totalBytesProcessed;
     /** Whether the ResultSet came from BigQuery's cache */
     private final boolean cacheHit;
+    /** Specifies which mode of BI Engine acceleration was performed (if any).*/
+    private final String biEngineMode;
+    /** In case of DISABLED or PARTIAL bi_engine_mode, these contain the explanatory reasons
+     * as to why BI Engine could not accelerate.
+     * In case the full query was accelerated, this field is not populated. */
+    private final List<BiEngineReason> biEngineReasons;
+
     /** Cursor position which goes from -1 to FETCH_SIZE then 0 to FETCH_SIZE
      * The -1 is needed because of the while(Result.next() == true) { } iterating method*/
     private int Cursor = -1;
@@ -103,7 +110,17 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
 
     public BQForwardOnlyResultSet(Bigquery bigquery, String projectId,
                                   Job completedJob, BQStatementRoot bqStatementRoot) throws SQLException {
-        this(bigquery, projectId, completedJob, bqStatementRoot, null, false, null, 0, false);
+        this(bigquery,
+            projectId,
+            completedJob,
+            bqStatementRoot,
+            null,
+            false,
+            null,
+            0,
+            false,
+            null,
+            null);
     }
 
     /**
@@ -120,7 +137,9 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                                   Job completedJob, BQStatementRoot bqStatementRoot,
                                   List<TableRow> prefetchedRows, boolean prefetchedAllRows,
                                   TableSchema schema,
-                                  long totalBytesProcessed, boolean cacheHit
+                                  long totalBytesProcessed, boolean cacheHit,
+                                  String biEngineMode,
+                                  List<BiEngineReason> biEngineReasons
                                   ) throws SQLException {
         logger.debug("Created forward only resultset TYPE_FORWARD_ONLY");
         this.Statementreference = (Statement) bqStatementRoot;
@@ -136,6 +155,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             this.schema = schema;
             this.totalBytesProcessed = totalBytesProcessed;
             this.cacheHit = cacheHit;
+            this.biEngineMode = biEngineMode;
+            this.biEngineReasons = biEngineReasons;
         } else {
             // initial load
             GetQueryResultsResponse result;
@@ -145,11 +166,25 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
             } catch (IOException e) {
                 throw new BQSQLException("Failed to retrieve data", e);
             } //should not happen
+
             if (result == null) {  //if we don't have results at all
                 this.rowsofResult = null;
                 this.totalBytesProcessed = totalBytesProcessed;
                 this.cacheHit = cacheHit;
+                this.biEngineMode = biEngineMode;
+                this.biEngineReasons = biEngineReasons;
             } else {
+                BiEngineStatistics biEngineStatistics = null;
+                if (completedJob != null){
+                    biEngineStatistics = completedJob.getStatistics().getQuery().getBiEngineStatistics();
+                }
+                if(biEngineStatistics != null){
+                    this.biEngineMode = biEngineStatistics.getBiEngineMode();
+                    this.biEngineReasons = biEngineStatistics.getBiEngineReasons();
+                } else {
+                    this.biEngineMode = biEngineMode;
+                    this.biEngineReasons = biEngineReasons;
+                }
                 if (result.getRows() == null) {  //if we got results, but it was empty
                     this.rowsofResult = null;
                 } else {                        //we got results, it wasn't empty
@@ -159,6 +194,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
                 }
                 this.totalBytesProcessed = result.getTotalBytesProcessed();
                 this.cacheHit = Boolean.TRUE.equals(result.getCacheHit()); // coerce Boolean nullable object to boolean primitive
+
             }
         }
     }
@@ -2735,5 +2771,17 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
 
     public boolean getCacheHit() {
         return cacheHit;
+    }
+
+    public String getBiEngineMode(){ return biEngineMode; }
+
+    public List<BiEngineReason> getBiEngineReasons() { return biEngineReasons; }
+
+    public String getJobId() {
+        if(this.completedJob != null) {
+            return this.completedJob.getId();
+        } else {
+            return null;
+        }
     }
 }

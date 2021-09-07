@@ -725,4 +725,20 @@ public class BQScrollableResultSetFunctionTest {
         Assert.assertEquals(results.getTotalBytesProcessed() == 0, results.getCacheHit());
     }
 
+    @Test
+    public void TestResultSetJobId() {
+        Assert.assertTrue(Result instanceof BQScrollableResultSet);
+        BQScrollableResultSet results = (BQScrollableResultSet)Result;
+        Assert.assertFalse(results.getJobId() == null);
+    }
+
+    @Test
+    public void TestResultSetBiEngineStatistics() {
+        Assert.assertTrue(Result instanceof BQScrollableResultSet);
+        BQScrollableResultSet results = (BQScrollableResultSet)Result;
+        // TEST DB DOES NOT HAVE BI ENGINE ENABLED
+        Assert.assertTrue(results.getBiEngineMode() == null);
+        Assert.assertTrue(results.getBiEngineReasons() == null);
+    }
+
 }
