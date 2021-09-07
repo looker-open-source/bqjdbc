@@ -184,7 +184,7 @@ public class JdbcUrlTest {
   @Test
   public void canConnectWithApplicationDefaultCredentials() throws SQLException, IOException {
     // For testing, the `GOOGLE_APPLICATION_ENVIRONMENT` env var is a path to a service account file
-    Properties testProps = getProperties("/protectedaccount-json.properties");
+    Properties testProps = getProperties("/applicationdefault.properties");
     String url =
         BQDriver.getURLPrefix()
             + testProps.getProperty("projectid")
@@ -200,14 +200,15 @@ public class JdbcUrlTest {
   @Test
   public void canImpersonateServiceAccountWithApplicationDefaultAsSource()
       throws IOException, SQLException {
-    Properties testProps = getProperties("/protectedaccount-json.properties");
+    Properties testProps = getProperties("/applicationdefault.properties");
     String url =
         BQDriver.getURLPrefix()
             + testProps.getProperty("projectid")
             + "/"
             + testProps.getProperty("dataset");
-    String targetServiceAccount = "looker-service-account@looker-test-db.iam.gserviceaccount.com";
-    url += "?withApplicationDefaultCredentials=true&targetServiceAccount=" + targetServiceAccount;
+    url +=
+        "?withApplicationDefaultCredentials=true&targetServiceAccount="
+            + testProps.getProperty("targetaccount");
     BQConnection bqConn = new BQConnection(url, new Properties());
 
     BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
@@ -217,15 +218,16 @@ public class JdbcUrlTest {
   @Test
   public void impersonatingServiceAccountWithLimitedPermissionsWorksAsExpected()
       throws IOException, SQLException {
-    Properties testProps = getProperties("/protectedaccount-json.properties");
+    Properties testProps = getProperties("/applicationdefault.properties");
     String url =
         BQDriver.getURLPrefix()
             + testProps.getProperty("projectid")
             + "/"
             + testProps.getProperty("dataset");
     // dummy service account that has the BigQuery User role but no access to the orders table
-    String targetServiceAccount = "limited-bq-access@looker-test-db.iam.gserviceaccount.com";
-    url += "?withApplicationDefaultCredentials=true&targetServiceAccount=" + targetServiceAccount;
+    url +=
+        "?withApplicationDefaultCredentials=true&targetServiceAccount="
+            + testProps.getProperty("limitedpermissiontargetaccount");
     BQConnection bqConn = new BQConnection(url, new Properties());
 
     BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
