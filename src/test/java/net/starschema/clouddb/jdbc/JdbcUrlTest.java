@@ -15,7 +15,9 @@ import java.util.Properties;
 import junit.framework.Assert;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
 
 /** Created by steven on 10/21/15. */
 public class JdbcUrlTest {
@@ -23,6 +25,10 @@ public class JdbcUrlTest {
   private BQConnection bq;
   private String URL;
   private Properties properties;
+  private final String defaultServiceAccount =
+      "src/test/resources/bigquery_credentials_protected.json";
+
+  @Rule public final EnvironmentVariables environmentVariables = new EnvironmentVariables();
 
   @Before
   public void setup() throws SQLException, IOException {
@@ -30,6 +36,7 @@ public class JdbcUrlTest {
     URL = getUrl("/installedaccount.properties", null) + "&useLegacySql=true";
     ;
     this.bq = new BQConnection(URL, new Properties());
+    this.environmentVariables.set("GOOGLE_APPLICATION_CREDENTIALS", defaultServiceAccount);
   }
 
   @Test
