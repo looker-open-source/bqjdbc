@@ -22,8 +22,11 @@
  */
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.model.BiEngineReason;
+import com.google.api.services.bigquery.model.BiEngineStatistics;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobReference;
+import com.google.api.services.bigquery.model.JobStatistics2;
 import com.google.api.services.bigquery.model.QueryResponse;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.TableSchema;
@@ -173,6 +176,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     Job referencedJob = null;
     int retries = 0;
     boolean jobAlreadyCompleted = false;
+    String biEngineMode;
+    List<BiEngineReason> biEngineReasons;
 
     try {
       QueryResponse qr = runSyncQuery(querySql, unlimitedBillingBytes);
@@ -183,8 +188,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
               && (qr.getTotalRows().equals(BigInteger.ZERO)
                   || (qr.getRows() != null
                       && qr.getTotalRows().equals(BigInteger.valueOf(qr.getRows().size()))));
-      // Don't look up the job if we have nothing else we need to do
-      if (!(fetchedAll || this.connection.isClosed())) {
+
+      if (!this.connection.isClosed()) {
         if (qr.getJobReference() != null) {
           referencedJob =
               this.connection
@@ -193,7 +198,29 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                   .get(projectId, qr.getJobReference().getJobId())
                   .setLocation(qr.getJobReference().getLocation())
                   .execute();
+
+          BiEngineStatistics biEngineStatistics = null;
+          if (referencedJob != null) {
+            JobStatistics2 statistics2 = referencedJob.getStatistics().getQuery();
+            if (statistics2 != null) {
+              biEngineStatistics = statistics2.getBiEngineStatistics();
+            }
+          }
+
+          if (biEngineStatistics != null) {
+            biEngineMode = biEngineStatistics.getBiEngineMode();
+            biEngineReasons = biEngineStatistics.getBiEngineReasons();
+          } else {
+            biEngineMode = null;
+            biEngineReasons = null;
+          }
+        } else {
+          biEngineMode = null;
+          biEngineReasons = null;
         }
+      } else {
+        biEngineMode = null;
+        biEngineReasons = null;
       }
       if (jobComplete) {
         if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {
@@ -209,13 +236,22 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
               fetchedAll,
               schema,
               qr.getTotalBytesProcessed(),
-              qr.getCacheHit());
+              qr.getCacheHit(),
+              biEngineMode,
+              biEngineReasons);
         } else if (fetchedAll) {
           // We can only return scrollable result sets here if we have all the rows: otherwise we'll
           // have to go get more below
           TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
           return new BQScrollableResultSet(
-              qr.getRows(), this, schema, qr.getTotalBytesProcessed(), qr.getCacheHit());
+              qr.getRows(),
+              this,
+              schema,
+              qr.getTotalBytesProcessed(),
+              qr.getCacheHit(),
+              biEngineMode,
+              biEngineReasons,
+              qr.getJobReference());
         }
         jobAlreadyCompleted = true;
       }
