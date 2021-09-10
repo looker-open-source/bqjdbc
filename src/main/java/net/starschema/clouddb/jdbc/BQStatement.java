@@ -176,8 +176,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
     Job referencedJob = null;
     int retries = 0;
     boolean jobAlreadyCompleted = false;
-    String biEngineMode;
-    List<BiEngineReason> biEngineReasons;
+    String biEngineMode = null;
+    List<BiEngineReason> biEngineReasons = null;
 
     try {
       QueryResponse qr = runSyncQuery(querySql, unlimitedBillingBytes);
@@ -204,23 +204,13 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             JobStatistics2 statistics2 = referencedJob.getStatistics().getQuery();
             if (statistics2 != null) {
               biEngineStatistics = statistics2.getBiEngineStatistics();
+              if (biEngineStatistics != null) {
+                biEngineMode = biEngineStatistics.getBiEngineMode();
+                biEngineReasons = biEngineStatistics.getBiEngineReasons();
+              }
             }
           }
-
-          if (biEngineStatistics != null) {
-            biEngineMode = biEngineStatistics.getBiEngineMode();
-            biEngineReasons = biEngineStatistics.getBiEngineReasons();
-          } else {
-            biEngineMode = null;
-            biEngineReasons = null;
-          }
-        } else {
-          biEngineMode = null;
-          biEngineReasons = null;
         }
-      } else {
-        biEngineMode = null;
-        biEngineReasons = null;
       }
       if (jobComplete) {
         if (resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE) {

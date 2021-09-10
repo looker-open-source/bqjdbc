@@ -23,7 +23,7 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.client.json.JsonGenerator;
-import com.google.api.client.json.jackson.JacksonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.*;
@@ -87,13 +87,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
   /** Whether the ResultSet came from BigQuery's cache */
   private final @Nullable Boolean cacheHit;
   /** Specifies which mode of BI Engine acceleration was performed (if any). */
-  private final String biEngineMode;
+  private final @Nullable String biEngineMode;
   /**
    * In case of DISABLED or PARTIAL bi_engine_mode, these contain the explanatory reasons as to why
    * BI Engine could not accelerate. In case the full query was accelerated, this field is not
    * populated.
    */
-  private final List<BiEngineReason> biEngineReasons;
+  private final @Nullable List<BiEngineReason> biEngineReasons;
   /**
    * Cursor position which goes from -1 to FETCH_SIZE then 0 to FETCH_SIZE The -1 is needed because
    * of the while(Result.next() == true) { } iterating method
@@ -154,6 +154,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     this.bigquery = bigquery;
     this.completedJob = completedJob;
     this.projectId = projectId;
+
     BiEngineStatistics biEngineStatistics = null;
     if (completedJob != null) {
       biEngineStatistics = completedJob.getStatistics().getQuery().getBiEngineStatistics();
@@ -3010,7 +3011,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     return biEngineReasons;
   }
 
-  public String getJobId() {
+  public @Nullable String getJobId() {
     if (this.completedJob != null) {
       return this.completedJob.getId();
     } else {

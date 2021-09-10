@@ -288,7 +288,7 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
     return biEngineReasons;
   }
 
-  public String getJobId() {
+  public @Nullable String getJobId() {
     if (this.jobReference != null) {
       return this.jobReference.getJobId();
     } else {
