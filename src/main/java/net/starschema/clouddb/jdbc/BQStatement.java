@@ -199,11 +199,10 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                   .setLocation(qr.getJobReference().getLocation())
                   .execute();
 
-          BiEngineStatistics biEngineStatistics = null;
           if (referencedJob != null) {
             JobStatistics2 statistics2 = referencedJob.getStatistics().getQuery();
             if (statistics2 != null) {
-              biEngineStatistics = statistics2.getBiEngineStatistics();
+              BiEngineStatistics biEngineStatistics = statistics2.getBiEngineStatistics();
               if (biEngineStatistics != null) {
                 biEngineMode = biEngineStatistics.getBiEngineMode();
                 biEngineReasons = biEngineStatistics.getBiEngineReasons();

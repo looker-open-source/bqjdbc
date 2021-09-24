@@ -155,17 +155,16 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     this.completedJob = completedJob;
     this.projectId = projectId;
 
-    BiEngineStatistics biEngineStatistics = null;
     if (completedJob != null) {
-      biEngineStatistics = completedJob.getStatistics().getQuery().getBiEngineStatistics();
+      BiEngineStatistics biEngineStatistics =
+          completedJob.getStatistics().getQuery().getBiEngineStatistics();
+      if (biEngineStatistics != null) {
+        biEngineMode = biEngineStatistics.getBiEngineMode();
+        biEngineReasons = biEngineStatistics.getBiEngineReasons();
+      }
     }
-    if (biEngineStatistics != null) {
-      this.biEngineMode = biEngineStatistics.getBiEngineMode();
-      this.biEngineReasons = biEngineStatistics.getBiEngineReasons();
-    } else {
-      this.biEngineMode = biEngineMode;
-      this.biEngineReasons = biEngineReasons;
-    }
+    this.biEngineMode = biEngineMode;
+    this.biEngineReasons = biEngineReasons;
 
     if (prefetchedRows != null || prefetchedAllRows) {
       // prefetchedAllRows can be true with rows null for an empty result set

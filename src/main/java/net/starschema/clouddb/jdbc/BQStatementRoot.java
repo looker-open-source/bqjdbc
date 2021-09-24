@@ -346,12 +346,12 @@ public abstract class BQStatementRoot {
         List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
         if (BigInteger.valueOf(rows.size()).equals(qr.getTotalRows())) {
           TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
-          BiEngineStatistics biEngineStatistics = null;
           String biEngineMode = null;
           List<BiEngineReason> biEngineReasons = null;
 
           if (referencedJob != null) {
-            biEngineStatistics = referencedJob.getStatistics().getQuery().getBiEngineStatistics();
+            BiEngineStatistics biEngineStatistics =
+                referencedJob.getStatistics().getQuery().getBiEngineStatistics();
             if (biEngineStatistics != null) {
               biEngineMode = biEngineStatistics.getBiEngineMode();
               biEngineReasons = biEngineStatistics.getBiEngineReasons();
