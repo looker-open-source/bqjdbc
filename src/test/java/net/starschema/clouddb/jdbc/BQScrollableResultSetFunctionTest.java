@@ -710,5 +710,8 @@ public class BQScrollableResultSetFunctionTest {
 
     results.getTotalBytesProcessed();
     results.getCacheHit();
+    results.getJobId();
+    results.getBiEngineMode();
+    results.getBiEngineReasons();
   }
 }

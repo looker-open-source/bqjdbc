@@ -25,7 +25,9 @@ package net.starschema.clouddb.jdbc;
 import static net.starschema.clouddb.jdbc.BQForwardOnlyResultSet.toDate;
 
 import com.google.api.client.util.Data;
+import com.google.api.services.bigquery.model.BiEngineReason;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
+import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.TableCell;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.TableSchema;
@@ -58,6 +60,17 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
   /** Whether the ResultSet came from BigQuery's cache */
   private final @Nullable Boolean cacheHit;
 
+  /** Specifies which mode of BI Engine acceleration was performed (if any). */
+  private final @Nullable String biEngineMode;
+  /**
+   * In case of DISABLED or PARTIAL bi_engine_mode, these contain the explanatory reasons as to why
+   * BI Engine could not accelerate. In case the full query was accelerated, this field is not
+   * populated.
+   */
+  private final @Nullable List<BiEngineReason> biEngineReasons;
+
+  private final JobReference jobReference;
+
   private TableSchema schema;
 
   /**
@@ -73,7 +86,10 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
         bqStatementRoot,
         bigQueryGetQueryResultResponse.getSchema(),
         bigQueryGetQueryResultResponse.getTotalBytesProcessed(),
-        bigQueryGetQueryResultResponse.getCacheHit());
+        bigQueryGetQueryResultResponse.getCacheHit(),
+        null,
+        null,
+        bigQueryGetQueryResultResponse.getJobReference());
 
     BigInteger maxrow;
     try {
@@ -88,7 +104,10 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
       BQStatementRoot bqStatementRoot,
       TableSchema schema,
       @Nullable Long totalBytesProcessed,
-      @Nullable Boolean cacheHit) {
+      @Nullable Boolean cacheHit,
+      @Nullable String biEngineMode,
+      @Nullable List<BiEngineReason> biEngineReasons,
+      JobReference jobReference) {
     logger.debug("Created Scrollable resultset TYPE_SCROLL_INSENSITIVE");
     try {
       maxFieldSize = bqStatementRoot.getMaxFieldSize();
@@ -107,6 +126,9 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
     this.schema = schema;
     this.totalBytesProcessed = totalBytesProcessed;
     this.cacheHit = cacheHit;
+    this.biEngineMode = biEngineMode;
+    this.biEngineReasons = biEngineReasons;
+    this.jobReference = jobReference;
   }
 
   /** {@inheritDoc} */
@@ -256,5 +278,21 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
 
   public @Nullable Boolean getCacheHit() {
     return cacheHit;
+  }
+
+  public @Nullable String getBiEngineMode() {
+    return biEngineMode;
+  }
+
+  public @Nullable List<BiEngineReason> getBiEngineReasons() {
+    return biEngineReasons;
+  }
+
+  public @Nullable String getJobId() {
+    if (this.jobReference != null) {
+      return this.jobReference.getJobId();
+    } else {
+      return null;
+    }
   }
 }

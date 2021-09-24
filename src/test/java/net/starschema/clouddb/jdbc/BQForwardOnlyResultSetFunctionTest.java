@@ -696,5 +696,8 @@ public class BQForwardOnlyResultSetFunctionTest {
 
     results.getTotalBytesProcessed();
     results.getCacheHit();
+    results.getJobId();
+    results.getBiEngineMode();
+    results.getBiEngineReasons();
   }
 }

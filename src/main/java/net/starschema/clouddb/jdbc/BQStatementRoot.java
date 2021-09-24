@@ -22,6 +22,8 @@
  */
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.model.BiEngineReason;
+import com.google.api.services.bigquery.model.BiEngineStatistics;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.QueryResponse;
@@ -333,21 +335,40 @@ public abstract class BQStatementRoot {
               this.connection.getUseQueryCache());
       this.mostRecentJobReference.set(qr.getJobReference());
 
-      if (defaultValueIfNull(qr.getJobComplete(), false)) {
-        List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
-        if (BigInteger.valueOf(rows.size()).equals(qr.getTotalRows())) {
-          TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
-          return new BQScrollableResultSet(
-              rows, this, schema, qr.getTotalBytesProcessed(), qr.getCacheHit());
-        }
-        jobAlreadyCompleted = true;
-      }
       referencedJob =
           this.connection
               .getBigquery()
               .jobs()
               .get(projectId, qr.getJobReference().getJobId())
               .execute();
+
+      if (defaultValueIfNull(qr.getJobComplete(), false)) {
+        List<TableRow> rows = defaultValueIfNull(qr.getRows(), new ArrayList<TableRow>());
+        if (BigInteger.valueOf(rows.size()).equals(qr.getTotalRows())) {
+          TableSchema schema = defaultValueIfNull(qr.getSchema(), new TableSchema());
+          String biEngineMode = null;
+          List<BiEngineReason> biEngineReasons = null;
+
+          if (referencedJob != null) {
+            BiEngineStatistics biEngineStatistics =
+                referencedJob.getStatistics().getQuery().getBiEngineStatistics();
+            if (biEngineStatistics != null) {
+              biEngineMode = biEngineStatistics.getBiEngineMode();
+              biEngineReasons = biEngineStatistics.getBiEngineReasons();
+            }
+          }
+          return new BQScrollableResultSet(
+              rows,
+              this,
+              schema,
+              qr.getTotalBytesProcessed(),
+              qr.getCacheHit(),
+              biEngineMode,
+              biEngineReasons,
+              referencedJob.getJobReference());
+        }
+        jobAlreadyCompleted = true;
+      }
 
       this.logger.info("Executing Query: " + querySql);
     } catch (IOException e) {
