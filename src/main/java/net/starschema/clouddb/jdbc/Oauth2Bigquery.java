@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,7 +103,8 @@ public class Oauth2Bigquery {
       HttpTransport httpTransport,
       String userAgent,
       String rootUrl,
-      String targetServiceAccount) {
+      String targetServiceAccount,
+      @Nullable String oauthToken) {
 
     if (targetServiceAccount != null) {
       credential = impersonateServiceAccount(credential, targetServiceAccount);
@@ -115,10 +117,15 @@ public class Oauth2Bigquery {
         new Builder(httpTransport, JSON_FACTORY, httpRequestInitializer)
             .setApplicationName(applicationName);
 
-    if (userAgent != null) {
+    if (oauthToken != null || userAgent != null) {
       BigQueryRequestUserAgentInitializer requestInitializer =
           new BigQueryRequestUserAgentInitializer();
-      requestInitializer.setUserAgent(userAgent);
+      if (userAgent != null) {
+        requestInitializer.setUserAgent(userAgent);
+      }
+      if (oauthToken != null) {
+        requestInitializer.setOauthToken(oauthToken);
+      }
 
       bqBuilder.setBigqueryRequestInitializer(requestInitializer);
     }
@@ -178,7 +185,8 @@ public class Oauth2Bigquery {
             httpTransport,
             userAgent,
             rootUrl,
-            targetServiceAccount);
+            targetServiceAccount,
+            oauthToken);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -286,7 +294,8 @@ public class Oauth2Bigquery {
             httpTransport,
             userAgent,
             rootUrl,
-            targetServiceAccount);
+            targetServiceAccount,
+            null);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -335,7 +344,8 @@ public class Oauth2Bigquery {
             httpTransport,
             userAgent,
             rootUrl,
-            targetServiceAccount);
+            targetServiceAccount,
+            null);
 
     return new MinifiedBigquery(bqBuilder);
   }
