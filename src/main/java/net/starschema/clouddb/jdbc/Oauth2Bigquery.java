@@ -104,10 +104,11 @@ public class Oauth2Bigquery {
       String userAgent,
       String rootUrl,
       String targetServiceAccount,
-      @Nullable String oauthToken) {
+      @Nullable String oauthToken,
+      @Nullable List<String> delegates) {
 
     if (targetServiceAccount != null) {
-      credential = impersonateServiceAccount(credential, targetServiceAccount);
+      credential = impersonateServiceAccount(credential, targetServiceAccount, delegates);
     }
 
     HttpRequestTimeoutInitializer httpRequestInitializer =
@@ -171,7 +172,8 @@ public class Oauth2Bigquery {
       Integer readTimeout,
       String rootUrl,
       HttpTransport httpTransport,
-      String targetServiceAccount)
+      String targetServiceAccount,
+      List<String> delegates)
       throws SQLException {
     GoogleCredentials credential = GoogleCredentials.create(new AccessToken(oauthToken, null));
 
@@ -186,7 +188,8 @@ public class Oauth2Bigquery {
             userAgent,
             rootUrl,
             targetServiceAccount,
-            oauthToken);
+            oauthToken,
+            delegates);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -278,7 +281,8 @@ public class Oauth2Bigquery {
       Integer connectTimeout,
       String rootUrl,
       HttpTransport httpTransport,
-      String targetServiceAccount)
+      String targetServiceAccount,
+      List<String> delegates)
       throws GeneralSecurityException, IOException {
     GoogleCredentials credential =
         createServiceAccountCredential(
@@ -295,7 +299,8 @@ public class Oauth2Bigquery {
             userAgent,
             rootUrl,
             targetServiceAccount,
-            null);
+            null,
+            delegates);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -330,7 +335,8 @@ public class Oauth2Bigquery {
       Integer readTimeout,
       String rootUrl,
       HttpTransport httpTransport,
-      String targetServiceAccount)
+      String targetServiceAccount,
+      List<String> delegates)
       throws IOException {
     GoogleCredentials credential = GoogleCredentials.getApplicationDefault();
 
@@ -345,7 +351,8 @@ public class Oauth2Bigquery {
             userAgent,
             rootUrl,
             targetServiceAccount,
-            null);
+            null,
+            delegates);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -388,12 +395,14 @@ public class Oauth2Bigquery {
   }
 
   private static GoogleCredentials impersonateServiceAccount(
-      GoogleCredentials sourceCredentials, String targetServiceAccount) {
+      GoogleCredentials sourceCredentials,
+      String targetServiceAccount,
+      @Nullable List<String> delegates) {
 
     return ImpersonatedCredentials.create(
         sourceCredentials,
         targetServiceAccount,
-        null, // Look into delegates later if necessary
+        delegates,
         GenerateScopes(false),
         DEFAULT_IMPERSONATION_LIFETIME);
   }

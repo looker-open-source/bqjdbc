@@ -158,6 +158,10 @@ public class BQConnection implements Connection {
     String targetServiceAccount = caseInsensitiveProps.getProperty("targetserviceaccount");
     String oAuthAccessToken = caseInsensitiveProps.getProperty("oauthaccesstoken");
 
+    // extract a list of delegates if provided, should be a list of comma seperated SA emails
+    List<String> delegates =
+        parseArrayQueryParam(caseInsensitiveProps.getProperty("delegates"), ',');
+
     // extract withServiceAccount property
     boolean serviceAccount =
         parseBooleanQueryParam(caseInsensitiveProps.getProperty("withserviceaccount"), false);
@@ -224,7 +228,8 @@ public class BQConnection implements Connection {
                 connectTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccount);
+                targetServiceAccount,
+                delegates);
         this.logger.info("Authorized with service account");
       } catch (GeneralSecurityException e) {
         throw new BQSQLException(e);
@@ -241,7 +246,8 @@ public class BQConnection implements Connection {
                 readTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccount);
+                targetServiceAccount,
+                delegates);
         this.logger.info("Authorized with OAuth access token");
       } catch (SQLException e) {
         throw new BQSQLException(e);
@@ -255,7 +261,8 @@ public class BQConnection implements Connection {
                 readTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccount);
+                targetServiceAccount,
+                delegates);
       } catch (IOException e) {
         throw new BQSQLException(e);
       }
@@ -302,6 +309,19 @@ public class BQConnection implements Connection {
       }
     }
     return val;
+  }
+
+  /**
+   * Return null if {@code string} is null. Otherwise, return an array of delegates iff {@code
+   * string} can be parsed as an array when split by {@code delimiter}.
+   */
+  private static List<String> parseArrayQueryParam(@Nullable String string, Character delimiter)
+      throws BQSQLException {
+    List<String> delegates = null;
+    if (string != null) {
+      delegates = Arrays.asList(string.split("\\s*" + delimiter + "\\s*"));
+    }
+    return delegates;
   }
 
   /**

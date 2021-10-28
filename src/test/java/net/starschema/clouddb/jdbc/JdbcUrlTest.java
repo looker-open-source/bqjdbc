@@ -250,6 +250,48 @@ public class JdbcUrlTest {
   }
 
   @Test
+  public void impersonatedServiceAccountWithDelegations() throws IOException, SQLException {
+    Properties testProps = getProperties("/applicationdefault.properties");
+    String url =
+        BQDriver.getURLPrefix()
+            + testProps.getProperty("projectid")
+            + "/"
+            + testProps.getProperty("dataset");
+    url +=
+        "?withApplicationDefaultCredentials=true&targetServiceAccount="
+            + testProps.getProperty("limitedpermissiontargetaccount")
+            + "&delegates="
+            + testProps.getProperty("delegates");
+    BQConnection bqConn = new BQConnection(url, new Properties());
+    BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
+    // Don't really care about the results here, just need to be able to run a query
+    stmt.executeQuery("SELECT * FROM bigquery-public-data.baseball.schedules limit 1");
+  }
+
+  @Test
+  public void delegationsThowWithBadDelegationChain() throws IOException, SQLException {
+    Properties testProps = getProperties("/applicationdefault.properties");
+    String url =
+        BQDriver.getURLPrefix()
+            + testProps.getProperty("projectid")
+            + "/"
+            + testProps.getProperty("dataset");
+    url +=
+        "?withApplicationDefaultCredentials=true&targetServiceAccount="
+            + testProps.getProperty("limitedpermissiontargetaccount")
+            + "&delegates="
+            + testProps.getProperty("baddelegates");
+    BQConnection bqConn = new BQConnection(url, new Properties());
+    BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
+    try {
+      stmt.executeQuery("SELECT * FROM bigquery-public-data.baseball.schedules limit 1");
+      Assert.fail("I should have failed when trying to execute the query.");
+    } catch (SQLException e) {
+      Assertions.assertThat(e.getCause().getMessage()).contains("Error requesting access token");
+    }
+  }
+
+  @Test
   public void gettingUrlComponentsWorks() throws IOException {
     String url = getUrl("/protectedaccount.properties", null);
     Properties protectedProperties = getProperties("/protectedaccount.properties");
