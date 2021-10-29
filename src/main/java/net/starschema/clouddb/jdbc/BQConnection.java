@@ -155,13 +155,14 @@ public class BQConnection implements Connection {
     String userKey = caseInsensitiveProps.getProperty("password");
     String userPath = caseInsensitiveProps.getProperty("path");
 
+    // extract a list of "delegate" service accounts leading to a "target" service account to use
+    // for impersonation.
+    // if only a single service account is provided, then it will be used as the "target"
     List<String> targetServiceAccounts =
         parseArrayQueryParam(caseInsensitiveProps.getProperty("targetserviceaccount"), ',');
-    String oAuthAccessToken = caseInsensitiveProps.getProperty("oauthaccesstoken");
 
-    // extract a list of delegates if provided, should be a list of comma seperated SA emails
-    List<String> delegates =
-        parseArrayQueryParam(caseInsensitiveProps.getProperty("delegates"), ',');
+    // extract OAuth access token
+    String oAuthAccessToken = caseInsensitiveProps.getProperty("oauthaccesstoken");
 
     // extract withServiceAccount property
     boolean serviceAccount =
