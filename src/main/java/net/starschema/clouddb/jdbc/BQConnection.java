@@ -315,13 +315,10 @@ public class BQConnection implements Connection {
    * Return null if {@code string} is null. Otherwise, return an array of delegates iff {@code
    * string} can be parsed as an array when split by {@code delimiter}.
    */
-  private static List<String> parseArrayQueryParam(@Nullable String string, Character delimiter)
-      throws BQSQLException {
-    List<String> delegates = null;
-    if (string != null) {
-      delegates = Arrays.asList(string.split("\\s*" + delimiter + "\\s*"));
-    }
-    return delegates;
+  private static List<String> parseArrayQueryParam(@Nullable String string, Character delimiter) {
+    return string == null
+        ? Collections.emptyList()
+        : Arrays.asList(string.split("\\s*" + delimiter + "\\s*"));
   }
 
   /**

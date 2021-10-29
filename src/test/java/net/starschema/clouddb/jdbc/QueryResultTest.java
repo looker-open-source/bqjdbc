@@ -256,7 +256,8 @@ public class QueryResultTest {
       result = stmt.executeQuery(sql);
     } catch (SQLException e) {
       this.logger.debug("SQLexception" + e.toString());
-      Assert.assertTrue(e.toString().contains("Not found: Table guid754187384106:m_lab.2010_01"));
+      Assert.assertTrue(
+          e.toString().contains("Access Denied: Table guid754187384106:m_lab.2010_01"));
     }
   }
 

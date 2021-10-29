@@ -105,7 +105,7 @@ public class Oauth2Bigquery {
       String rootUrl,
       String targetServiceAccount,
       @Nullable String oauthToken,
-      @Nullable List<String> delegates) {
+      List<String> delegates) {
 
     if (targetServiceAccount != null) {
       credential = impersonateServiceAccount(credential, targetServiceAccount, delegates);
