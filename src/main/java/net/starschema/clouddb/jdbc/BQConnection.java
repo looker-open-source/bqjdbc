@@ -310,7 +310,7 @@ public class BQConnection implements Connection {
   }
 
   /**
-   * Return an empty list if {@code string} is null. Otherwise, return an array of delegates iff
+   * Return an empty list if {@code string} is null. Otherwise, return an array of strings iff
    * {@code string} can be parsed as an array when split by {@code delimiter}.
    */
   private static List<String> parseArrayQueryParam(@Nullable String string, Character delimiter) {
