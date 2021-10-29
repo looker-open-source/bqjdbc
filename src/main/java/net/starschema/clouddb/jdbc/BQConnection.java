@@ -156,8 +156,7 @@ public class BQConnection implements Connection {
     String userPath = caseInsensitiveProps.getProperty("path");
 
     // extract a list of "delegate" service accounts leading to a "target" service account to use
-    // for impersonation.
-    // if only a single service account is provided, then it will be used as the "target"
+    // for impersonation. if only a single account is provided, then it will be used as the "target"
     List<String> targetServiceAccounts =
         parseArrayQueryParam(caseInsensitiveProps.getProperty("targetserviceaccount"), ',');
 
