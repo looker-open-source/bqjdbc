@@ -259,9 +259,9 @@ public class JdbcUrlTest {
             + testProps.getProperty("dataset");
     url +=
         "?withApplicationDefaultCredentials=true&targetServiceAccount="
-            + testProps.getProperty("limitedpermissiontargetaccount")
-            + "&delegates="
-            + testProps.getProperty("delegates");
+            + testProps.getProperty("delegates")
+            + ","
+            + testProps.getProperty("limitedpermissiontargetaccount");
     BQConnection bqConn = new BQConnection(url, new Properties());
     BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
     // Don't really care about the results here, just need to be able to run a query
@@ -278,9 +278,9 @@ public class JdbcUrlTest {
             + testProps.getProperty("dataset");
     url +=
         "?withApplicationDefaultCredentials=true&targetServiceAccount="
-            + testProps.getProperty("limitedpermissiontargetaccount")
-            + "&delegates="
-            + testProps.getProperty("baddelegates");
+            + testProps.getProperty("baddelegates")
+            + ","
+            + testProps.getProperty("limitedpermissiontargetaccount");
     BQConnection bqConn = new BQConnection(url, new Properties());
     BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
     try {

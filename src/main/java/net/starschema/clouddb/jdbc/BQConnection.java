@@ -155,7 +155,8 @@ public class BQConnection implements Connection {
     String userKey = caseInsensitiveProps.getProperty("password");
     String userPath = caseInsensitiveProps.getProperty("path");
 
-    String targetServiceAccount = caseInsensitiveProps.getProperty("targetserviceaccount");
+    List<String> targetServiceAccounts =
+        parseArrayQueryParam(caseInsensitiveProps.getProperty("targetserviceaccount"), ',');
     String oAuthAccessToken = caseInsensitiveProps.getProperty("oauthaccesstoken");
 
     // extract a list of delegates if provided, should be a list of comma seperated SA emails
@@ -228,8 +229,7 @@ public class BQConnection implements Connection {
                 connectTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccount,
-                delegates);
+                targetServiceAccounts);
         this.logger.info("Authorized with service account");
       } catch (GeneralSecurityException e) {
         throw new BQSQLException(e);
@@ -246,8 +246,7 @@ public class BQConnection implements Connection {
                 readTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccount,
-                delegates);
+                targetServiceAccounts);
         this.logger.info("Authorized with OAuth access token");
       } catch (SQLException e) {
         throw new BQSQLException(e);
@@ -261,8 +260,7 @@ public class BQConnection implements Connection {
                 readTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccount,
-                delegates);
+                targetServiceAccounts);
       } catch (IOException e) {
         throw new BQSQLException(e);
       }
@@ -312,8 +310,8 @@ public class BQConnection implements Connection {
   }
 
   /**
-   * Return null if {@code string} is null. Otherwise, return an array of delegates iff {@code
-   * string} can be parsed as an array when split by {@code delimiter}.
+   * Return an empty list if {@code string} is null. Otherwise, return an array of delegates iff
+   * {@code string} can be parsed as an array when split by {@code delimiter}.
    */
   private static List<String> parseArrayQueryParam(@Nullable String string, Character delimiter) {
     return string == null
