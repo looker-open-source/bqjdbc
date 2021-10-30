@@ -316,7 +316,7 @@ public class BQConnection implements Connection {
   private static List<String> parseArrayQueryParam(@Nullable String string, Character delimiter) {
     return string == null
         ? Collections.emptyList()
-        : Arrays.asList(string.split("\\s*" + delimiter + "\\s*"));
+        : Arrays.asList(string.split(delimiter + "\\s*"));
   }
 
   /**
