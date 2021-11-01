@@ -106,9 +106,8 @@ public class Oauth2Bigquery {
       List<String> targetServiceAccounts,
       @Nullable String oauthToken) {
 
-    if (!targetServiceAccounts.isEmpty()) {
-      credential = impersonateServiceAccount(credential, targetServiceAccounts);
-    }
+    // If targetServiceAccounts is empty this returns the original credential
+    credential = impersonateServiceAccount(credential, targetServiceAccounts);
 
     HttpRequestTimeoutInitializer httpRequestInitializer =
         createRequestTimeoutInitalizer(credential, connectTimeout, readTimeout);
@@ -387,8 +386,22 @@ public class Oauth2Bigquery {
     return response.getAccessToken();
   }
 
+  /**
+   * If {@code targetServiceAccounts} is not empty, this function returns an impersonated
+   * GoogleCredentials instance. {@code sourceCredentials} should be the principal service account
+   * (SA). The last element in {@code targetServiceAccounts} will be used as the "target" account to
+   * impersonate. Any additional SAs in {@code targetServiceAccounts} will be used as delegates. The
+   * original {@code sourceCredentials} are returned if {@code targetServiceAccounts} is empty.
+   *
+   * @param sourceCredentials
+   * @param targetServiceAccounts
+   * @return GoogleCredentials
+   */
   private static GoogleCredentials impersonateServiceAccount(
       GoogleCredentials sourceCredentials, List<String> targetServiceAccounts) {
+    if (targetServiceAccounts.isEmpty()) {
+      return sourceCredentials;
+    }
 
     int lastIdx = targetServiceAccounts.size() - 1;
     String targetServiceAccount = targetServiceAccounts.get(lastIdx);
