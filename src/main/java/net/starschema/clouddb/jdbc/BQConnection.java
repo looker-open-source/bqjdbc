@@ -155,7 +155,12 @@ public class BQConnection implements Connection {
     String userKey = caseInsensitiveProps.getProperty("password");
     String userPath = caseInsensitiveProps.getProperty("path");
 
-    String targetServiceAccount = caseInsensitiveProps.getProperty("targetserviceaccount");
+    // extract a list of "delegate" service accounts leading to a "target" service account to use
+    // for impersonation. if only a single account is provided, then it will be used as the "target"
+    List<String> targetServiceAccounts =
+        parseArrayQueryParam(caseInsensitiveProps.getProperty("targetserviceaccount"), ',');
+
+    // extract OAuth access token
     String oAuthAccessToken = caseInsensitiveProps.getProperty("oauthaccesstoken");
 
     // extract withServiceAccount property
@@ -224,7 +229,7 @@ public class BQConnection implements Connection {
                 connectTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccount);
+                targetServiceAccounts);
         this.logger.info("Authorized with service account");
       } catch (GeneralSecurityException e) {
         throw new BQSQLException(e);
@@ -241,7 +246,7 @@ public class BQConnection implements Connection {
                 readTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccount);
+                targetServiceAccounts);
         this.logger.info("Authorized with OAuth access token");
       } catch (SQLException e) {
         throw new BQSQLException(e);
@@ -255,7 +260,7 @@ public class BQConnection implements Connection {
                 readTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccount);
+                targetServiceAccounts);
       } catch (IOException e) {
         throw new BQSQLException(e);
       }
@@ -302,6 +307,16 @@ public class BQConnection implements Connection {
       }
     }
     return val;
+  }
+
+  /**
+   * Return an empty list if {@code string} is null. Otherwise, return an array of strings iff
+   * {@code string} can be parsed as an array when split by {@code delimiter}.
+   */
+  private static List<String> parseArrayQueryParam(@Nullable String string, Character delimiter) {
+    return string == null
+        ? Collections.emptyList()
+        : Arrays.asList(string.split(delimiter + "\\s*"));
   }
 
   /**
