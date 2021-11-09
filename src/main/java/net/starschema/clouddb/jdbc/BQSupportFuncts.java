@@ -634,7 +634,7 @@ public class BQSupportFuncts {
       qr.setMaxResults(maxResults);
     }
 
-    return bigquery.jobs().query(querySql, qr).setProjectId(projectId).execute();
+    return bigquery.jobs().query(projectId, qr).execute();
   }
 
   /**
