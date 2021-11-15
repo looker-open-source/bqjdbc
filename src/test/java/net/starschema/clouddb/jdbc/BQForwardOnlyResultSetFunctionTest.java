@@ -667,9 +667,7 @@ public class BQForwardOnlyResultSetFunctionTest {
   @Test
   public void testBQForwardOnlyResultSetDoesntThrowNPE() throws Exception {
     BQConnection bq = conn();
-    BQStatement stmt =
-        new BQStatement(
-            defaultProjectId, bq, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    BQStatement stmt = (BQStatement) bq.createStatement();
     QueryResponse qr = stmt.runSyncQuery("SELECT 1", false);
     Job ref =
         bq.getBigquery()
