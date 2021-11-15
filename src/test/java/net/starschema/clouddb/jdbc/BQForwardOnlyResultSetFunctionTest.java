@@ -22,6 +22,8 @@ package net.starschema.clouddb.jdbc;
 
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
+import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.QueryResponse;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import java.io.IOException;
@@ -52,16 +54,22 @@ public class BQForwardOnlyResultSetFunctionTest {
 
   Logger logger = LoggerFactory.getLogger(BQForwardOnlyResultSetFunctionTest.class);
   private Integer maxRows = null;
+  private String defaultProjectId = null;
+  private BQConnection defaultConn = null;
+
+  @Before
+  public void setup() throws SQLException, IOException {
+    Properties props =
+        BQSupportFuncts.readFromPropFile(
+            getClass().getResource("/installedaccount.properties").getFile());
+    String url = BQSupportFuncts.constructUrlFromPropertiesFile(props, true, null);
+    url += "&useLegacySql=false";
+    this.defaultProjectId = props.getProperty("projectid");
+    this.defaultConn = new BQConnection(url, new Properties());
+  }
 
   private BQConnection conn() throws SQLException, IOException {
-    String url =
-        BQSupportFuncts.constructUrlFromPropertiesFile(
-            BQSupportFuncts.readFromPropFile(
-                getClass().getResource("/installedaccount.properties").getFile()),
-            true,
-            null);
-    url += "&useLegacySql=false";
-    return new BQConnection(url, new Properties());
+    return this.defaultConn;
   }
 
   @Test
@@ -653,6 +661,30 @@ public class BQForwardOnlyResultSetFunctionTest {
               ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       stmt.setQueryTimeout(500);
       stmt.executeQuery(cleanupSql);
+    }
+  }
+
+  @Test
+  public void testBQForwardOnlyResultSetDoesntThrowNPE() throws Exception {
+    BQConnection bq = conn();
+    BQStatement stmt =
+        new BQStatement(
+            defaultProjectId, bq, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    QueryResponse qr = stmt.runSyncQuery("SELECT 1", false);
+    Job ref =
+        bq.getBigquery()
+            .jobs()
+            .get(defaultProjectId, qr.getJobReference().getJobId())
+            .setLocation(qr.getJobReference().getLocation())
+            .execute();
+    // Under certain race conditions we could close the connection after the job is complete but
+    // before the results have been fetched. This was throwing a NPE.
+    bq.close();
+    try {
+      new BQForwardOnlyResultSet(bq.getBigquery(), defaultProjectId, ref, stmt);
+      Assert.fail("Initalizing BQForwardOnlyResultSet should throw something other than a NPE.");
+    } catch (SQLException e) {
+      Assert.assertEquals(e.getMessage(), "Failed to fetch results. Connection is closed.");
     }
   }
 
