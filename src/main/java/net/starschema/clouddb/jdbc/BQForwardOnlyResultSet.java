@@ -151,9 +151,12 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
       throws SQLException {
     logger.debug("Created forward only resultset TYPE_FORWARD_ONLY");
     this.Statementreference = (Statement) bqStatementRoot;
-    this.bigquery = bigquery;
     this.completedJob = completedJob;
     this.projectId = projectId;
+    if (bigquery == null) {
+      throw new BQSQLException("Failed to fetch results. Connection is closed.");
+    }
+    this.bigquery = bigquery;
 
     if (completedJob != null) {
       BiEngineStatistics biEngineStatistics =
