@@ -2,7 +2,10 @@ package net.starschema.clouddb.jdbc;
 
 import static junit.framework.Assert.*;
 
+import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobReference;
+import com.google.api.services.bigquery.model.JobStatistics;
+import com.google.api.services.bigquery.model.JobStatus;
 import com.google.api.services.bigquery.model.QueryResponse;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -163,6 +166,55 @@ public class CancelTest {
     stmt1.waitForTestPoint();
     bq.close();
     backgroundThread.join();
+  }
+
+  @Test
+  public void handlesNullResultsWhilePollingJob()
+      throws SQLException, IOException, InterruptedException {
+    // We want to check a few possibilites if BQ kills the query job prematurely due to reservation
+    // quotas. We're not guaranteed a complete job object when we're polling for completion in the
+    // `BQStatement.runSync` loop.
+    Job[] jobs =
+        new Job[] {
+          new Job(),
+          new Job().setStatus(new JobStatus()),
+          new Job()
+              .setStatus(new JobStatus().setState("PENDING"))
+              .setStatistics(new JobStatistics())
+        };
+    BQConnection bq = conn();
+    for (Job j : jobs) {
+      final TestableBQStatementWithBadPollJobs stmt1 =
+          new TestableBQStatementWithBadPollJobs(bq.getProjectId(), bq);
+      stmt1.pollJob = j;
+      stmt1.setTestPoint();
+      Thread backgroundThread = getAndRunBackgroundQuery(stmt1);
+      stmt1.waitForTestPoint();
+      backgroundThread.join();
+      SQLException exception = expectedSqlException.get();
+      assertPollJobException(exception);
+    }
+  }
+
+  private void assertPollJobException(Exception exception) {
+    Assert.assertTrue(
+        exception.getMessage().contains("Something went wrong getting results for the job"));
+    Assert.assertEquals(exception.getClass(), BQSQLException.class);
+    Assert.assertEquals(exception.getCause().getMessage(), "Failed to fetch query state.");
+    Assert.assertEquals(exception.getCause().getClass(), IOException.class);
+  }
+
+  private static class TestableBQStatementWithBadPollJobs extends TestableBQStatement {
+    public Job pollJob;
+
+    public TestableBQStatementWithBadPollJobs(String projectId, BQConnection bqConnection) {
+      super(projectId, bqConnection);
+    }
+
+    @Override
+    protected Job getPollJob(Job jobToPoll) throws IOException {
+      return pollJob;
+    }
   }
 
   private static class TestableBQStatement extends BQStatement {

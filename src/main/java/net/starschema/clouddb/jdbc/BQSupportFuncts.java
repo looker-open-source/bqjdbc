@@ -327,7 +327,7 @@ public class BQSupportFuncts {
     return queryResult;
   }
 
-  private static Job getPollJob(JobReference jobRef, Bigquery bq, String projectId)
+  public static Job getPollJob(JobReference jobRef, Bigquery bq, String projectId)
       throws IOException {
     return bq.jobs().get(projectId, jobRef.getJobId()).setLocation(jobRef.getLocation()).execute();
   }
