@@ -327,6 +327,11 @@ public class BQSupportFuncts {
     return queryResult;
   }
 
+  public static Job getPollJob(JobReference jobRef, Bigquery bq, String projectId)
+      throws IOException {
+    return bq.jobs().get(projectId, jobRef.getJobId()).setLocation(jobRef.getLocation()).execute();
+  }
+
   /**
    * Returns the status of a job
    *
@@ -340,12 +345,25 @@ public class BQSupportFuncts {
   public static String getQueryState(Job myjob, Bigquery bigquery, String projectId)
       throws IOException {
     JobReference myjobReference = myjob.getJobReference();
-    Job pollJob =
-        bigquery
-            .jobs()
-            .get(projectId, myjobReference.getJobId())
-            .setLocation(myjobReference.getLocation())
-            .execute();
+    Job pollJob = getPollJob(myjobReference, bigquery, projectId);
+    return logAndGetQueryState(pollJob);
+  }
+
+  /**
+   * Logs the status and running time of a job and returns its current state
+   *
+   * @param pollJob Instance of Job
+   * @return the status of the job
+   * @throws IOException
+   *     <p>if the request to get the job specified by myjob and projectId fails
+   */
+  public static String logAndGetQueryState(Job pollJob) throws IOException {
+    if (pollJob == null
+        || pollJob.isEmpty()
+        || pollJob.getStatus().isEmpty()
+        || pollJob.getStatistics().isEmpty()) {
+      throw new IOException("Failed to fetch query state.");
+    }
     BQSupportFuncts.logger.info(
         "Job status: "
             + pollJob.getStatus().getState()

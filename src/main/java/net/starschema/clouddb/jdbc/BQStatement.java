@@ -264,9 +264,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
             throw new BQSQLException("Cannot poll results without a job reference");
           }
           try {
-            status =
-                BQSupportFuncts.getQueryState(
-                    referencedJob, this.connection.getBigquery(), projectId);
+            Job pollJob = getPollJob(referencedJob);
+            status = BQSupportFuncts.logAndGetQueryState(pollJob);
           } catch (IOException e) {
             if (retries++ < MAX_IO_FAILURE_RETRIES) {
               continue;
@@ -432,6 +431,12 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
   /** Wrap [BQSupportFuncts.cancelQuery] purely for testability purposes. */
   protected void performQueryCancel(JobReference jobRefToCancel) throws IOException {
     BQSupportFuncts.cancelQuery(jobRefToCancel, this.connection.getBigquery(), projectId);
+  }
+
+  /** Wrap [BQSupportFuncts.getPollJob] for convenience and testability purposes. */
+  protected Job getPollJob(Job jobToPoll) throws IOException {
+    JobReference jobRef = jobToPoll.getJobReference();
+    return BQSupportFuncts.getPollJob(jobRef, this.connection.getBigquery(), projectId);
   }
 
   /**
