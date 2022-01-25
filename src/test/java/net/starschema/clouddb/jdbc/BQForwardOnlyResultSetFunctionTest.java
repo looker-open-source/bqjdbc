@@ -688,22 +688,6 @@ public class BQForwardOnlyResultSetFunctionTest {
   }
 
   @Test
-  public void testPollingQueryStateHandlesNullResponse() throws Exception {
-    Job emptyJob = new Job();
-    Job emptyStatusJob = new Job().setStatus(new JobStatus());
-    Job[] jobs = new Job[] {emptyJob, emptyStatusJob};
-    for (Job j : jobs) {
-      try {
-        BQSupportFuncts.logAndGetQueryState(j);
-      } catch (NullPointerException e) {
-        Assert.fail("Should not have thrown a NPE");
-      } catch (IOException e) {
-        Assert.assertEquals(e.getMessage(), "Failed to fetch query state.");
-      }
-    }
-  }
-
-  @Test
   public void testHandlesAllNullResponseFields() throws Exception {
     try {
       mockResponse("{}");
