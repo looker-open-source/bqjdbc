@@ -23,6 +23,7 @@ package net.starschema.clouddb.jdbc;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.JobStatus;
 import com.google.api.services.bigquery.model.QueryResponse;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
@@ -683,6 +684,22 @@ public class BQForwardOnlyResultSetFunctionTest {
       Assert.fail("Initalizing BQForwardOnlyResultSet should throw something other than a NPE.");
     } catch (SQLException e) {
       Assert.assertEquals(e.getMessage(), "Failed to fetch results. Connection is closed.");
+    }
+  }
+
+  @Test
+  public void testPollingQueryStateHandlesNullResponse() throws Exception {
+    Job emptyJob = new Job();
+    Job emptyStatusJob = new Job().setStatus(new JobStatus());
+    Job[] jobs = new Job[] {emptyJob, emptyStatusJob};
+    for (Job j : jobs) {
+      try {
+        BQSupportFuncts.logAndGetQueryState(j);
+      } catch (NullPointerException e) {
+        Assert.fail("Should not have thrown a NPE");
+      } catch (IOException e) {
+        Assert.assertEquals(e.getMessage(), "Failed to fetch query state.");
+      }
     }
   }
 
