@@ -23,7 +23,6 @@ package net.starschema.clouddb.jdbc;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.api.services.bigquery.model.Job;
-import com.google.api.services.bigquery.model.JobStatus;
 import com.google.api.services.bigquery.model.QueryResponse;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
