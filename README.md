@@ -40,7 +40,7 @@ The dependency is provided on
 at the following coordinates:
 ```xml
 <dependency>
-    <groupId>com.github.looker-open-source</groupId>
+    <groupId>com.google.looker-open-source</groupId>
     <artifactId>bqjdbc</artifactId>
     <version>...</version>
 </dependency>
@@ -49,7 +49,7 @@ at the following coordinates:
 A fat (shaded) jar is also available:
 ```xml
 <dependency>
-    <groupId>com.github.looker-open-source</groupId>
+    <groupId>com.google.looker-open-source</groupId>
     <artifactId>bqjdbc</artifactId>
     <version>...</version>
     <classifier>shaded</classifier>
@@ -64,7 +64,7 @@ We require Java (JDK 8 through 15) and Apache Maven (3.2.5 or higher).
 
 ```bash
 $ git clone git://github.com/looker-open-source/bqjdbc.git
-$ cd starschema-bigquery-jdbc
+$ cd bqjdbc
 $ mvn clean install -DskipTests
 ```
 
@@ -90,6 +90,5 @@ Releases are handled through GitHub actions, and kicked off when a release is cr
 
 ## History
 
-`bqjdbc` was 
-forked from https://code.google.com/p/starschema-bigquery-jdbc/ in 2013
+`bqjdbc` was forked from https://code.google.com/p/starschema-bigquery-jdbc/ in 2013
 and has since been maintained by a few folks at [Looker](https://github.com/looker-open-source).
