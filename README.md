@@ -1,7 +1,7 @@
 # bqjdbc
 
-![Maven Central](https://img.shields.io/maven-central/v/com.github.jonathanswenson/bqjdbc)
-[![javadoc](https://javadoc.io/badge2/com.github.jonathanswenson/bqjdbc/javadoc.svg)](https://javadoc.io/doc/com.github.jonathanswenson/bqjdbc)
+![Maven Central](https://img.shields.io/maven-central/v/com.github.looker-open-source/bqjdbc)
+[![javadoc](https://javadoc.io/badge2/com.github.looker-open-source/bqjdbc/javadoc.svg)](https://javadoc.io/doc/com.github.looker-open-source/bqjdbc)
 
 `bqjdbc` (also known as `starschema-bigquery-jdbc`) is a
 [JDBC Driver](https://docs.oracle.com/javase/8/docs/technotes/guides/jdbc/) for
@@ -40,7 +40,7 @@ The dependency is provided on
 at the following coordinates:
 ```xml
 <dependency>
-    <groupId>com.github.jonathanswenson</groupId>
+    <groupId>com.github.looker-open-source</groupId>
     <artifactId>bqjdbc</artifactId>
     <version>...</version>
 </dependency>
@@ -49,7 +49,7 @@ at the following coordinates:
 A fat (shaded) jar is also available:
 ```xml
 <dependency>
-    <groupId>com.github.jonathanswenson</groupId>
+    <groupId>com.github.looker-open-source</groupId>
     <artifactId>bqjdbc</artifactId>
     <version>...</version>
     <classifier>shaded</classifier>
@@ -63,7 +63,7 @@ A fat (shaded) jar is also available:
 We require Java (JDK 8 through 15) and Apache Maven (3.2.5 or higher).
 
 ```bash
-$ git clone git://github.com/jonathanswenson/starschema-bigquery-jdbc.git
+$ git clone git://github.com/looker-open-source/bqjdbc.git
 $ cd starschema-bigquery-jdbc
 $ mvn clean install -DskipTests
 ```
@@ -92,4 +92,4 @@ Releases are handled through GitHub actions, and kicked off when a release is cr
 
 `bqjdbc` was 
 forked from https://code.google.com/p/starschema-bigquery-jdbc/ in 2013
-and has since been maintained by a few folks at [Looker](https://github.com/looker).
+and has since been maintained by a few folks at [Looker](https://github.com/looker-open-source).
