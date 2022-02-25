@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <!-- Original was net.starschema.clouddb.bqjdbc but it's not changed so we can publish
        to a groupId that we have ownership over -->
-  <groupId>com.github.jonathanswenson</groupId>
+  <groupId>com.google.looker-open-source</groupId>
   <artifactId>bqjdbc</artifactId>
   <version>2.3.18-SNAPSHOT</version>
   <name>Big Query over JDBC</name>
@@ -10,12 +10,12 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-  <url>https://github.com/jonathanswenson/bqjdbc</url>
+  <url>https://github.com/looker-open-source/bqjdbc</url>
 
   <developers>
     <developer>
       <name>Looker Inc.</name>
-      <email>jgswenson@google.com</email>
+      <email>looker-open-source@google.com</email>
       <organization>Looker</organization>
       <organizationUrl>https://looker.com/</organizationUrl>
     </developer>
@@ -24,24 +24,24 @@
   <distributionManagement>
     <site>
       <id>github-pages</id>
-      <url>http://jonathanswenson.github.io/bqjdbc/</url>
+      <url>http://looker-open-source.github.io/bqjdbc/</url>
     </site>
 
     <repository>
       <id>ossrh</id>
       <name>Central Repository OSSRH</name>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      <url>https://google.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
     <snapshotRepository>
       <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <url>https://google.oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
   </distributionManagement>
 
   <scm>
-    <connection>scm:git:git://github.com/jonathanswenson/bqjdbc.git</connection>
-    <developerConnection>scm:git:ssh://github.com:jonathanswenson/bqjdbc.git</developerConnection>
-    <url>http://github.com/jonathanswenson/bqjdbc/tree/master</url>
+    <connection>scm:git:git://github.com/looker-open-source/bqjdbc.git</connection>
+    <developerConnection>scm:git:ssh://github.com:looker-open-source/bqjdbc.git</developerConnection>
+    <url>http://github.com/looker-open-source/bqjdbc/tree/master</url>
   </scm>
 
   <repositories>
@@ -214,7 +214,7 @@
         <extensions>true</extensions>
         <configuration>
           <serverId>ossrh</serverId>
-          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <nexusUrl>https://google.oss.sonatype.org/</nexusUrl>
           <autoReleaseAfterClose>true</autoReleaseAfterClose>
         </configuration>
       </plugin>
