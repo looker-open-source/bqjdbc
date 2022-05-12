@@ -476,7 +476,7 @@ public class Oauth2Bigquery {
     return (PrivateKey) keystore.getKey(keystore.aliases().nextElement(), password.toCharArray());
   }
 
-  public static class HttpRequestTimeoutInitializer extends HttpCredentialsAdapter {
+  private static class HttpRequestTimeoutInitializer extends HttpCredentialsAdapter {
     private Integer readTimeout = null;
     private Integer connectTimeout = null;
 
