@@ -104,10 +104,11 @@ public class Oauth2Bigquery {
       String userAgent,
       String rootUrl,
       List<String> targetServiceAccounts,
-      @Nullable String oauthToken) {
+      @Nullable String oauthToken,
+      @Nullable String projectId) {
 
     // If targetServiceAccounts is empty this returns the original credential
-    credential = impersonateServiceAccount(credential, targetServiceAccounts);
+    credential = impersonateServiceAccount(credential, targetServiceAccounts, projectId);
 
     HttpRequestTimeoutInitializer httpRequestInitializer =
         createRequestTimeoutInitalizer(credential, connectTimeout, readTimeout);
@@ -170,7 +171,8 @@ public class Oauth2Bigquery {
       Integer readTimeout,
       String rootUrl,
       HttpTransport httpTransport,
-      List<String> targetServiceAccounts)
+      List<String> targetServiceAccounts,
+      String projectId)
       throws SQLException {
     GoogleCredentials credential = GoogleCredentials.create(new AccessToken(oauthToken, null));
 
@@ -185,7 +187,8 @@ public class Oauth2Bigquery {
             userAgent,
             rootUrl,
             targetServiceAccounts,
-            oauthToken);
+            oauthToken,
+            projectId);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -277,7 +280,8 @@ public class Oauth2Bigquery {
       Integer connectTimeout,
       String rootUrl,
       HttpTransport httpTransport,
-      List<String> targetServiceAccounts)
+      List<String> targetServiceAccounts,
+      String projectId)
       throws GeneralSecurityException, IOException {
     GoogleCredentials credential =
         createServiceAccountCredential(
@@ -294,7 +298,8 @@ public class Oauth2Bigquery {
             userAgent,
             rootUrl,
             targetServiceAccounts,
-            null);
+            /* oauthToken= */ null,
+            projectId);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -329,7 +334,8 @@ public class Oauth2Bigquery {
       Integer readTimeout,
       String rootUrl,
       HttpTransport httpTransport,
-      List<String> targetServiceAccounts)
+      List<String> targetServiceAccounts,
+      String projectId)
       throws IOException {
     GoogleCredentials credential = GoogleCredentials.getApplicationDefault();
 
@@ -344,7 +350,8 @@ public class Oauth2Bigquery {
             userAgent,
             rootUrl,
             targetServiceAccounts,
-            null);
+            /* oauthToken= */ null,
+            projectId);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -398,21 +405,30 @@ public class Oauth2Bigquery {
    * @return GoogleCredentials
    */
   private static GoogleCredentials impersonateServiceAccount(
-      GoogleCredentials sourceCredentials, List<String> targetServiceAccounts) {
+      GoogleCredentials sourceCredentials,
+      List<String> targetServiceAccounts,
+      @Nullable String quotaProjectId) {
     if (targetServiceAccounts.isEmpty()) {
       return sourceCredentials;
     }
 
+    // Get target principle at end of delegate chain
     int lastIdx = targetServiceAccounts.size() - 1;
     String targetServiceAccount = targetServiceAccounts.get(lastIdx);
     List<String> delegates = targetServiceAccounts.subList(0, lastIdx);
 
-    return ImpersonatedCredentials.create(
-        sourceCredentials,
-        targetServiceAccount,
-        delegates,
-        GenerateScopes(false),
-        DEFAULT_IMPERSONATION_LIFETIME);
+    ImpersonatedCredentials.Builder builder = ImpersonatedCredentials.newBuilder();
+    builder.setSourceCredentials(sourceCredentials);
+    builder.setTargetPrincipal(targetServiceAccount);
+    builder.setDelegates(delegates);
+    builder.setLifetime(DEFAULT_IMPERSONATION_LIFETIME);
+    builder.setScopes(GenerateScopes(false));
+
+    if (quotaProjectId != null) {
+      builder.setQuotaProjectId(quotaProjectId);
+    }
+
+    return builder.build();
   }
 
   private static GoogleCredentials createServiceAccountCredential(
@@ -460,7 +476,7 @@ public class Oauth2Bigquery {
     return (PrivateKey) keystore.getKey(keystore.aliases().nextElement(), password.toCharArray());
   }
 
-  private static class HttpRequestTimeoutInitializer extends HttpCredentialsAdapter {
+  public static class HttpRequestTimeoutInitializer extends HttpCredentialsAdapter {
     private Integer readTimeout = null;
     private Integer connectTimeout = null;
 

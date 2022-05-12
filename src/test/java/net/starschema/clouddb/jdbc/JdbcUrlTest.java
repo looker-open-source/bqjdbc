@@ -269,7 +269,7 @@ public class JdbcUrlTest {
   }
 
   @Test
-  public void delegationsThowWithBadDelegationChain() throws IOException, SQLException {
+  public void delegationsThrowWithBadDelegationChain() throws IOException, SQLException {
     Properties testProps = getProperties("/applicationdefault.properties");
     String url =
         BQDriver.getURLPrefix()
