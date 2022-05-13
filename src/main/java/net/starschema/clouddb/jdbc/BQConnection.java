@@ -229,7 +229,8 @@ public class BQConnection implements Connection {
                 connectTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccounts);
+                targetServiceAccounts,
+                this.getProjectId());
         this.logger.info("Authorized with service account");
       } catch (GeneralSecurityException e) {
         throw new BQSQLException(e);
@@ -246,7 +247,8 @@ public class BQConnection implements Connection {
                 readTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccounts);
+                targetServiceAccounts,
+                this.getProjectId());
         this.logger.info("Authorized with OAuth access token");
       } catch (SQLException e) {
         throw new BQSQLException(e);
@@ -260,7 +262,8 @@ public class BQConnection implements Connection {
                 readTimeout,
                 rootUrl,
                 httpTransport,
-                targetServiceAccounts);
+                targetServiceAccounts,
+                this.getProjectId());
       } catch (IOException e) {
         throw new BQSQLException(e);
       }
