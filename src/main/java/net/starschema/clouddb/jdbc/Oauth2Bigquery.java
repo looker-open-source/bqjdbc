@@ -287,8 +287,7 @@ public class Oauth2Bigquery {
       throws GeneralSecurityException, IOException {
     GoogleCredentials credential =
         createServiceAccountCredential(
-                serviceaccountemail, keypath, password, jsonAuthContents, false)
-            .createScoped(GenerateScopes(false));
+            serviceaccountemail, keypath, password, jsonAuthContents, false);
 
     logger.debug("Authorized?");
 
@@ -342,7 +341,6 @@ public class Oauth2Bigquery {
       throws IOException {
     GoogleCredentials credential =
         GoogleCredentials.getApplicationDefault().createScoped(GenerateScopes(false));
-    ;
 
     logger.debug("Authorizing with Application Default Credentials.");
 
