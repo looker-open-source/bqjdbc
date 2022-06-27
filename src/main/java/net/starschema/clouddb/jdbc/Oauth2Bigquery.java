@@ -86,7 +86,7 @@ public class Oauth2Bigquery {
   /** Application name set on bigquery connection */
   static final String applicationName = "BigQuery JDBC Driver";
 
-  private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
+  private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly";
 
   private static final Integer DEFAULT_IMPERSONATION_LIFETIME = 3600;
 
@@ -174,7 +174,9 @@ public class Oauth2Bigquery {
       List<String> targetServiceAccounts,
       String projectId)
       throws SQLException {
-    GoogleCredentials credential = GoogleCredentials.create(new AccessToken(oauthToken, null));
+    GoogleCredentials credential =
+        GoogleCredentials.create(new AccessToken(oauthToken, null))
+            .createScoped(GenerateScopes(false));
 
     logger.debug("Creating a new bigquery client.");
 
@@ -337,7 +339,8 @@ public class Oauth2Bigquery {
       List<String> targetServiceAccounts,
       String projectId)
       throws IOException {
-    GoogleCredentials credential = GoogleCredentials.getApplicationDefault();
+    GoogleCredentials credential =
+        GoogleCredentials.getApplicationDefault().createScoped(GenerateScopes(false));
 
     logger.debug("Authorizing with Application Default Credentials.");
 
