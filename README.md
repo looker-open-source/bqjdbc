@@ -1,7 +1,7 @@
 # bqjdbc
 
-![Maven Central](https://img.shields.io/maven-central/v/com.github.looker-open-source/bqjdbc)
-[![javadoc](https://javadoc.io/badge2/com.github.looker-open-source/bqjdbc/javadoc.svg)](https://javadoc.io/doc/com.github.looker-open-source/bqjdbc)
+![Maven Central](https://img.shields.io/maven-central/v/com.google.looker-open-source/bqjdbc)
+[![javadoc](https://javadoc.io/badge2/com.github.looker-open-source/bqjdbc/javadoc.svg)](https://javadoc.io/doc/com.google.looker-open-source/bqjdbc)
 
 `bqjdbc` (also known as `starschema-bigquery-jdbc`) is a
 [JDBC Driver](https://docs.oracle.com/javase/8/docs/technotes/guides/jdbc/) for
