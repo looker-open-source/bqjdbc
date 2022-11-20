@@ -27,21 +27,22 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.*;
 import java.sql.Date;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import javax.annotation.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class implements the java.sql.ResultSet interface, as a Forward only resultset
@@ -157,14 +158,14 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
       throw new BQSQLException("Failed to fetch results. Connection is closed.");
     }
     this.bigquery = bigquery;
-
-    if (completedJob != null) {
-      BiEngineStatistics biEngineStatistics =
-          completedJob.getStatistics().getQuery().getBiEngineStatistics();
-      if (biEngineStatistics != null) {
-        biEngineMode = biEngineStatistics.getBiEngineMode();
-        biEngineReasons = biEngineStatistics.getBiEngineReasons();
-      }
+    Optional<BiEngineStatistics> biEngineStatisticsOptional = Optional.ofNullable(completedJob)
+            .map(Job::getStatistics)
+            .map(JobStatistics::getQuery)
+            .map(JobStatistics2::getBiEngineStatistics);
+    if (biEngineStatisticsOptional.isPresent()){
+      BiEngineStatistics biEngineStatistics = biEngineStatisticsOptional.get();
+      biEngineMode = biEngineStatistics.getBiEngineMode();
+      biEngineReasons = biEngineStatistics.getBiEngineReasons();
     }
     this.biEngineMode = biEngineMode;
     this.biEngineReasons = biEngineReasons;
