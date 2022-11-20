@@ -23,9 +23,6 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.services.bigquery.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.sql.*;
@@ -34,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class partially implements java.sql.Statement, and java.sql.PreparedStatement
@@ -345,7 +344,8 @@ public abstract class BQStatementRoot {
           String biEngineMode = null;
           List<BiEngineReason> biEngineReasons = null;
 
-          Optional<BiEngineStatistics> biEngineStatisticsOptional = Optional.ofNullable(referencedJob)
+          Optional<BiEngineStatistics> biEngineStatisticsOptional =
+              Optional.ofNullable(referencedJob)
                   .map(Job::getStatistics)
                   .map(JobStatistics::getQuery)
                   .map(JobStatistics2::getBiEngineStatistics);
