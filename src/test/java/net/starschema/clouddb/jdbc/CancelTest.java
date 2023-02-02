@@ -196,6 +196,20 @@ public class CancelTest {
     }
   }
 
+  @Test
+  public void handlesLoggingBQJobStatus()
+      throws SQLException, IOException, InterruptedException {
+    // Check that the job status is correctly retrieved if query job has all
+    // required attributes (status, statistics, and job reference). Previous
+    // test verifies that exception is thrown if one or more of these is missing.
+    Job testJob = new Job()
+                      .setStatus(new JobStatus().setState("PENDING"))
+                      .setStatistics(new JobStatistics().setCreationTime(12345567789L))
+                      .setJobReference(new JobReference().setJobId("Job Id"));
+    String result = BQSupportFuncts.logAndGetQueryState(testJob);
+    Assert.assertEquals(result, "PENDING");
+  }
+
   private void assertPollJobException(Exception exception) {
     Assert.assertTrue(
         exception.getMessage().contains("Something went wrong getting results for the job"));

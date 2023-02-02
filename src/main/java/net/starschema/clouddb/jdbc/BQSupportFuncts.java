@@ -370,7 +370,7 @@ public class BQSupportFuncts {
             + " ; "
             + pollJob.getJobReference().getJobId()
             + " ; "
-            + (System.currentTimeMillis() - pollJob.getStatistics().getStartTime()));
+            + (System.currentTimeMillis() - pollJob.getStatistics().getCreationTime()));
     return pollJob.getStatus().getState();
   }
 
