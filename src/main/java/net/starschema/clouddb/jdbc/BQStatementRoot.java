@@ -22,19 +22,14 @@
  */
 package net.starschema.clouddb.jdbc;
 
-import com.google.api.services.bigquery.model.BiEngineReason;
-import com.google.api.services.bigquery.model.BiEngineStatistics;
-import com.google.api.services.bigquery.model.Job;
-import com.google.api.services.bigquery.model.JobReference;
-import com.google.api.services.bigquery.model.QueryResponse;
-import com.google.api.services.bigquery.model.TableRow;
-import com.google.api.services.bigquery.model.TableSchema;
+import com.google.api.services.bigquery.model.*;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -349,13 +344,15 @@ public abstract class BQStatementRoot {
           String biEngineMode = null;
           List<BiEngineReason> biEngineReasons = null;
 
-          if (referencedJob != null) {
-            BiEngineStatistics biEngineStatistics =
-                referencedJob.getStatistics().getQuery().getBiEngineStatistics();
-            if (biEngineStatistics != null) {
-              biEngineMode = biEngineStatistics.getBiEngineMode();
-              biEngineReasons = biEngineStatistics.getBiEngineReasons();
-            }
+          Optional<BiEngineStatistics> biEngineStatisticsOptional =
+              Optional.ofNullable(referencedJob)
+                  .map(Job::getStatistics)
+                  .map(JobStatistics::getQuery)
+                  .map(JobStatistics2::getBiEngineStatistics);
+          if (biEngineStatisticsOptional.isPresent()) {
+            BiEngineStatistics biEngineStatistics = biEngineStatisticsOptional.get();
+            biEngineMode = biEngineStatistics.getBiEngineMode();
+            biEngineReasons = biEngineStatistics.getBiEngineReasons();
           }
           return new BQScrollableResultSet(
               rows,

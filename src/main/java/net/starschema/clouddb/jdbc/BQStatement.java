@@ -22,14 +22,7 @@
  */
 package net.starschema.clouddb.jdbc;
 
-import com.google.api.services.bigquery.model.BiEngineReason;
-import com.google.api.services.bigquery.model.BiEngineStatistics;
-import com.google.api.services.bigquery.model.Job;
-import com.google.api.services.bigquery.model.JobReference;
-import com.google.api.services.bigquery.model.JobStatistics2;
-import com.google.api.services.bigquery.model.QueryResponse;
-import com.google.api.services.bigquery.model.TableRow;
-import com.google.api.services.bigquery.model.TableSchema;
+import com.google.api.services.bigquery.model.*;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -38,6 +31,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -199,15 +193,15 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                   .setLocation(qr.getJobReference().getLocation())
                   .execute();
 
-          if (referencedJob != null) {
-            JobStatistics2 statistics2 = referencedJob.getStatistics().getQuery();
-            if (statistics2 != null) {
-              BiEngineStatistics biEngineStatistics = statistics2.getBiEngineStatistics();
-              if (biEngineStatistics != null) {
-                biEngineMode = biEngineStatistics.getBiEngineMode();
-                biEngineReasons = biEngineStatistics.getBiEngineReasons();
-              }
-            }
+          Optional<BiEngineStatistics> biEngineStatisticsOptional =
+              Optional.ofNullable(referencedJob)
+                  .map(Job::getStatistics)
+                  .map(JobStatistics::getQuery)
+                  .map(JobStatistics2::getBiEngineStatistics);
+          if (biEngineStatisticsOptional.isPresent()) {
+            BiEngineStatistics biEngineStatistics = biEngineStatisticsOptional.get();
+            biEngineMode = biEngineStatistics.getBiEngineMode();
+            biEngineReasons = biEngineStatistics.getBiEngineReasons();
           }
         }
       }

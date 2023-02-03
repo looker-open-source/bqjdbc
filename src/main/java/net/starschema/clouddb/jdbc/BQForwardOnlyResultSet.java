@@ -26,14 +26,41 @@ import com.google.api.client.json.JsonGenerator;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.Bigquery;
-import com.google.api.services.bigquery.model.*;
-import java.io.*;
+import com.google.api.services.bigquery.model.BiEngineReason;
+import com.google.api.services.bigquery.model.BiEngineStatistics;
+import com.google.api.services.bigquery.model.GetQueryResultsResponse;
+import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.JobStatistics;
+import com.google.api.services.bigquery.model.JobStatistics2;
+import com.google.api.services.bigquery.model.TableFieldSchema;
+import com.google.api.services.bigquery.model.TableRow;
+import com.google.api.services.bigquery.model.TableSchema;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Date;
+import java.sql.NClob;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.RowId;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -157,14 +184,15 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
       throw new BQSQLException("Failed to fetch results. Connection is closed.");
     }
     this.bigquery = bigquery;
-
-    if (completedJob != null) {
-      BiEngineStatistics biEngineStatistics =
-          completedJob.getStatistics().getQuery().getBiEngineStatistics();
-      if (biEngineStatistics != null) {
-        biEngineMode = biEngineStatistics.getBiEngineMode();
-        biEngineReasons = biEngineStatistics.getBiEngineReasons();
-      }
+    Optional<BiEngineStatistics> biEngineStatisticsOptional =
+        Optional.ofNullable(completedJob)
+            .map(Job::getStatistics)
+            .map(JobStatistics::getQuery)
+            .map(JobStatistics2::getBiEngineStatistics);
+    if (biEngineStatisticsOptional.isPresent()) {
+      BiEngineStatistics biEngineStatistics = biEngineStatisticsOptional.get();
+      biEngineMode = biEngineStatistics.getBiEngineMode();
+      biEngineReasons = biEngineStatistics.getBiEngineReasons();
     }
     this.biEngineMode = biEngineMode;
     this.biEngineReasons = biEngineReasons;
