@@ -35,11 +35,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -364,14 +360,19 @@ public class BQSupportFuncts {
         || pollJob.getStatistics().isEmpty()) {
       throw new IOException("Failed to fetch query state.");
     }
-    BQSupportFuncts.logger.info(
-        "Job status: "
-            + pollJob.getStatus().getState()
-            + " ; "
-            + pollJob.getJobReference().getJobId()
-            + " ; "
-            + (System.currentTimeMillis() - pollJob.getStatistics().getCreationTime()));
-    return pollJob.getStatus().getState();
+
+    if (Optional.ofNullable(pollJob.getStatistics().getCreationTime()).isPresent()) {
+      BQSupportFuncts.logger.info(
+              "Job status: "
+                      + pollJob.getStatus().getState()
+                      + " ; "
+                      + pollJob.getJobReference().getJobId()
+                      + " ; "
+                      + (System.currentTimeMillis() - pollJob.getStatistics().getCreationTime()));
+      return pollJob.getStatus().getState();
+    } else {
+      throw new IOException("Failed to fetch creation time.");
+    }
   }
 
   /**
