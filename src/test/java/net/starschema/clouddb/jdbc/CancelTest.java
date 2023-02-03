@@ -1,6 +1,7 @@
 package net.starschema.clouddb.jdbc;
 
 import static junit.framework.Assert.*;
+import static org.junit.Assert.assertThrows;
 
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobReference;
@@ -197,7 +198,7 @@ public class CancelTest {
   }
 
   @Test
-  public void handlesLoggingBQJobStatus() throws SQLException, IOException, InterruptedException {
+  public void handlesLoggingBQJobStatus() throws IOException {
     // Check that the job status is correctly retrieved if query job has all
     // required attributes (status, statistics, and job reference). Previous
     // test verifies that exception is thrown if one or more of these is missing.
@@ -208,6 +209,24 @@ public class CancelTest {
             .setJobReference(new JobReference().setJobId("Job Id"));
     String result = BQSupportFuncts.logAndGetQueryState(testJob);
     Assert.assertEquals(result, "PENDING");
+  }
+
+  @Test
+  public void handlesNullCreationTime() throws IOException {
+    // Check that proper exception is thrown if creation time is null while
+    // logging job status.
+    Job testJob =
+        new Job()
+            .setStatus(new JobStatus().setState("PENDING"))
+            .setStatistics(new JobStatistics().setStartTime(12345567789L))
+            .setJobReference(new JobReference().setJobId("Job Id"));
+    Throwable exception =
+        assertThrows(
+            IOException.class,
+            () -> {
+              BQSupportFuncts.logAndGetQueryState(testJob);
+            });
+    assertEquals("Failed to fetch creation time.", exception.getMessage());
   }
 
   private void assertPollJobException(Exception exception) {

@@ -22,7 +22,15 @@
  */
 package net.starschema.clouddb.jdbc;
 
-import com.google.api.services.bigquery.model.*;
+import com.google.api.services.bigquery.model.BiEngineReason;
+import com.google.api.services.bigquery.model.BiEngineStatistics;
+import com.google.api.services.bigquery.model.Job;
+import com.google.api.services.bigquery.model.JobReference;
+import com.google.api.services.bigquery.model.JobStatistics;
+import com.google.api.services.bigquery.model.JobStatistics2;
+import com.google.api.services.bigquery.model.QueryResponse;
+import com.google.api.services.bigquery.model.TableRow;
+import com.google.api.services.bigquery.model.TableSchema;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.math.BigInteger;
