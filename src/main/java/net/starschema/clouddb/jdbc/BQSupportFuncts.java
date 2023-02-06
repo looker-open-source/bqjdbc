@@ -39,7 +39,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -356,16 +355,19 @@ public class BQSupportFuncts {
    *     <p>if the request to get the job specified by myjob and projectId fails
    */
   public static String logAndGetQueryState(Job pollJob) throws IOException {
-    JobStatistics stats = pollJob.getStatistics();
     if (pollJob == null
-        || pollJob.isEmpty()
-        || pollJob.getStatus().isEmpty()
-        || stats.isEmpty()) {
+            || pollJob.isEmpty()
+            || pollJob.getStatus().isEmpty()
+            || pollJob.getStatistics().isEmpty()) {
       throw new IOException("Failed to fetch query state.");
     }
-    long startTime = Stream.of(stats.getStartTime(), stats.getCreationTime())
-            .filter(Objects::nonNull).findFirst()
-            .orElseThrow(() -> new IllegalStateException("Failed to fetch start or creation time."));
+    JobStatistics stats = pollJob.getStatistics();
+    long startTime =
+        Stream.of(stats.getCreationTime(), stats.getStartTime())
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElseThrow(
+                () -> new IllegalStateException("Failed to fetch start or creation time."));
     BQSupportFuncts.logger.info(
         "Job status: "
             + pollJob.getStatus().getState()
