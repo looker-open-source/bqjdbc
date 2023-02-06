@@ -218,15 +218,15 @@ public class CancelTest {
     Job testJob =
         new Job()
             .setStatus(new JobStatus().setState("PENDING"))
-            .setStatistics(new JobStatistics().setStartTime(12345567789L))
+            .setStatistics(new JobStatistics().setEndTime(0L))
             .setJobReference(new JobReference().setJobId("Job Id"));
     Throwable exception =
         assertThrows(
-            IOException.class,
+            IllegalStateException.class,
             () -> {
               BQSupportFuncts.logAndGetQueryState(testJob);
             });
-    assertEquals("Failed to fetch creation time.", exception.getMessage());
+    assertEquals("Failed to fetch start or creation time.", exception.getMessage());
   }
 
   private void assertPollJobException(Exception exception) {
