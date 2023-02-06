@@ -35,7 +35,12 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -356,9 +361,9 @@ public class BQSupportFuncts {
    */
   public static String logAndGetQueryState(Job pollJob) throws IOException {
     if (pollJob == null
-            || pollJob.isEmpty()
-            || pollJob.getStatus().isEmpty()
-            || pollJob.getStatistics().isEmpty()) {
+        || pollJob.isEmpty()
+        || pollJob.getStatus().isEmpty()
+        || pollJob.getStatistics().isEmpty()) {
       throw new IOException("Failed to fetch query state.");
     }
     JobStatistics stats = pollJob.getStatistics();
