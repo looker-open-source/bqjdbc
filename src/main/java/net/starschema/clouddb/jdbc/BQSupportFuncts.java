@@ -38,10 +38,12 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -364,13 +366,20 @@ public class BQSupportFuncts {
         || pollJob.getStatistics().isEmpty()) {
       throw new IOException("Failed to fetch query state.");
     }
+    JobStatistics stats = pollJob.getStatistics();
+    long startTime =
+        Stream.of(stats.getCreationTime(), stats.getStartTime())
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElseThrow(
+                () -> new IllegalStateException("Failed to fetch start or creation time."));
     BQSupportFuncts.logger.info(
         "Job status: "
             + pollJob.getStatus().getState()
             + " ; "
             + pollJob.getJobReference().getJobId()
             + " ; "
-            + (System.currentTimeMillis() - pollJob.getStatistics().getStartTime()));
+            + (System.currentTimeMillis() - startTime));
     return pollJob.getStatus().getState();
   }
 
