@@ -178,7 +178,10 @@ public class BQSQLException extends SQLException {
     } else {
       String throwableDetails = cause.toString();
       // if the `cause` itself does not have a detailed message, ask for the message of its cause.
-      if (!throwableDetails.isEmpty()) throwableDetails = cause.getCause().toString();
+      if (!throwableDetails.isEmpty()) {
+        Throwable parentCause = cause.getCause();
+        if (parentCause != null) throwableDetails = parentCause.toString();
+      }
       return prefix + throwableDetails;
     }
     return reason;
