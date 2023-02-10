@@ -176,7 +176,10 @@ public class BQSQLException extends SQLException {
         return prefix + googleJsonResponseException.getDetails().getMessage();
       }
     } else {
-      return prefix + cause.toString();
+      String throwableDetails = cause.toString();
+      // if the `cause` itself does not have a detailed message, ask for the message of its cause.
+      if (!throwableDetails.isEmpty()) throwableDetails = cause.getCause().toString();
+      return prefix + throwableDetails;
     }
     return reason;
   }
