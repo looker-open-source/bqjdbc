@@ -28,16 +28,13 @@ import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Builder;
 import com.google.api.services.bigquery.BigqueryRequest;
 import com.google.api.services.bigquery.BigqueryRequestInitializer;
 import com.google.api.services.bigquery.BigqueryScopes;
 import com.google.api.services.bigquery.MinifiedBigquery;
-import com.google.api.services.iamcredentials.v1.IAMCredentials;
-import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenRequest;
-import com.google.api.services.iamcredentials.v1.model.GenerateAccessTokenResponse;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -53,7 +50,6 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -67,7 +63,7 @@ public class Oauth2Bigquery {
   static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
   /** Global instance of the JSON factory. */
-  private static final JsonFactory JSON_FACTORY = new JacksonFactory();
+  private static final JsonFactory JSON_FACTORY = new GsonFactory();
 
   /** Log4j logger, for debugging. */
   static Logger logger = LoggerFactory.getLogger(Oauth2Bigquery.class);
@@ -376,24 +372,8 @@ public class Oauth2Bigquery {
     GoogleCredentials credential =
         createServiceAccountCredential(
             serviceaccountemail, keypath, password, jsonAuthContents, true);
-    HttpRequestTimeoutInitializer httpRequestInitializer =
-        new HttpRequestTimeoutInitializer(credential);
 
-    IAMCredentials.Builder builder =
-        new IAMCredentials.Builder(HTTP_TRANSPORT, JSON_FACTORY, httpRequestInitializer)
-            .setApplicationName(applicationName);
-
-    IAMCredentials iamCredentials = builder.build();
-
-    String name = "projects/-/serviceAccounts/" + serviceaccountemail;
-    GenerateAccessTokenRequest request = new GenerateAccessTokenRequest();
-    request.setScope(Collections.singletonList(BigqueryScopes.CLOUD_PLATFORM));
-
-    IAMCredentials.Projects.ServiceAccounts.GenerateAccessToken generateAccessToken;
-    generateAccessToken =
-        iamCredentials.projects().serviceAccounts().generateAccessToken(name, request);
-    GenerateAccessTokenResponse response = generateAccessToken.execute();
-    return response.getAccessToken();
+    return credential.refreshAccessToken().getTokenValue();
   }
 
   /**
