@@ -23,7 +23,7 @@
 package net.starschema.clouddb.jdbc;
 
 import com.google.api.client.json.JsonGenerator;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.BiEngineReason;
@@ -475,7 +475,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
   private String easyToJson(Object resultObject) throws SQLException {
     Writer writer = new StringWriter();
     try {
-      JsonGenerator gen = new JacksonFactory().createJsonGenerator(writer);
+      JsonGenerator gen = new GsonFactory().createJsonGenerator(writer);
       gen.serialize(resultObject);
       gen.close();
     } catch (IOException e) {
