@@ -646,26 +646,26 @@ public class BQSupportFuncts {
       Map<String, String> labels,
       boolean useQueryCache)
       throws IOException {
-      return getSyncQuery(
-               bigquery,
-               projectId,
-               querySql,
-               dataSet,
-               useLegacySql,
-               maxBillingBytes,
-               queryTimeoutMs,
-               maxResults,
-               labels,
-               useQueryCache
-             ).execute();
+    return getSyncQuery(
+            bigquery,
+            projectId,
+            querySql,
+            dataSet,
+            useLegacySql,
+            maxBillingBytes,
+            queryTimeoutMs,
+            maxResults,
+            labels,
+            useQueryCache)
+        .execute();
   }
 
   /*
-  * Gets a query as specified, but does not execute it.
-  * Introduced for assertions on the property of the query.
-  * */
+   * Gets a query as specified, but does not execute it.
+   * Introduced for assertions on the property of the query.
+   * */
   static Bigquery.Jobs.Query getSyncQuery(
-  Bigquery bigquery,
+      Bigquery bigquery,
       String projectId,
       String querySql,
       String dataSet,
@@ -676,7 +676,7 @@ public class BQSupportFuncts {
       Map<String, String> labels,
       boolean useQueryCache)
       throws IOException {
-     QueryRequest qr =
+    QueryRequest qr =
         new QueryRequest()
             .setLabels(labels)
             .setUseQueryCache(useQueryCache)
