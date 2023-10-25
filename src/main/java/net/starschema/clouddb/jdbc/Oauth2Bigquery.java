@@ -529,9 +529,6 @@ public class Oauth2Bigquery {
 
         request.setRequestHeaders(currentHeaders);
       }
-      if (oauthToken != null) {
-        request.setOauthToken(oauthToken);
-      }
     }
   }
 }
