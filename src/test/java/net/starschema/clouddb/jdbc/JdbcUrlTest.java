@@ -190,18 +190,19 @@ public class JdbcUrlTest {
     String url = BQSupportFuncts.constructUrlFromPropertiesFile(oauthProps, true, null);
     BQConnection bqConn = new BQConnection(url, new Properties());
     BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
-    Query query = BQSupportFuncts.getSyncQuery(
-                    bqConn.getBigquery(),
-                    oauthProps.getProperty("projectid"),
-                    "SELECT * FROM orders limit 1",
-                    bqConn.getDataSet(),
-                    bqConn.getUseLegacySql(),
-                    null,
-                    stmt.getSyncTimeoutMillis(),
-                    (long) stmt.getMaxRows(),
-                    stmt.getAllLabels(),
-                   bqConn.getUseQueryCache());
-                   String oAuthToken = query.getOauthToken();
+    Query query =
+        BQSupportFuncts.getSyncQuery(
+            bqConn.getBigquery(),
+            oauthProps.getProperty("projectid"),
+            "SELECT * FROM orders limit 1",
+            bqConn.getDataSet(),
+            bqConn.getUseLegacySql(),
+            null,
+            stmt.getSyncTimeoutMillis(),
+            (long) stmt.getMaxRows(),
+            stmt.getAllLabels(),
+            bqConn.getUseQueryCache());
+    String oAuthToken = query.getOauthToken();
     Assert.assertTrue(oAuthToken == null);
   }
 
