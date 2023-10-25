@@ -506,14 +506,9 @@ public class Oauth2Bigquery {
   private static class BigQueryRequestUserAgentInitializer extends BigqueryRequestInitializer {
 
     String userAgent = null;
-    String oauthToken = null;
 
     public void setUserAgent(String userAgent) {
       this.userAgent = userAgent;
-    }
-
-    public void setOauthToken(String oauthToken) {
-      this.oauthToken = oauthToken;
     }
 
     public String getOauthToken() {
