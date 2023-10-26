@@ -119,9 +119,6 @@ public class Oauth2Bigquery {
       if (userAgent != null) {
         requestInitializer.setUserAgent(userAgent);
       }
-      if (oauthToken != null) {
-        requestInitializer.setOauthToken(oauthToken);
-      }
 
       bqBuilder.setBigqueryRequestInitializer(requestInitializer);
     }
@@ -509,10 +506,6 @@ public class Oauth2Bigquery {
 
     public void setUserAgent(String userAgent) {
       this.userAgent = userAgent;
-    }
-
-    public String getOauthToken() {
-      return this.oauthToken;
     }
 
     @Override
