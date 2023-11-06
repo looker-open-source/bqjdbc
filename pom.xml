@@ -109,7 +109,7 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-bigquery</artifactId>
-      <version>2.29.0</version>
+      <version>2.34.0</version>
     </dependency>
     <!-- START TEST DEPENDENCIES -->
     <dependency>
