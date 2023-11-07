@@ -75,8 +75,9 @@ public class PreparedStatementTests {
       PreparedStatementTests.con =
           DriverManager.getConnection(
               BQSupportFuncts.constructUrlFromPropertiesFile(
-                  BQSupportFuncts.readFromPropFile("installedaccount1.properties")),
-              BQSupportFuncts.readFromPropFile("installedaccount1.properties"));
+                  BQSupportFuncts.readFromPropFile(
+                      "src/test/resources/installedaccount1.properties")),
+              BQSupportFuncts.readFromPropFile("src/test/resources/installedaccount1.properties"));
     } catch (Exception e) {
       e.printStackTrace();
     }
