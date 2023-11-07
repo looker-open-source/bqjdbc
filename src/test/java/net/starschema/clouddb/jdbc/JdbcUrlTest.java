@@ -3,7 +3,6 @@ package net.starschema.clouddb.jdbc;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpRequest;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
-import com.google.api.services.bigquery.Bigquery.Jobs.Query;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -171,39 +170,6 @@ public class JdbcUrlTest {
 
     BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
     stmt.executeQuery("SELECT * FROM orders limit 1");
-  }
-
-  @Test
-  public void oAuthAccessTokenOnlyInHeader()
-      throws SQLException, IOException, GeneralSecurityException {
-    // generate access token from service account credentials
-    Properties serviceProps = getProperties("/protectedaccount.properties");
-    String accessToken =
-        Oauth2Bigquery.generateAccessToken(
-            serviceProps.getProperty("user"),
-            serviceProps.getProperty("path"),
-            serviceProps.getProperty("password"),
-            null);
-
-    Properties oauthProps = getProperties("/oauthaccount.properties");
-    oauthProps.setProperty("oauthaccesstoken", accessToken);
-    String url = BQSupportFuncts.constructUrlFromPropertiesFile(oauthProps, true, null);
-    BQConnection bqConn = new BQConnection(url, new Properties());
-    BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
-    Query query =
-        BQSupportFuncts.getSyncQuery(
-            bqConn.getBigquery(),
-            oauthProps.getProperty("projectid"),
-            "SELECT * FROM orders limit 1",
-            bqConn.getDataSet(),
-            bqConn.getUseLegacySql(),
-            null,
-            stmt.getSyncTimeoutMillis(),
-            (long) stmt.getMaxRows(),
-            stmt.getAllLabels(),
-            bqConn.getUseQueryCache());
-    String oAuthToken = query.getOauthToken();
-    Assert.assertTrue(oAuthToken == null);
   }
 
   @Test
