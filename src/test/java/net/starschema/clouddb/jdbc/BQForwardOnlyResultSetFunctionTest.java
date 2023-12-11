@@ -29,12 +29,16 @@ import com.google.gson.Gson;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -432,7 +436,7 @@ public class BQForwardOnlyResultSetFunctionTest {
             + "['a', 'b', 'c'], "
             + "[STRUCT(1 as a, 'hello' as b), STRUCT(2 as a, 'goodbye' as b)], "
             + "STRUCT(1 as a, ['an', 'array'] as b),"
-            + "TIMESTAMP('2012-01-01 00:00:03.032') as t";
+            + "TIMESTAMP('2012-01-01 00:00:03.0000') as t";
 
     this.NewConnection(false);
     java.sql.ResultSet result = null;
@@ -486,15 +490,79 @@ public class BQForwardOnlyResultSetFunctionTest {
         new Gson().toJson(new String[] {"an", "array"}),
         new Gson().toJson(mixedBagActual.get("b")));
 
-    Assert.assertEquals("2012-01-01 00:00:03.032", result.getString(5));
+    Assert.assertEquals("2012-01-01 00:00:03 UTC", result.getString(5));
+  }
+
+  @Test
+  public void testResultSetDateTimeType() throws SQLException, ParseException {
+    final String sql = "SELECT DATETIME('2012-01-01 01:02:03.04567')";
+    final Calendar istCalendar = new GregorianCalendar(TimeZone.getTimeZone("Asia/Kolkata"));
+    final DateFormat utcDateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    utcDateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+    this.NewConnection(false);
+    Statement stmt =
+        BQForwardOnlyResultSetFunctionTest.con.createStatement(
+            ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    stmt.setQueryTimeout(500);
+    ResultSet result = stmt.executeQuery(sql);
+    Assert.assertTrue(result.next());
+
+    Timestamp resultTimestamp = result.getTimestamp(1);
+    Object resultObject = result.getObject(1);
+    String resultString = result.getString(1);
+
+    // getObject() and getTimestamp() should behave the same for DATETIME.
+    Assert.assertEquals(resultTimestamp, resultObject);
+
+    // getTimestamp().toString() should be equivalent to getString(), with full microsecond support.
+    Assert.assertEquals("2012-01-01 01:02:03.04567", resultTimestamp.toString());
+    Assert.assertEquals("2012-01-01T01:02:03.045670", resultString);
+
+    // If a different calendar is used, the string representation should be adjusted.
+    Timestamp adjustedTimestamp = result.getTimestamp(1, istCalendar);
+    // Render it from the perspective of UTC.
+    // Since it was created for IST, it should be adjusted by -5:30.
+    String adjustedString = utcDateFormatter.format(adjustedTimestamp);
+    Assert.assertEquals("2011-12-31 19:32:03.045", adjustedString);
+    // SimpleDateFormat does not support microseconds,
+    // but they should be correct on the adjusted timestamp.
+    Assert.assertEquals(45670000, adjustedTimestamp.getNanos());
+  }
+
+  @Test
+  public void testResultSetTimestampType() throws SQLException, ParseException {
+    final String sql = "SELECT TIMESTAMP('2012-01-01 01:02:03.04567')";
+
+    this.NewConnection(false);
+    Statement stmt =
+        BQForwardOnlyResultSetFunctionTest.con.createStatement(
+            ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    stmt.setQueryTimeout(500);
+    ResultSet result = stmt.executeQuery(sql);
+    Assert.assertTrue(result.next());
+
+    Timestamp resultTimestamp = result.getTimestamp(1);
+    Object resultObject = result.getObject(1);
+    String resultString = result.getString(1);
+
+    // getObject() and getTimestamp() should behave the same for TIMESTAMP.
+    Assert.assertEquals(resultTimestamp, resultObject);
+
+    // getString() should be the string representation in UTC+0.
+    Assert.assertEquals("2012-01-01 01:02:03.04567 UTC", resultString);
+
+    // getTimestamp() should have the right number of milliseconds elapsed since epoch.
+    // 1325379723045 milliseconds after epoch, the time is 2012-01-01 01:02:03.045 in UTC+0.
+    Assert.assertEquals(1325379723045L, resultTimestamp.getTime());
+    // The microseconds should also be correct, but nanoseconds are not supported by BigQuery.
+    Assert.assertEquals(45670000, resultTimestamp.getNanos());
   }
 
   @Test
   public void testResultSetTypesInGetObject() throws SQLException, ParseException {
     final String sql =
         "SELECT "
-            + "DATETIME('2012-01-01 00:00:02'), "
-            + "TIMESTAMP('2012-01-01 00:00:03'), "
             + "CAST('2312412432423423334.234234234' AS NUMERIC), "
             + "CAST('2011-04-03' AS DATE), "
             + "CAST('nan' AS FLOAT)";
@@ -513,19 +581,14 @@ public class BQForwardOnlyResultSetFunctionTest {
     }
     Assert.assertNotNull(result);
     Assert.assertTrue(result.next());
-    Assert.assertEquals("2012-01-01T00:00:02", result.getObject(1));
 
-    SimpleDateFormat timestampDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss z");
-    Date parsedDate = timestampDateFormat.parse("2012-01-01 00:00:03 UTC");
-    Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
-    Assert.assertEquals(timestamp, result.getObject(2));
+    Assert.assertEquals(new BigDecimal("2312412432423423334.234234234"), result.getObject(1));
 
-    Assert.assertEquals(new BigDecimal("2312412432423423334.234234234"), result.getObject(3));
     SimpleDateFormat dateDateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date parsedDateDate = new java.sql.Date(dateDateFormat.parse("2011-04-03").getTime());
-    Assert.assertEquals(parsedDateDate, result.getObject(4));
+    Assert.assertEquals(parsedDateDate, result.getObject(2));
 
-    Assert.assertEquals(Double.NaN, result.getObject(5));
+    Assert.assertEquals(Double.NaN, result.getObject(3));
   }
 
   @Test
@@ -565,7 +628,7 @@ public class BQForwardOnlyResultSetFunctionTest {
 
   @Test
   public void testResultSetTimeType() throws SQLException, ParseException {
-    final String sql = "select current_time(), CAST('00:00:02.123455' AS TIME)";
+    final String sql = "select current_time(), CAST('00:00:02.12345' AS TIME)";
     this.NewConnection(false);
     java.sql.ResultSet result = null;
     try {
@@ -585,14 +648,28 @@ public class BQForwardOnlyResultSetFunctionTest {
     Object resultObject = result.getObject(1);
     String resultString = result.getString(1);
 
-    // getObject() and getString() should behave the same for TIME
-    Assert.assertEquals(resultString, (String) resultObject);
+    // getObject() and getTime() should behave the same for TIME.
+    Assert.assertEquals(resultTime, resultObject);
 
-    // getTime() will return a 'time' without milliseconds
+    // getTime().toString() should be equivalent to getString() without milliseconds.
     Assert.assertTrue(resultString.startsWith(resultTime.toString()));
 
-    // also check that explicit casts to TIME work as expected
-    Assert.assertEquals(result.getTime(2).toString(), "00:00:02");
+    // getTime() should have milliseconds, though. They're just not included in toString().
+    // Get whole milliseconds (modulo whole seconds) from resultTime.
+    long timeMillis = resultTime.getTime() % 1000;
+    // Get whole milliseconds from resultString.
+    int decimalPlace = resultString.lastIndexOf('.');
+    long stringMillis = Long.parseLong(resultString.substring(decimalPlace + 1, decimalPlace + 4));
+    Assert.assertEquals(timeMillis, stringMillis);
+
+    // Check that explicit casts to TIME work as expected.
+    Time fixedTime = result.getTime(2);
+    Assert.assertEquals("00:00:02", fixedTime.toString());
+    // The object should have milliseconds even though they're hidden by toString().
+    // AFAICT [java.sql.Time] does not support microseconds.
+    Assert.assertEquals(123, fixedTime.getTime() % 1000);
+    // getString() should show microseconds.
+    Assert.assertEquals("00:00:02.123450", result.getString(2));
   }
 
   @Test
