@@ -4,7 +4,7 @@
        to a groupId that we have ownership over -->
   <groupId>com.google.looker-open-source</groupId>
   <artifactId>bqjdbc</artifactId>
-  <version>2.3.30-SNAPSHOT</version>
+  <version>3.0.0-SNAPSHOT</version>
   <name>Big Query over JDBC</name>
   <description>A simple JDBC driver, to reach Google's BigQuery</description>
   <properties>
