@@ -142,6 +142,18 @@
       <version>1.19.0</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-core</artifactId>
+      <version>1.37</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-generator-annprocess</artifactId>
+      <version>1.37</version>
+      <scope>test</scope>
+    </dependency>
     <!-- END TEST DEPENDENCIES -->
   </dependencies>
   <build>
@@ -221,8 +233,29 @@
           </java>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>benchmark-stateless-small</id>
+            <goals><goal>exec</goal></goals>
+            <configuration>
+              <classpathScope>test</classpathScope>
+              <executable>java</executable>
+              <arguments>
+                <argument>-classpath</argument>
+                <classpath/>
+                <argument>org.openjdk.jmh.Main</argument>
+                <argument>
+                  net.starschema.clouddb.jdbc.StatelessSmallQueryBenchmark
+                </argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
-
-
 </project>
