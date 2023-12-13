@@ -28,7 +28,12 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -40,6 +45,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
 import junit.framework.Assert;
+import org.assertj.core.api.Assertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -70,6 +77,14 @@ public class BQForwardOnlyResultSetFunctionTest {
     url += "&useLegacySql=false";
     this.defaultProjectId = props.getProperty("projectid");
     this.defaultConn = new BQConnection(url, new Properties());
+  }
+
+  @After
+  public void teardown() throws SQLException {
+    if (defaultConn != null) {
+      defaultConn.close();
+      defaultConn = null;
+    }
   }
 
   private BQConnection conn() throws SQLException, IOException {
@@ -202,21 +217,26 @@ public class BQForwardOnlyResultSetFunctionTest {
    */
   @Before
   public void NewConnection() {
-    NewConnection(true);
+    NewConnection("&useLegacySql=true");
   }
 
-  void NewConnection(boolean useLegacySql) {
-
+  void NewConnection(String extraUrl) {
     this.logger.info("Testing the JDBC driver");
     try {
       Class.forName("net.starschema.clouddb.jdbc.BQDriver");
       Properties props =
           BQSupportFuncts.readFromPropFile(
               getClass().getResource("/installedaccount1.properties").getFile());
-      props.setProperty("useLegacySql", String.valueOf(useLegacySql));
+      String jdcbUrl = BQSupportFuncts.constructUrlFromPropertiesFile(props);
+      if (extraUrl != null) {
+        jdcbUrl += extraUrl;
+      }
+      if (BQForwardOnlyResultSetFunctionTest.con != null) {
+        BQForwardOnlyResultSetFunctionTest.con.close();
+      }
       BQForwardOnlyResultSetFunctionTest.con =
           DriverManager.getConnection(
-              BQSupportFuncts.constructUrlFromPropertiesFile(props),
+              jdcbUrl,
               BQSupportFuncts.readFromPropFile(
                   getClass().getResource("/installedaccount1.properties").getFile()));
     } catch (Exception e) {
@@ -438,7 +458,7 @@ public class BQForwardOnlyResultSetFunctionTest {
             + "STRUCT(1 as a, ['an', 'array'] as b),"
             + "TIMESTAMP('2012-01-01 00:00:03.0000') as t";
 
-    this.NewConnection(false);
+    this.NewConnection("&useLegacySql=false");
     java.sql.ResultSet result = null;
     try {
       Statement stmt =
@@ -500,7 +520,7 @@ public class BQForwardOnlyResultSetFunctionTest {
     final DateFormat utcDateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     utcDateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-    this.NewConnection(false);
+    this.NewConnection("&useLegacySql=false");
     Statement stmt =
         BQForwardOnlyResultSetFunctionTest.con.createStatement(
             ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
@@ -534,7 +554,7 @@ public class BQForwardOnlyResultSetFunctionTest {
   public void testResultSetTimestampType() throws SQLException, ParseException {
     final String sql = "SELECT TIMESTAMP('2012-01-01 01:02:03.04567')";
 
-    this.NewConnection(false);
+    this.NewConnection("&useLegacySql=false");
     Statement stmt =
         BQForwardOnlyResultSetFunctionTest.con.createStatement(
             ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
@@ -567,7 +587,7 @@ public class BQForwardOnlyResultSetFunctionTest {
             + "CAST('2011-04-03' AS DATE), "
             + "CAST('nan' AS FLOAT)";
 
-    this.NewConnection(true);
+    this.NewConnection("&useLegacySql=true");
     java.sql.ResultSet result = null;
     try {
       Statement stmt =
@@ -595,7 +615,7 @@ public class BQForwardOnlyResultSetFunctionTest {
   public void testResultSetArraysInGetObject() throws SQLException, ParseException {
     final String sql = "SELECT [1, 2, 3], [TIMESTAMP(\"2010-09-07 15:30:00 America/Los_Angeles\")]";
 
-    this.NewConnection(false);
+    this.NewConnection("&useLegacySql=false");
     java.sql.ResultSet result = null;
     try {
       Statement stmt =
@@ -629,7 +649,8 @@ public class BQForwardOnlyResultSetFunctionTest {
   @Test
   public void testResultSetTimeType() throws SQLException, ParseException {
     final String sql = "select current_time(), CAST('00:00:02.12345' AS TIME)";
-    this.NewConnection(false);
+    this.NewConnection("&useLegacySql=false");
+
     java.sql.ResultSet result = null;
     try {
       Statement stmt =
@@ -686,7 +707,7 @@ public class BQForwardOnlyResultSetFunctionTest {
     final String sql =
         "CREATE PROCEDURE looker_test.procedure_test(target_id INT64)\n" + "BEGIN\n" + "END;";
 
-    this.NewConnection(false);
+    this.NewConnection("&useLegacySql=false");
     java.sql.ResultSet result = null;
     try {
       Statement stmt =
@@ -713,7 +734,7 @@ public class BQForwardOnlyResultSetFunctionTest {
   public void testResultSetProceduresAsync() throws SQLException {
     final String sql =
         "CREATE PROCEDURE looker_test.long_procedure(target_id INT64)\n" + "BEGIN\n" + "END;";
-    this.NewConnection(false);
+    this.NewConnection("&useLegacySql=false");
 
     try {
       BQConnection bq = conn();
@@ -756,7 +777,7 @@ public class BQForwardOnlyResultSetFunctionTest {
     // before the results have been fetched. This was throwing a NPE.
     bq.close();
     try {
-      new BQForwardOnlyResultSet(bq.getBigquery(), defaultProjectId, ref, stmt);
+      new BQForwardOnlyResultSet(bq.getBigquery(), defaultProjectId, ref, null, stmt);
       Assert.fail("Initalizing BQForwardOnlyResultSet should throw something other than a NPE.");
     } catch (SQLException e) {
       Assert.assertEquals(e.getMessage(), "Failed to fetch results. Connection is closed.");
@@ -806,5 +827,22 @@ public class BQForwardOnlyResultSetFunctionTest {
     results.getJobId();
     results.getBiEngineMode();
     results.getBiEngineReasons();
+  }
+
+  @Test
+  public void testStatelessQuery() throws SQLException {
+    NewConnection("&useLegacySql=false&jobcreationmode=JOB_CREATION_OPTIONAL");
+    StatelessQuery.assumeStatelessQueriesEnabled(
+        BQForwardOnlyResultSetFunctionTest.con.getCatalog());
+    final Statement stmt =
+        BQForwardOnlyResultSetFunctionTest.con.createStatement(
+            ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    final ResultSet result = stmt.executeQuery(StatelessQuery.exampleQuery());
+    final String[][] rows = BQSupportMethods.GetQueryResult(result);
+    Assertions.assertThat(rows).isEqualTo(StatelessQuery.exampleValues());
+
+    final BQForwardOnlyResultSet bqResultSet = (BQForwardOnlyResultSet) result;
+    Assertions.assertThat(bqResultSet.getJobId()).isNull();
+    Assertions.assertThat(bqResultSet.getQueryId()).contains("!");
   }
 }

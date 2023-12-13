@@ -28,6 +28,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import junit.framework.Assert;
+import org.assertj.core.api.Assertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -242,7 +244,16 @@ public class BQScrollableResultSetFunctionTest {
    */
   @Before
   public void NewConnection() {
+    NewConnection("&useLegacySql=true");
+  }
 
+  @After
+  public void closeConnection() throws SQLException {
+    BQScrollableResultSetFunctionTest.con.close();
+    BQScrollableResultSetFunctionTest.con = null;
+  }
+
+  public void NewConnection(String extraUrl) {
     try {
       if (BQScrollableResultSetFunctionTest.con == null
           || !BQScrollableResultSetFunctionTest.con.isValid(0)) {
@@ -253,7 +264,9 @@ public class BQScrollableResultSetFunctionTest {
               BQSupportFuncts.constructUrlFromPropertiesFile(
                   BQSupportFuncts.readFromPropFile(
                       getClass().getResource("/installedaccount1.properties").getFile()));
-          jdbcUrl += "&useLegacySql=true";
+          if (jdbcUrl != null) {
+            jdbcUrl += extraUrl;
+          }
           BQScrollableResultSetFunctionTest.con =
               DriverManager.getConnection(
                   jdbcUrl,
@@ -713,5 +726,23 @@ public class BQScrollableResultSetFunctionTest {
     results.getJobId();
     results.getBiEngineMode();
     results.getBiEngineReasons();
+  }
+
+  @Test
+  public void testStatelessQuery() throws SQLException {
+    closeConnection();
+    NewConnection("&useLegacySql=true&jobcreationmode=JOB_CREATION_OPTIONAL");
+    StatelessQuery.assumeStatelessQueriesEnabled(
+        BQScrollableResultSetFunctionTest.con.getCatalog());
+    final Statement stmt =
+        BQScrollableResultSetFunctionTest.con.createStatement(
+            ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+    final ResultSet result = stmt.executeQuery(StatelessQuery.exampleQuery());
+    final String[][] rows = BQSupportMethods.GetQueryResult(result);
+    Assertions.assertThat(rows).isEqualTo(StatelessQuery.exampleValues());
+
+    final BQScrollableResultSet bqResultSet = (BQScrollableResultSet) result;
+    Assertions.assertThat(bqResultSet.getJobId()).isNull();
+    Assertions.assertThat(bqResultSet.getQueryId()).contains("!");
   }
 }

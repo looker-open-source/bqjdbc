@@ -72,6 +72,32 @@ public class BQConnection implements Connection {
   /** Boolean to determine whether or not to use legacy sql (default: false) * */
   private final boolean useLegacySql;
 
+  /**
+   * Enum that describes whether to create a job in projects that support stateless queries. Copied
+   * from BigQueryImpl
+   */
+  public static enum JobCreationMode {
+    /** If unspecified JOB_CREATION_REQUIRED is the default. */
+    JOB_CREATION_MODE_UNSPECIFIED,
+    /** Default. Job creation is always required. */
+    JOB_CREATION_REQUIRED,
+
+    /**
+     * Job creation is optional. Returning immediate results is prioritized. BigQuery will
+     * automatically determine if a Job needs to be created. The conditions under which BigQuery can
+     * decide to not create a Job are subject to change. If Job creation is required,
+     * JOB_CREATION_REQUIRED mode should be used, which is the default.
+     *
+     * <p>Note that no job ID will be created if the results were returned immediately.
+     */
+    JOB_CREATION_OPTIONAL;
+
+    private JobCreationMode() {}
+  }
+
+  /** The job creation mode - */
+  private JobCreationMode jobCreationMode = JobCreationMode.JOB_CREATION_MODE_UNSPECIFIED;
+
   /** getter for useLegacySql */
   public boolean getUseLegacySql() {
     return useLegacySql;
@@ -210,6 +236,9 @@ public class BQConnection implements Connection {
     this.useQueryCache =
         parseBooleanQueryParam(caseInsensitiveProps.getProperty("querycache"), true);
 
+    this.jobCreationMode =
+        parseJobCreationMode(caseInsensitiveProps.getProperty("jobcreationmode"));
+
     // Create Connection to BigQuery
     if (serviceAccount) {
       try {
@@ -320,6 +349,21 @@ public class BQConnection implements Connection {
     return string == null
         ? Collections.emptyList()
         : Arrays.asList(string.split(delimiter + "\\s*"));
+  }
+
+  /**
+   * Return a {@link JobCreationMode} or raise an exception if the string does not match a variant.
+   */
+  private static JobCreationMode parseJobCreationMode(@Nullable String string)
+      throws BQSQLException {
+    if (string == null) {
+      return null;
+    }
+    try {
+      return JobCreationMode.valueOf(string);
+    } catch (IllegalArgumentException e) {
+      throw new BQSQLException("could not parse " + string + " as job creation mode", e);
+    }
   }
 
   /**
@@ -1213,5 +1257,9 @@ public class BQConnection implements Connection {
 
   public Integer getTimeoutMs() {
     return timeoutMs;
+  }
+
+  public JobCreationMode getJobCreationMode() {
+    return jobCreationMode;
   }
 }
