@@ -23,6 +23,12 @@ import org.openjdk.jmh.annotations.Threads;
  *
  * <p>Run with mvn exec:exec@benchmark-stateless - note that mvn install must have been run at least
  * once before.
+ *
+ * <p>Representative summary as of 2023-12-14: <code>
+ * Benchmark                                                     Mode  Cnt   Score    Error  Units
+ * StatelessSmallQueryBenchmark.benchmarkSmallQueryOptionalJob  thrpt    5  67.994 ± 10.326  ops/s
+ * StatelessSmallQueryBenchmark.benchmarkSmallQueryRequiredJob  thrpt    5  37.171 ±  3.041  ops/s
+ * </code>
  */
 @Fork(1)
 @Threads(10)
