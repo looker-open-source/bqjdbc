@@ -16,7 +16,7 @@ public final class StatelessQuery {
    * Raise an {@link org.junit.AssumptionViolatedException} if the provided project isn't one that's
    * known to have stateless queries enabled
    *
-   * @param project the project to check - get it from {@link BQConnection.getCatalog() }
+   * @param project the project to check - get it from {@link BQConnection#getCatalog() }
    */
   public static void assumeStatelessQueriesEnabled(String project) {
     Assume.assumeTrue(ENABLED_PROJECTS.contains(project));
@@ -32,7 +32,7 @@ public final class StatelessQuery {
   }
 
   /**
-   * The values returned by {@link StatelessQuery}
+   * The values returned by {@link StatelessQuery#exampleQuery()}
    *
    * @return An array of strings representing the returned values
    */

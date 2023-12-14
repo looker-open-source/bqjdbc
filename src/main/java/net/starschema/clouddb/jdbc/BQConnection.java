@@ -74,7 +74,9 @@ public class BQConnection implements Connection {
 
   /**
    * Enum that describes whether to create a job in projects that support stateless queries. Copied
-   * from BigQueryImpl
+   * from <a
+   * href="https://github.com/googleapis/java-bigquery/blob/v2.34.0/google-cloud-bigquery/src/main/java/com/google/cloud/bigquery/QueryJobConfiguration.java#L98-L111">google-cloud-bigquery
+   * 2.34.0</a>
    */
   public static enum JobCreationMode {
     /** If unspecified JOB_CREATION_REQUIRED is the default. */
