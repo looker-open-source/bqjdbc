@@ -125,11 +125,41 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
    */
   private int Cursor = -1;
 
+  /**
+   * Constructor without query ID for backwards compatibility.
+   *
+   * @param bigquery Bigquery driver instance for which this is a result
+   * @param projectId the project from which these results were queried
+   * @param completedJob the query's job, if any
+   * @param bqStatementRoot the statement for which this is a result
+   * @throws SQLException thrown if the results can't be retrieved
+   */
   public BQForwardOnlyResultSet(
       Bigquery bigquery,
       String projectId,
       @Nullable Job completedJob,
-      String queryId,
+      BQStatementRoot bqStatementRoot)
+      throws SQLException {
+    this(
+        bigquery,
+        projectId,
+        completedJob,
+        null,
+        bqStatementRoot,
+        null,
+        false,
+        null,
+        0L,
+        false,
+        null,
+        null);
+  }
+
+  public BQForwardOnlyResultSet(
+      Bigquery bigquery,
+      String projectId,
+      @Nullable Job completedJob,
+      @Nullable String queryId,
       BQStatementRoot bqStatementRoot)
       throws SQLException {
     this(
