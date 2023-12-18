@@ -66,7 +66,10 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
    */
   private final @Nullable List<BiEngineReason> biEngineReasons;
 
-  private final JobReference jobReference;
+  private final @Nullable JobReference jobReference;
+
+  /** The BigQuery query ID; set if the query completed without a Job */
+  private final @Nullable String queryId;
 
   private TableSchema schema;
 
@@ -86,7 +89,8 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
         bigQueryGetQueryResultResponse.getCacheHit(),
         null,
         null,
-        bigQueryGetQueryResultResponse.getJobReference());
+        bigQueryGetQueryResultResponse.getJobReference(),
+        null);
 
     BigInteger maxrow;
     try {
@@ -104,7 +108,8 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
       @Nullable Boolean cacheHit,
       @Nullable String biEngineMode,
       @Nullable List<BiEngineReason> biEngineReasons,
-      JobReference jobReference) {
+      @Nullable JobReference jobReference,
+      @Nullable String queryId) {
     logger.debug("Created Scrollable resultset TYPE_SCROLL_INSENSITIVE");
     try {
       maxFieldSize = bqStatementRoot.getMaxFieldSize();
@@ -126,6 +131,7 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
     this.biEngineMode = biEngineMode;
     this.biEngineReasons = biEngineReasons;
     this.jobReference = jobReference;
+    this.queryId = queryId;
   }
 
   /** {@inheritDoc} */
@@ -301,5 +307,9 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
     } else {
       return null;
     }
+  }
+
+  public @Nullable String getQueryId() {
+    return queryId;
   }
 }

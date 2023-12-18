@@ -105,6 +105,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
   private String projectId;
   /** Reference for the Job */
   private @Nullable Job completedJob;
+  /** The BigQuery query ID; set if the query completed without a Job */
+  private final @Nullable String queryId;
   /** The total number of bytes processed while creating this ResultSet */
   private final @Nullable Long totalBytesProcessed;
   /** Whether the ResultSet came from BigQuery's cache */
@@ -123,6 +125,15 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
    */
   private int Cursor = -1;
 
+  /**
+   * Constructor without query ID for backwards compatibility.
+   *
+   * @param bigquery Bigquery driver instance for which this is a result
+   * @param projectId the project from which these results were queried
+   * @param completedJob the query's job, if any
+   * @param bqStatementRoot the statement for which this is a result
+   * @throws SQLException thrown if the results can't be retrieved
+   */
   public BQForwardOnlyResultSet(
       Bigquery bigquery,
       String projectId,
@@ -133,6 +144,29 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         bigquery,
         projectId,
         completedJob,
+        null,
+        bqStatementRoot,
+        null,
+        false,
+        null,
+        0L,
+        false,
+        null,
+        null);
+  }
+
+  public BQForwardOnlyResultSet(
+      Bigquery bigquery,
+      String projectId,
+      @Nullable Job completedJob,
+      @Nullable String queryId,
+      BQStatementRoot bqStatementRoot)
+      throws SQLException {
+    this(
+        bigquery,
+        projectId,
+        completedJob,
+        queryId,
         bqStatementRoot,
         null,
         false,
@@ -160,6 +194,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
       Bigquery bigquery,
       String projectId,
       @Nullable Job completedJob,
+      @Nullable String queryId,
       BQStatementRoot bqStatementRoot,
       List<TableRow> prefetchedRows,
       boolean prefetchedAllRows,
@@ -172,6 +207,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     logger.debug("Created forward only resultset TYPE_FORWARD_ONLY");
     this.Statementreference = (Statement) bqStatementRoot;
     this.completedJob = completedJob;
+    this.queryId = queryId;
     this.projectId = projectId;
     if (bigquery == null) {
       throw new BQSQLException("Failed to fetch results. Connection is closed.");
@@ -2991,5 +3027,9 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     } else {
       return null;
     }
+  }
+
+  public @Nullable String getQueryId() {
+    return queryId;
   }
 }

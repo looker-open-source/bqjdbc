@@ -254,7 +254,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
                 this);
           } else {
             return new BQForwardOnlyResultSet(
-                this.connection.getBigquery(), this.projectId, referencedJob, this);
+                this.connection.getBigquery(), this.projectId, referencedJob, null, this);
           }
         }
         // Pause execution for half second before polling job status

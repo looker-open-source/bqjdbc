@@ -72,6 +72,34 @@ public class BQConnection implements Connection {
   /** Boolean to determine whether or not to use legacy sql (default: false) * */
   private final boolean useLegacySql;
 
+  /**
+   * Enum that describes whether to create a job in projects that support stateless queries. Copied
+   * from <a
+   * href="https://github.com/googleapis/java-bigquery/blob/v2.34.0/google-cloud-bigquery/src/main/java/com/google/cloud/bigquery/QueryJobConfiguration.java#L98-L111">google-cloud-bigquery
+   * 2.34.0</a>
+   */
+  public static enum JobCreationMode {
+    /** If unspecified JOB_CREATION_REQUIRED is the default. */
+    JOB_CREATION_MODE_UNSPECIFIED,
+    /** Default. Job creation is always required. */
+    JOB_CREATION_REQUIRED,
+
+    /**
+     * Job creation is optional. Returning immediate results is prioritized. BigQuery will
+     * automatically determine if a Job needs to be created. The conditions under which BigQuery can
+     * decide to not create a Job are subject to change. If Job creation is required,
+     * JOB_CREATION_REQUIRED mode should be used, which is the default.
+     *
+     * <p>Note that no job ID will be created if the results were returned immediately.
+     */
+    JOB_CREATION_OPTIONAL;
+
+    private JobCreationMode() {}
+  }
+
+  /** The job creation mode - */
+  private JobCreationMode jobCreationMode = JobCreationMode.JOB_CREATION_MODE_UNSPECIFIED;
+
   /** getter for useLegacySql */
   public boolean getUseLegacySql() {
     return useLegacySql;
@@ -209,6 +237,18 @@ public class BQConnection implements Connection {
     // by default, the cache is enabled
     this.useQueryCache =
         parseBooleanQueryParam(caseInsensitiveProps.getProperty("querycache"), true);
+
+    final String jobCreationModeString = caseInsensitiveProps.getProperty("jobcreationmode");
+    if (jobCreationModeString == null) {
+      jobCreationMode = null;
+    } else {
+      try {
+        jobCreationMode = JobCreationMode.valueOf(jobCreationModeString);
+      } catch (IllegalArgumentException e) {
+        throw new BQSQLException(
+            "could not parse " + jobCreationModeString + " as job creation mode", e);
+      }
+    }
 
     // Create Connection to BigQuery
     if (serviceAccount) {
@@ -1213,5 +1253,9 @@ public class BQConnection implements Connection {
 
   public Integer getTimeoutMs() {
     return timeoutMs;
+  }
+
+  public JobCreationMode getJobCreationMode() {
+    return jobCreationMode;
   }
 }

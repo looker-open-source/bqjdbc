@@ -44,6 +44,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import net.starschema.clouddb.jdbc.BQConnection.JobCreationMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -644,7 +645,8 @@ public class BQSupportFuncts {
       Long queryTimeoutMs,
       Long maxResults,
       Map<String, String> labels,
-      boolean useQueryCache)
+      boolean useQueryCache,
+      JobCreationMode jobCreationMode)
       throws IOException {
     QueryRequest qr =
         new QueryRequest()
@@ -654,6 +656,9 @@ public class BQSupportFuncts {
             .setQuery(querySql)
             .setUseLegacySql(useLegacySql)
             .setMaximumBytesBilled(maxBillingBytes);
+    if (jobCreationMode != null) {
+      qr = qr.setJobCreationMode(jobCreationMode.name());
+    }
     if (dataSet != null) {
       qr.setDefaultDataset(new DatasetReference().setDatasetId(dataSet).setProjectId(projectId));
     }

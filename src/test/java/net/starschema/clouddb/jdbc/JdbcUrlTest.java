@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import junit.framework.Assert;
+import net.starschema.clouddb.jdbc.BQConnection.JobCreationMode;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Rule;
@@ -507,5 +508,28 @@ public class JdbcUrlTest {
 
   private String getUrl(String pathToProp, String dataset) throws IOException {
     return BQSupportFuncts.constructUrlFromPropertiesFile(getProperties(pathToProp), true, dataset);
+  }
+
+  @Test
+  public void missingJobCreationModeDefaultsToNull() throws Exception {
+    final String url = getUrl("/protectedaccount.properties", null);
+    Assertions.assertThat(url).doesNotContain("jobcreationmode");
+    bq = new BQConnection(url, new Properties());
+    final JobCreationMode mode = bq.getJobCreationMode();
+    Assertions.assertThat(mode).isNull();
+  }
+
+  @Test
+  public void jobCreationModeTest() throws Exception {
+    final String url = getUrl("/protectedaccount.properties", null);
+    Assertions.assertThat(url).doesNotContain("jobcreationmode");
+    final JobCreationMode[] modes = JobCreationMode.values();
+    for (JobCreationMode mode : modes) {
+      final String fullURL = String.format("%s&jobcreationmode=%s", url, mode.name());
+      try (BQConnection bq = new BQConnection(fullURL, new Properties())) {
+        final JobCreationMode parsedMode = bq.getJobCreationMode();
+        Assertions.assertThat(parsedMode).isEqualTo(mode);
+      }
+    }
   }
 }
