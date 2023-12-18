@@ -238,8 +238,17 @@ public class BQConnection implements Connection {
     this.useQueryCache =
         parseBooleanQueryParam(caseInsensitiveProps.getProperty("querycache"), true);
 
-    this.jobCreationMode =
-        parseJobCreationMode(caseInsensitiveProps.getProperty("jobcreationmode"));
+    final String jobCreationModeString = caseInsensitiveProps.getProperty("jobcreationmode");
+    if (jobCreationModeString == null) {
+      jobCreationMode = null;
+    } else {
+      try {
+        jobCreationMode = JobCreationMode.valueOf(jobCreationModeString);
+      } catch (IllegalArgumentException e) {
+        throw new BQSQLException(
+            "could not parse " + jobCreationModeString + " as job creation mode", e);
+      }
+    }
 
     // Create Connection to BigQuery
     if (serviceAccount) {
@@ -351,21 +360,6 @@ public class BQConnection implements Connection {
     return string == null
         ? Collections.emptyList()
         : Arrays.asList(string.split(delimiter + "\\s*"));
-  }
-
-  /**
-   * Return a {@link JobCreationMode} or raise an exception if the string does not match a variant.
-   */
-  private static JobCreationMode parseJobCreationMode(@Nullable String string)
-      throws BQSQLException {
-    if (string == null) {
-      return null;
-    }
-    try {
-      return JobCreationMode.valueOf(string);
-    } catch (IllegalArgumentException e) {
-      throw new BQSQLException("could not parse " + string + " as job creation mode", e);
-    }
   }
 
   /**
