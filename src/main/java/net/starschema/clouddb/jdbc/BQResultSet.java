@@ -112,9 +112,10 @@ public class BQResultSet extends ScrollableResultset<Object> implements java.sql
     if (this.isClosed()) {
       throw new BQSQLException("This Resultset is Closed");
     }
-    int columncount = this.getMetaData().getColumnCount();
-    for (int i = 1; i <= columncount; i++) {
-      if (this.getMetaData().getCatalogName(i).equals(columnLabel)) {
+    final ResultSetMetaData metadata = this.getMetaData();
+    int columns = metadata.getColumnCount();
+    for (int i = 1; i <= columns; i++) {
+      if (metadata.getColumnLabel(i).equals(columnLabel)) {
         return i;
       }
     }

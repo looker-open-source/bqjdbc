@@ -22,6 +22,7 @@ package net.starschema.clouddb.jdbc;
 
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,6 +32,7 @@ import junit.framework.Assert;
 import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * @author Horváth Attila
  * @author Gunics Balazs
  */
-public class BQScrollableResultSetFunctionTest {
+public class BQScrollableResultSetFunctionTest extends CommonTestsForResultSets {
 
   private static java.sql.Connection con = null;
   private static java.sql.ResultSet Result = null;
@@ -745,4 +747,31 @@ public class BQScrollableResultSetFunctionTest {
     Assertions.assertThat(bqResultSet.getJobId()).isNull();
     Assertions.assertThat(bqResultSet.getQueryId()).contains("!");
   }
+
+  @Override
+  protected Statement createStatementForCommonTests(Connection connection) throws SQLException {
+    return connection.createStatement(
+        ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+  }
+
+  @Override
+  @Test
+  @Ignore(
+      "Contradiction between BQSCrollableResultSet and BQForwardOnlyResultSet "
+          + "dates and times: b/317107706")
+  public void testGetTimeByLabel() throws SQLException {}
+
+  @Override
+  @Test
+  @Ignore(
+      "Contradiction between BQSCrollableResultSet and BQForwardOnlyResultSet "
+          + "dates and times: b/317107706")
+  public void testGetDateByLabel() throws SQLException {}
+
+  @Override
+  @Test
+  @Ignore(
+      "Contradiction between BQSCrollableResultSet and BQForwardOnlyResultSet "
+          + "dates and times: b/317107706")
+  public void testGetTimestampByLabel() throws SQLException {}
 }
