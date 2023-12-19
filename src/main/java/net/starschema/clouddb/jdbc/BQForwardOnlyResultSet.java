@@ -586,29 +586,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     throw new BQSQLFeatureNotSupportedException("deleteRow()");
   }
 
-  /**
-   *
-   *
-   * <h1>Implementation Details:</h1>
-   *
-   * <br>
-   * Not implemented yet.
-   *
-   * @throws BQSQLException
-   */
+  /** {@inheritDoc} */
   @Override
   public int findColumn(String columnLabel) throws SQLException {
-    if (isClosed()) {
-      throw new BQSQLException("This Resultset is Closed");
-    }
-    final ResultSetMetaData metadata = this.getMetaData();
-    int columns = metadata.getColumnCount();
-    for (int i = 1; i <= columns; i++) {
-      if (metadata.getColumnLabel(i).equals(columnLabel)) {
-        return i;
-      }
-    }
-    throw new BQSQLException("No Such column labeled: " + columnLabel);
+    return CommonResultSet.findColumn(columnLabel, getMetaData());
   }
 
   /**

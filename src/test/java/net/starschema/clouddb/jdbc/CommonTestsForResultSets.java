@@ -22,6 +22,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * An abstract class that contains tests common to {@link ResultSet} implementations. Its name
+ * doesn't end with Test so that JUnit doesn't try to run it.
+ *
+ * <p>Subclass this in @{link ResultSet} test classes and implement {@link
+ * CommonTestsForResultSets#createStatementForCommonTests(Connection)}.
+ */
 public abstract class CommonTestsForResultSets {
 
   private Connection connection;

@@ -137,17 +137,7 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
   /** {@inheritDoc} */
   @Override
   public int findColumn(String columnLabel) throws SQLException {
-    if (this.isClosed()) {
-      throw new BQSQLException("This Resultset is Closed");
-    }
-    final ResultSetMetaData metadata = this.getMetaData();
-    int columns = metadata.getColumnCount();
-    for (int i = 1; i <= columns; i++) {
-      if (metadata.getColumnLabel(i).equals(columnLabel)) {
-        return i;
-      }
-    }
-    throw new BQSQLException("No Such column labeled: " + columnLabel);
+    return CommonResultSet.findColumn(columnLabel, getMetaData());
   }
 
   /** {@inheritDoc} */

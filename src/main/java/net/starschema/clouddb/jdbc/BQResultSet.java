@@ -109,18 +109,7 @@ public class BQResultSet extends ScrollableResultset<Object> implements java.sql
   /** {@inheritDoc} */
   @Override
   public int findColumn(String columnLabel) throws SQLException {
-    if (this.isClosed()) {
-      throw new BQSQLException("This Resultset is Closed");
-    }
-    final ResultSetMetaData metadata = this.getMetaData();
-    int columns = metadata.getColumnCount();
-    for (int i = 1; i <= columns; i++) {
-      if (metadata.getColumnLabel(i).equals(columnLabel)) {
-        return i;
-      }
-    }
-    SQLException e = new BQSQLException("No Such column labeled: " + columnLabel);
-    throw e;
+    return CommonResultSet.findColumn(columnLabel, getMetaData());
   }
 
   /** {@inheritDoc} */
