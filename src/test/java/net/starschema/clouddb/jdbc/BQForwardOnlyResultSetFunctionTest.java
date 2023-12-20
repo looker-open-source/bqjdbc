@@ -28,6 +28,7 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -58,7 +59,7 @@ import org.slf4j.LoggerFactory;
  * @author Horváth Attila
  * @author Gunics Balazs
  */
-public class BQForwardOnlyResultSetFunctionTest {
+public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets {
 
   private static java.sql.Connection con = null;
   private java.sql.ResultSet resultForTest = null;
@@ -844,5 +845,11 @@ public class BQForwardOnlyResultSetFunctionTest {
     final BQForwardOnlyResultSet bqResultSet = (BQForwardOnlyResultSet) result;
     Assertions.assertThat(bqResultSet.getJobId()).isNull();
     Assertions.assertThat(bqResultSet.getQueryId()).contains("!");
+  }
+
+  @Override
+  protected Statement createStatementForCommonTests(final Connection connection)
+      throws SQLException {
+    return connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
   }
 }

@@ -61,7 +61,12 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -581,28 +586,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     throw new BQSQLFeatureNotSupportedException("deleteRow()");
   }
 
-  /**
-   *
-   *
-   * <h1>Implementation Details:</h1>
-   *
-   * <br>
-   * Not implemented yet.
-   *
-   * @throws BQSQLException
-   */
+  /** {@inheritDoc} */
   @Override
   public int findColumn(String columnLabel) throws SQLException {
-    if (this.isClosed()) {
-      throw new BQSQLException("This Resultset is Closed");
-    }
-    int columncount = this.getMetaData().getColumnCount();
-    for (int i = 1; i <= columncount; i++) {
-      if (this.getMetaData().getCatalogName(i).equals(columnLabel)) {
-        return i;
-      }
-    }
-    throw new BQSQLException("No Such column labeled: " + columnLabel);
+    return CommonResultSet.findColumn(columnLabel, getMetaData());
   }
 
   /**
