@@ -99,6 +99,9 @@ class DateTimeUtils {
 
   /** Parse a BigQuery TIMESTAMP literal, represented as the number of seconds since epoch. */
   static Timestamp parseTimestamp(String value) throws SQLException {
+    if (value == null) {
+      return null;
+    }
     try {
       // BigQuery TIMESTAMP has a string representation that looks like e.g. "1.288061375E9"
       // for 2010-10-26 02:49:35 UTC.
@@ -119,6 +122,9 @@ class DateTimeUtils {
   }
 
   static String formatTimestamp(String rawString) throws SQLException {
+    if (rawString == null) {
+      return null;
+    }
     Timestamp timestamp = parseTimestamp(rawString);
     return DATETIME_FORMATTER.format(OffsetDateTime.ofInstant(timestamp.toInstant(), UTC_ZONE))
         + " UTC";

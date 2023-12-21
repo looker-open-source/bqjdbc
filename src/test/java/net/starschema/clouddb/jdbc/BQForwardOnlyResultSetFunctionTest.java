@@ -38,6 +38,7 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -794,6 +795,58 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
       return;
     }
     throw new AssertionError("Expected graceful failure due to lack of job reference");
+  }
+
+  @Test
+  public void testHandlesNullTimeDateObjects() throws Exception {
+    this.NewConnection("&useLegacySql=false");
+    Statement stmt = BQForwardOnlyResultSetFunctionTest.con.createStatement(
+        ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+
+    final String date = "2011-11-11";
+    final String time = "12:12:12";
+    final String dateTime = date + " " + time;
+    final String dateTimeWithT = date + "T" + time;
+    // The number of milliseconds between epoch and 2011-11-11 12:12:12 UTC+0.
+    final long millis = 1321013532000L;
+
+    String sql = "SELECT " +
+        "TIMESTAMP('" + dateTime + "') AS ts, " +
+        "DATETIME('" + dateTime + "') AS dt, " +
+        "DATE('" + date + "') AS d, " +
+        "TIME(12, 12, 12) AS t\n" +
+        "UNION ALL SELECT " +
+        "CASE WHEN 1 = 0 THEN TIMESTAMP('" + dateTime + "') ELSE NULL END, " +
+        "CASE WHEN 1 = 0 THEN DATETIME('" + dateTime + "') ELSE NULL END, " +
+        "CASE WHEN 1 = 0 THEN DATE('" + date + "') ELSE NULL END, " +
+        "CASE WHEN 1 = 0 THEN TIME(12, 12, 12) ELSE NULL END";
+
+    ResultSet results = stmt.executeQuery(sql);
+
+    // First row has all non-null objects.
+    Assertions.assertThat(results.next()).isTrue();
+    Assertions.assertThat(results.getObject("ts")).isEqualTo(Timestamp.from(Instant.ofEpochMilli(millis)));
+    Assertions.assertThat(results.getString("ts")).isEqualTo(dateTime + " UTC");
+    Assertions.assertThat(results.getObject("dt")).isEqualTo(Timestamp.valueOf(dateTime));
+    Assertions.assertThat(results.getString("dt")).isEqualTo(dateTimeWithT);
+    Assertions.assertThat(results.getObject("d")).isEqualTo(java.sql.Date.valueOf(date));
+    Assertions.assertThat(results.getString("d")).isEqualTo(date);
+    Assertions.assertThat(results.getObject("t")).isEqualTo(java.sql.Time.valueOf(time));
+    Assertions.assertThat(results.getString("t")).isEqualTo(time);
+
+    // Second row is all null.
+    Assertions.assertThat(results.next()).isTrue();
+    Assertions.assertThat(results.getObject("ts")).isNull();
+    Assertions.assertThat(results.getString("ts")).isNull();
+    Assertions.assertThat(results.getObject("dt")).isNull();
+    Assertions.assertThat(results.getString("dt")).isNull();
+    Assertions.assertThat(results.getObject("d")).isNull();
+    Assertions.assertThat(results.getString("d")).isNull();
+    Assertions.assertThat(results.getObject("t")).isNull();
+    Assertions.assertThat(results.getString("t")).isNull();
+
+    // Only two rows.
+    Assertions.assertThat(results.next()).isFalse();
   }
 
   @Test
