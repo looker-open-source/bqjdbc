@@ -230,6 +230,7 @@
               <version>1.7</version>
               <style>GOOGLE</style>
             </googleJavaFormat>
+            <toggleOffOn />
           </java>
         </configuration>
       </plugin>
