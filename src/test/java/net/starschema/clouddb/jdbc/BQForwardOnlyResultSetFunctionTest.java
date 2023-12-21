@@ -800,8 +800,9 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
   @Test
   public void testHandlesNullTimeDateObjects() throws Exception {
     this.NewConnection("&useLegacySql=false");
-    Statement stmt = BQForwardOnlyResultSetFunctionTest.con.createStatement(
-        ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    Statement stmt =
+        BQForwardOnlyResultSetFunctionTest.con.createStatement(
+            ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 
     final String date = "2011-11-11";
     final String time = "12:12:12";
@@ -810,6 +811,7 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     // The number of milliseconds between epoch and 2011-11-11 12:12:12 UTC+0.
     final long millis = 1321013532000L;
 
+    // spotless:off
     String sql = "SELECT " +
         "TIMESTAMP('" + dateTime + "') AS ts, " +
         "DATETIME('" + dateTime + "') AS dt, " +
@@ -820,12 +822,14 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
         "CASE WHEN 1 = 0 THEN DATETIME('" + dateTime + "') ELSE NULL END, " +
         "CASE WHEN 1 = 0 THEN DATE('" + date + "') ELSE NULL END, " +
         "CASE WHEN 1 = 0 THEN TIME(12, 12, 12) ELSE NULL END";
+    // spotless:on
 
     ResultSet results = stmt.executeQuery(sql);
 
     // First row has all non-null objects.
     Assertions.assertThat(results.next()).isTrue();
-    Assertions.assertThat(results.getObject("ts")).isEqualTo(Timestamp.from(Instant.ofEpochMilli(millis)));
+    Assertions.assertThat(results.getObject("ts"))
+        .isEqualTo(Timestamp.from(Instant.ofEpochMilli(millis)));
     Assertions.assertThat(results.getString("ts")).isEqualTo(dateTime + " UTC");
     Assertions.assertThat(results.getObject("dt")).isEqualTo(Timestamp.valueOf(dateTime));
     Assertions.assertThat(results.getString("dt")).isEqualTo(dateTimeWithT);
