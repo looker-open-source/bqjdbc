@@ -67,7 +67,6 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
 
   Logger logger = LoggerFactory.getLogger(BQForwardOnlyResultSetFunctionTest.class);
   private Integer maxRows = null;
-  private String defaultProjectId = null;
 
   private Connection connect(final String extraUrl) throws SQLException, IOException {
     return ConnectionFromResources.connect("installedaccount1.properties", extraUrl);
@@ -76,8 +75,6 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
   @Before
   public void setConnection() throws SQLException, IOException {
     connection = connect("&useLegacySql=true");
-    final BQConnection bqConnection = (BQConnection) connection;
-    this.defaultProjectId = bqConnection.getProjectId();
   }
 
   @Before
@@ -739,14 +736,14 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     Job ref =
         bq.getBigquery()
             .jobs()
-            .get(defaultProjectId, qr.getJobReference().getJobId())
+            .get(bq.getProjectId(), qr.getJobReference().getJobId())
             .setLocation(qr.getJobReference().getLocation())
             .execute();
     // Under certain race conditions we could close the connection after the job is complete but
     // before the results have been fetched. This was throwing a NPE.
     bq.close();
     try {
-      new BQForwardOnlyResultSet(bq.getBigquery(), defaultProjectId, ref, null, stmt);
+      new BQForwardOnlyResultSet(bq.getBigquery(), bq.getProjectId(), ref, null, stmt);
       Assert.fail("Initalizing BQForwardOnlyResultSet should throw something other than a NPE.");
     } catch (SQLException e) {
       Assert.assertEquals(e.getMessage(), "Failed to fetch results. Connection is closed.");
@@ -766,9 +763,8 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
 
   @Test
   public void testHandlesNullTimeDateObjects() throws Exception {
-    this.NewConnection("&useLegacySql=false");
     Statement stmt =
-        BQForwardOnlyResultSetFunctionTest.con.createStatement(
+        standardSqlConnection.createStatement(
             ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 
     final String date = "2011-11-11";
