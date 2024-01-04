@@ -20,7 +20,8 @@
  */
 package net.starschema.clouddb.jdbc;
 
-import java.sql.DriverManager;
+import java.io.IOException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -40,7 +41,9 @@ import org.slf4j.LoggerFactory;
  */
 public class QueryResultTest {
 
-  private static java.sql.Connection con = null;
+  private java.sql.Connection connection;
+  private java.sql.Connection standardSqlConnection;
+
   // Logger logger = new Logger(QueryResultTest.class.getName());
   Logger logger = LoggerFactory.getLogger(QueryResultTest.class.getName());
 
@@ -64,61 +67,37 @@ public class QueryResultTest {
     return true;
   }
 
-  /**
-   * Makes a new Bigquery Connection to Hardcoded URL and gives back the Connection to static con
-   * member.
-   */
-  public void NewConnection(String extraUrl) {
-    try {
-      if (QueryResultTest.con == null || !QueryResultTest.con.isValid(0) || extraUrl != null) {
-
-        this.logger.info("Testing the JDBC driver");
-        try {
-          Class.forName("net.starschema.clouddb.jdbc.BQDriver");
-          String jdbcUrl =
-              BQSupportFuncts.constructUrlFromPropertiesFile(
-                  BQSupportFuncts.readFromPropFile(
-                      getClass().getResource("/serviceaccount.properties").getFile()));
-          if (extraUrl != null) {
-            jdbcUrl += extraUrl;
-          }
-          QueryResultTest.con =
-              DriverManager.getConnection(
-                  jdbcUrl,
-                  BQSupportFuncts.readFromPropFile(
-                      getClass().getResource("/serviceaccount.properties").getFile()));
-        } catch (Exception e) {
-          this.logger.error("Error in connection" + e.toString());
-          Assert.fail("General Exception:" + e.toString());
-        }
-        this.logger.info(((BQConnection) QueryResultTest.con).getURLPART());
-      }
-    } catch (SQLException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+  private Connection connect(final String extraUrl) throws SQLException, IOException {
+    return ConnectionFromResources.connect("installedaccount1.properties", extraUrl);
   }
 
   @Before
-  public void NewConnection() {
-    NewConnection("&useLegacySql=true");
+  public void setConnection() throws SQLException, IOException {
+    connection = connect("&useLegacySql=true");
+  }
+
+  @Before
+  public void setStandardSqlConnection() throws SQLException, IOException {
+    standardSqlConnection = connect("&useLegacySql=false");
   }
 
   @After
-  public void TeardownConnection() throws SQLException {
-    QueryResultTest.con.close();
-    QueryResultTest.con = null;
+  public void closeConnection() throws SQLException {
+    connection.close();
+  }
+
+  @After
+  public void closeStandardSqlConnection() throws SQLException {
+    standardSqlConnection.close();
   }
 
   @Test
   public void QueryResultTestWithDataset() throws SQLException {
-    NewConnection("&useLegacySql=false");
+    standardSqlConnection.setSchema("foobar");
+    Assert.assertEquals("foobar", standardSqlConnection.getSchema());
 
-    QueryResultTest.con.setSchema("foobar");
-    Assert.assertEquals("foobar", QueryResultTest.con.getSchema());
-
-    QueryResultTest.con.setSchema("tokyo_star");
-    Assert.assertEquals("tokyo_star", QueryResultTest.con.getSchema());
+    standardSqlConnection.setSchema("tokyo_star");
+    Assert.assertEquals("tokyo_star", standardSqlConnection.getSchema());
 
     final String sql = "SELECT meaning FROM meaning_of_life GROUP BY ROLLUP(meaning);";
     String[][] expectation = new String[][] {{null, "42"}};
@@ -128,7 +107,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Statement s = QueryResultTest.con.createStatement();
+      Statement s = standardSqlConnection.createStatement();
       s.setMaxRows(1);
       Result = s.executeQuery(sql);
     } catch (SQLException e) {
@@ -165,7 +144,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Result = QueryResultTest.con.createStatement().executeQuery(sql);
+      Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
       Assert.fail("SQLException" + e.toString());
@@ -215,7 +194,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Result = QueryResultTest.con.createStatement().executeQuery(sql);
+      Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
       Assert.fail("SQLException" + e.toString());
@@ -251,7 +230,7 @@ public class QueryResultTest {
     this.logger.debug(description);
     java.sql.ResultSet result = null;
     try {
-      Statement stmt = con.createStatement();
+      Statement stmt = connection.createStatement();
       // stmt.setQueryTimeout(60);
       result = stmt.executeQuery(sql);
     } catch (SQLException e) {
@@ -277,7 +256,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Result = QueryResultTest.con.createStatement().executeQuery(sql);
+      Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
       Assert.fail("SQLException" + e.toString());
@@ -308,7 +287,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Result = QueryResultTest.con.createStatement().executeQuery(sql);
+      Result = connection.createStatement().executeQuery(sql);
       this.logger.debug("{}", Result.getMetaData().getColumnCount());
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
@@ -344,7 +323,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Result = QueryResultTest.con.createStatement().executeQuery(sql);
+      Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
       Assert.fail("SQLException" + e.toString());
@@ -382,7 +361,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Result = QueryResultTest.con.createStatement().executeQuery(sql);
+      Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
       Assert.fail("SQLException" + e.toString());
@@ -423,7 +402,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Result = QueryResultTest.con.createStatement().executeQuery(sql);
+      Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
       Assert.fail("SQLException" + e.toString());
@@ -461,7 +440,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Result = QueryResultTest.con.createStatement().executeQuery(sql);
+      Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
       Assert.fail("SQLException" + e.toString());
@@ -500,7 +479,7 @@ public class QueryResultTest {
     this.logger.info("Running query:" + sql);
 
     try {
-      Statement stmt = QueryResultTest.con.createStatement();
+      Statement stmt = connection.createStatement();
       stmt.setQueryTimeout(1);
       stmt.executeQuery(sql);
     } catch (SQLException e) {
@@ -516,7 +495,7 @@ public class QueryResultTest {
     this.logger.info("Testing databesmetadata ... getSchemas() ");
 
     try {
-      QueryResultTest.con.getMetaData().getSchemas();
+      connection.getMetaData().getSchemas();
     } catch (SQLException e) {
       this.logger.warn("SQLexception" + e.toString());
       Assert.fail("schema problem");
@@ -534,7 +513,7 @@ public class QueryResultTest {
     java.sql.ResultSet Result = null;
     try {
       Statement stm =
-          con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+          connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
       stm.setFetchSize(1000);
       Result = stm.executeQuery(sql);
     } catch (SQLException e) {
@@ -561,8 +540,6 @@ public class QueryResultTest {
 
   @Test
   public void QueryResultTestSyncQuery() {
-    // sync is the default, but let's test it explicitly declared anyway
-    NewConnection();
     final String sql =
         "SELECT STRING(ROUND(weight_pounds))  FROM publicdata:samples.natality GROUP BY 1 ORDER BY"
             + " 1 DESC LIMIT 10;";
@@ -586,7 +563,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Result = QueryResultTest.con.createStatement().executeQuery(sql);
+      Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
       Assert.fail("SQLException" + e.toString());
@@ -615,7 +592,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Result = QueryResultTest.con.createStatement().executeQuery(sql);
+      Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
       Assert.fail("SQLException" + e.toString());
@@ -636,7 +613,6 @@ public class QueryResultTest {
 
   @Test
   public void QueryResultTestTokyoForceFetchMoreRowsPath() {
-    NewConnection("&useLegacySql=false");
     final String sql = "SELECT meaning FROM tokyo_star.meaning_of_life GROUP BY ROLLUP(meaning);";
     String[][] expectation = new String[][] {{null, "42"}};
 
@@ -645,7 +621,7 @@ public class QueryResultTest {
 
     java.sql.ResultSet Result = null;
     try {
-      Statement s = QueryResultTest.con.createStatement();
+      Statement s = standardSqlConnection.createStatement();
       s.setMaxRows(1);
       Result = s.executeQuery(sql);
     } catch (SQLException e) {
