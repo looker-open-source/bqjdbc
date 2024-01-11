@@ -409,7 +409,7 @@ public abstract class BQStatementRoot {
     throw new BQSQLException("Query run took more than the specified timeout");
   }
 
-  protected Map<String, String> getAllLabels() {
+  public Map<String, String> getAllLabels() {
     return this.connection.getLabels();
   }
 

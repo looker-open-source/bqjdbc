@@ -237,7 +237,8 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
               this.RunnableStatement,
               this.connection.getDataSet(),
               this.connection.getUseLegacySql(),
-              this.connection.getMaxBillingBytes());
+              this.connection.getMaxBillingBytes(),
+              this.connection.getKmsKeyName());
       this.logger.info("Executing Query: " + this.RunnableStatement);
     } catch (IOException e) {
       throw new BQSQLException("Something went wrong with the query: " + this.RunnableStatement, e);

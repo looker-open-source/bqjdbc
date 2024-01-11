@@ -35,7 +35,6 @@ public class JdbcUrlTest {
   public void setup() throws SQLException, IOException {
     properties = getProperties("/installedaccount.properties");
     URL = getUrl("/installedaccount.properties", null) + "&useLegacySql=true";
-    ;
     this.bq = new BQConnection(URL, new Properties());
     this.environmentVariables.set("GOOGLE_APPLICATION_CREDENTIALS", defaultServiceAccount);
   }

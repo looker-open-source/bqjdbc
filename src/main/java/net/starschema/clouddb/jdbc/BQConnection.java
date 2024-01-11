@@ -42,6 +42,9 @@ import org.slf4j.LoggerFactory;
  * @author Gunics Balázs, Horváth Attila
  */
 public class BQConnection implements Connection {
+  private static int DEFAULT_POLL_MS = 250;
+
+
   /** Variable to store auto commit mode */
   private boolean autoCommitEnabled = false;
 
@@ -98,7 +101,9 @@ public class BQConnection implements Connection {
   }
 
   /** The job creation mode - */
-  private JobCreationMode jobCreationMode = JobCreationMode.JOB_CREATION_MODE_UNSPECIFIED;
+  private JobCreationMode jobCreationMode;
+
+  private String kmsKeyName;
 
   /** getter for useLegacySql */
   public boolean getUseLegacySql() {
@@ -249,6 +254,8 @@ public class BQConnection implements Connection {
             "could not parse " + jobCreationModeString + " as job creation mode", e);
       }
     }
+
+    kmsKeyName = caseInsensitiveProps.getProperty("kmskeyname");
 
     // Create Connection to BigQuery
     if (serviceAccount) {
@@ -535,7 +542,10 @@ public class BQConnection implements Connection {
     }
     logger.debug(
         "Creating statement with resultsettype: forward only," + " concurrency: read only");
-    return new BQStatement(projectId, this);
+    if (kmsKeyName == null) {
+      return new BQStatement(projectId, this);
+    }
+    return new BQPolledStatement(projectId, this, DEFAULT_POLL_MS);
   }
 
   /** {@inheritDoc} */
@@ -550,7 +560,11 @@ public class BQConnection implements Connection {
             + resultSetType
             + " concurrency: "
             + resultSetConcurrency);
-    return new BQStatement(projectId, this, resultSetType, resultSetConcurrency);
+    if (kmsKeyName == null) {
+      return new BQStatement(projectId, this, resultSetType, resultSetConcurrency);
+    }
+    return new BQPolledStatement(
+        projectId, this, DEFAULT_POLL_MS, resultSetType, resultSetConcurrency);
   }
 
   /** {@inheritDoc} */
@@ -1257,5 +1271,9 @@ public class BQConnection implements Connection {
 
   public JobCreationMode getJobCreationMode() {
     return jobCreationMode;
+  }
+
+  public String getKmsKeyName() {
+    return kmsKeyName;
   }
 }
