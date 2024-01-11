@@ -718,13 +718,19 @@ public class BQSupportFuncts {
       String querySql,
       String dataSet,
       Boolean useLegacySql,
-      Long maxBillingBytes)
+      Long maxBillingBytes,
+      String kmsKeyName)
       throws IOException {
     Job job = new Job();
     JobConfiguration config = new JobConfiguration();
     JobConfigurationQuery queryConfig = new JobConfigurationQuery();
     queryConfig.setUseLegacySql(useLegacySql);
     queryConfig.setMaximumBytesBilled(maxBillingBytes);
+    if (kmsKeyName != null) {
+      EncryptionConfiguration encryptionConfiguration = new EncryptionConfiguration();
+      encryptionConfiguration.setKmsKeyName(kmsKeyName);
+      queryConfig.setDestinationEncryptionConfiguration(encryptionConfiguration);
+    }
     config.setQuery(queryConfig);
     String jobId = UUID.randomUUID().toString().replace("-", "");
     JobReference jobReference = new JobReference().setProjectId(projectId).setJobId(jobId);

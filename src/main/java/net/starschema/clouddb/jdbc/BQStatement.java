@@ -42,7 +42,7 @@ import java.util.stream.Stream;
  * @author Horváth Attila
  * @author Balazs Gunics
  */
-public class BQStatement extends BQStatementRoot implements java.sql.Statement {
+public class BQStatement extends BQStatementRoot implements java.sql.Statement, LabelledStatement {
 
   private static final long MAX_LABELS = 64;
   public static final int MAX_IO_FAILURE_RETRIES = 3;
@@ -119,7 +119,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
   }
 
   @Override
-  protected Map<String, String> getAllLabels() {
+  public Map<String, String> getAllLabels() {
     return ImmutableMap.<String, String>builder()
         .putAll(
             Stream.concat(
