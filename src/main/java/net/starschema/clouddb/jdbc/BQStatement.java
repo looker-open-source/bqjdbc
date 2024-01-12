@@ -214,6 +214,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
               this.connection.getBigquery(),
               projectId,
               referencedJob,
+              qr.getQueryId(),
               this,
               rows,
               fetchedAll,
@@ -234,7 +235,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
               qr.getCacheHit(),
               biEngineMode,
               biEngineReasons,
-              qr.getJobReference());
+              qr.getJobReference(),
+              qr.getQueryId());
         }
         jobAlreadyCompleted = true;
       }
@@ -285,7 +287,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                 this);
           } else {
             return new BQForwardOnlyResultSet(
-                this.connection.getBigquery(), projectId, referencedJob, this);
+                this.connection.getBigquery(), projectId, referencedJob, null, this);
           }
         }
         // Pause execution for half second before polling job status
@@ -345,7 +347,8 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                     // socket timeouts
                     (long) getMaxRows(),
                     this.getAllLabels(),
-                    this.connection.getUseQueryCache());
+                    this.connection.getUseQueryCache(),
+                    this.connection.getJobCreationMode());
             syncResponseFromCurrentQuery.set(resp);
             this.mostRecentJobReference.set(resp.getJobReference());
           } catch (Exception e) {

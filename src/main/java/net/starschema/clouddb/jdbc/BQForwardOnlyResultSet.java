@@ -61,11 +61,12 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,6 +110,8 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
   private String projectId;
   /** Reference for the Job */
   private @Nullable Job completedJob;
+  /** The BigQuery query ID; set if the query completed without a Job */
+  private final @Nullable String queryId;
   /** The total number of bytes processed while creating this ResultSet */
   private final @Nullable Long totalBytesProcessed;
   /** Whether the ResultSet came from BigQuery's cache */
@@ -127,9 +130,15 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
    */
   private int Cursor = -1;
 
-  private final DateTimeFormatter TIMESTAMP_FORMATTER =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withZone(ZoneId.of("UTC"));
-
+  /**
+   * Constructor without query ID for backwards compatibility.
+   *
+   * @param bigquery Bigquery driver instance for which this is a result
+   * @param projectId the project from which these results were queried
+   * @param completedJob the query's job, if any
+   * @param bqStatementRoot the statement for which this is a result
+   * @throws SQLException thrown if the results can't be retrieved
+   */
   public BQForwardOnlyResultSet(
       Bigquery bigquery,
       String projectId,
@@ -140,6 +149,29 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
         bigquery,
         projectId,
         completedJob,
+        null,
+        bqStatementRoot,
+        null,
+        false,
+        null,
+        0L,
+        false,
+        null,
+        null);
+  }
+
+  public BQForwardOnlyResultSet(
+      Bigquery bigquery,
+      String projectId,
+      @Nullable Job completedJob,
+      @Nullable String queryId,
+      BQStatementRoot bqStatementRoot)
+      throws SQLException {
+    this(
+        bigquery,
+        projectId,
+        completedJob,
+        queryId,
         bqStatementRoot,
         null,
         false,
@@ -167,6 +199,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
       Bigquery bigquery,
       String projectId,
       @Nullable Job completedJob,
+      @Nullable String queryId,
       BQStatementRoot bqStatementRoot,
       List<TableRow> prefetchedRows,
       boolean prefetchedAllRows,
@@ -179,6 +212,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     logger.debug("Created forward only resultset TYPE_FORWARD_ONLY");
     this.Statementreference = (Statement) bqStatementRoot;
     this.completedJob = completedJob;
+    this.queryId = queryId;
     this.projectId = projectId;
     if (bigquery == null) {
       throw new BQSQLException("Failed to fetch results. Connection is closed.");
@@ -248,7 +282,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
    */
   public Object getObject(int columnIndex) throws SQLException {
 
-    String result = getString(columnIndex, false);
+    String result = rawString(columnIndex);
 
     if (this.wasNull()) {
       return null;
@@ -274,16 +308,26 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
       if (Columntype.equals("INTEGER")) {
         return toLong(result);
       }
+      if (Columntype.equals("DATETIME")) {
+        // A BigQuery DATETIME is essentially defined by its string representation;
+        // the "clock-calendar parameters" comprising year, month, day, hour, minute, etc.
+        // On the other hand, a [java.sql.Timestamp] object is defined as a global instant, similar
+        // to BQ TIMESTAMP. It has a [toString] method that interprets that instant in the system
+        // default time zone. Thus, in order to produce a [Timestamp] object whose [toString] method
+        // has the correct result, we must adjust the value of the instant according to the system
+        // default time zone (passing a null Calendar uses the system default).
+        return DateTimeUtils.parseDateTime(result, null);
+      }
       if (Columntype.equals("TIMESTAMP")) {
-        return toTimestamp(result, null);
+        // A BigQuery TIMESTAMP is defined as a global instant in time, so when we create the
+        // [java.sql.Timestamp] object to represent it, we must not make any time zone adjustment.
+        return DateTimeUtils.parseTimestamp(result);
       }
       if (Columntype.equals("DATE")) {
-        return toDate(result, null);
+        return DateTimeUtils.parseDate(result, null);
       }
-      if (Columntype.equals("DATETIME")) {
-        // Date time represents a "clock face" time and so should NOT be processed into an actual
-        // time
-        return result;
+      if (Columntype.equals("TIME")) {
+        return DateTimeUtils.parseTime(result, null);
       }
       if (Columntype.equals("NUMERIC")) {
         return toBigDecimal(result);
@@ -321,69 +365,11 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     }
   }
 
-  /** Parse date/time types */
-  private Timestamp toTimestamp(String value, Calendar cal) throws SQLException {
-    try {
-      long dbValue =
-          new BigDecimal(value)
-              .movePointRight(3)
-              .longValue(); // movePointRight(3) =  *1000 (done before rounding) - from seconds
-      // (BigQuery specifications) to milliseconds (required by java).
-      // Precision under millisecond is discarded (BigQuery supports
-      // micro-seconds)
-      if (cal == null) {
-        cal =
-            Calendar.getInstance(
-                TimeZone.getTimeZone(
-                    "UTC")); // The time zone of the server that host the JVM should NOT impact the
-        // results. Use UTC calendar instead (which wont apply any correction,
-        // whatever the time zone of the data)
-      }
-
-      Calendar dbCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-      dbCal.setTimeInMillis(dbValue);
-      cal.set(Calendar.YEAR, dbCal.get(Calendar.YEAR));
-      cal.set(Calendar.MONTH, dbCal.get(Calendar.MONTH));
-      cal.set(Calendar.DAY_OF_MONTH, dbCal.get(Calendar.DAY_OF_MONTH));
-      cal.set(Calendar.HOUR_OF_DAY, dbCal.get(Calendar.HOUR_OF_DAY));
-      cal.set(Calendar.MINUTE, dbCal.get(Calendar.MINUTE));
-      cal.set(Calendar.SECOND, dbCal.get(Calendar.SECOND));
-      cal.set(Calendar.MILLISECOND, dbCal.get(Calendar.MILLISECOND));
-      return new Timestamp(cal.getTime().getTime());
-    } catch (NumberFormatException e) {
-      // before giving up, check to see if we've been given a 'time' value without a
-      // date, e.g. from current_time(), and if we have, try to parse it
-      try {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String dateStringFromValue = ("1970-01-01 " + value).substring(0, 19);
-        java.util.Date parsedDate = dateFormat.parse(dateStringFromValue);
-        return new java.sql.Timestamp(parsedDate.getTime());
-      } catch (Exception e2) {
-        throw new BQSQLException(e);
-      }
-    }
-  }
-
   // Secondary converters
 
   /** Parse integral or floating types with (virtually) infinite precision */
   private BigDecimal toBigDecimal(String value) {
     return new BigDecimal(value);
-  }
-
-  static Date toDate(String value, Calendar cal) throws SQLException {
-    // Dates in BigQuery come back in the YYYY-MM-DD format
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-    try {
-      java.util.Date date = sdf.parse(value);
-      return new java.sql.Date(date.getTime());
-    } catch (java.text.ParseException e) {
-      throw new BQSQLException(e);
-    }
-  }
-
-  private Time toTime(String value, Calendar cal) throws SQLException {
-    return new java.sql.Time(toTimestamp(value, cal).getTime());
   }
 
   @Override
@@ -396,10 +382,18 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
    *     is unsupported
    */
   public String getString(int columnIndex) throws SQLException {
-    return getString(columnIndex, true);
+    String rawString = rawString(columnIndex);
+
+    BQResultsetMetaData metadata = getBQResultsetMetaData();
+    if (metadata.getColumnTypeName(columnIndex).equals("TIMESTAMP")
+        && !metadata.getColumnMode(columnIndex).equals("REPEATED")) {
+      return DateTimeUtils.formatTimestamp(rawString);
+    }
+
+    return rawString;
   }
 
-  private String getString(int columnIndex, boolean formatTimestamps) throws SQLException {
+  private String rawString(int columnIndex) throws SQLException {
     // to make the logfiles smaller!
     // logger.debug("Function call getString columnIndex is: " + String.valueOf(columnIndex));
     this.closestrm();
@@ -410,21 +404,21 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
       throw new BQSQLException("ColumnIndex is not valid");
     }
 
-    if (this.rowsofResult == null) throw new BQSQLException("Invalid position!");
+    if (this.rowsofResult == null) {
+      throw new BQSQLException("Invalid position!");
+    }
+
+    // Since the results came from BigQuery's JSON API,
+    // the only types we'll ever see for resultObject are JSON-supported types,
+    // i.e. strings, numbers, arrays, booleans, or null.
+    // Many standard Java types, like timestamps, will be represented as strings.
     Object resultObject = this.rowsofResult.get(this.Cursor).getF().get(columnIndex - 1).getV();
+
     if (Data.isNull(resultObject)) {
       this.wasnull = true;
       return null;
     }
     this.wasnull = false;
-    if (!this.getBQResultsetMetaData().getColumnMode(columnIndex).equals("REPEATED")
-        && formatTimestamps
-        && getMetaData().getColumnTypeName(columnIndex).equals("TIMESTAMP")) {
-      Instant instant =
-          Instant.ofEpochMilli(
-              (new BigDecimal((String) resultObject).movePointRight(3)).longValue());
-      return TIMESTAMP_FORMATTER.format(instant);
-    }
     if (resultObject instanceof List || resultObject instanceof Map) {
       Object resultTransformedWithSchema =
           smartTransformResult(resultObject, schema.getFields().get(columnIndex - 1));
@@ -592,28 +586,10 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     throw new BQSQLFeatureNotSupportedException("deleteRow()");
   }
 
-  /**
-   *
-   *
-   * <h1>Implementation Details:</h1>
-   *
-   * <br>
-   * Not implemented yet.
-   *
-   * @throws BQSQLException
-   */
+  /** {@inheritDoc} */
   @Override
   public int findColumn(String columnLabel) throws SQLException {
-    if (this.isClosed()) {
-      throw new BQSQLException("This Resultset is Closed");
-    }
-    int columncount = this.getMetaData().getColumnCount();
-    for (int i = 1; i <= columncount; i++) {
-      if (this.getMetaData().getCatalogName(i).equals(columnLabel)) {
-        return i;
-      }
-    }
-    throw new BQSQLException("No Such column labeled: " + columnLabel);
+    return CommonResultSet.findColumn(columnLabel, getMetaData());
   }
 
   /**
@@ -913,11 +889,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
   /** {@inheritDoc} */
   @Override
   public Date getDate(int columnIndex) throws SQLException {
-    String value = this.getString(columnIndex);
-    if (this.wasNull()) {
-      return null;
-    }
-    return toDate(value, null);
+    return getDate(columnIndex, null);
   }
 
   /** {@inheritDoc} */
@@ -927,14 +899,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     if (this.wasNull()) {
       return null;
     }
-    return toDate(value, cal);
+    return DateTimeUtils.parseDate(value, cal);
   }
 
   /** {@inheritDoc} */
   @Override
   public Date getDate(String columnLabel) throws SQLException {
-    int columnIndex = this.findColumn(columnLabel);
-    return this.getDate(columnIndex);
+    return getDate(columnLabel, null);
   }
 
   /** {@inheritDoc} */
@@ -1336,11 +1307,7 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
   /** {@inheritDoc} */
   @Override
   public Time getTime(int columnIndex) throws SQLException {
-    String value = this.getString(columnIndex);
-    if (this.wasNull()) {
-      return null;
-    }
-    return toTime(value, null);
+    return getTime(columnIndex, null);
   }
 
   /** {@inheritDoc} */
@@ -1350,14 +1317,13 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     if (this.wasNull()) {
       return null;
     }
-    return toTime(value, cal);
+    return DateTimeUtils.parseTime(value, cal);
   }
 
   /** {@inheritDoc} */
   @Override
   public Time getTime(String columnLabel) throws SQLException {
-    int columnIndex = this.findColumn(columnLabel);
-    return this.getTime(columnIndex);
+    return getTime(columnLabel, null);
   }
 
   /** {@inheritDoc} */
@@ -1370,28 +1336,29 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
   /** {@inheritDoc} */
   @Override
   public Timestamp getTimestamp(int columnIndex) throws SQLException {
-    String value = this.getString(columnIndex);
-    if (this.wasNull()) {
-      return null;
-    }
-    return toTimestamp(value, null);
+    return getTimestamp(columnIndex, null);
   }
 
   /** {@inheritDoc} */
   @Override
   public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-    String value = this.getString(columnIndex);
+    String value = rawString(columnIndex);
     if (this.wasNull()) {
       return null;
     }
-    return toTimestamp(value, cal);
+    // Both the TIMESTAMP and DATETIME objects support JDBC's getTimestamp method.
+    // DATETIME in BigQuery is analogous to TIMESTAMP in ISO SQL.
+    // TIMESTAMP in BigQuery is analogous to TIMESTAMP WITH LOCAL TIME ZONE in ISO SQL.
+    String columnType = this.schema.getFields().get(columnIndex - 1).getType();
+    return "TIMESTAMP".equals(columnType)
+        ? DateTimeUtils.parseTimestamp(value)
+        : DateTimeUtils.parseDateTime(value, cal);
   }
 
   /** {@inheritDoc} */
   @Override
   public Timestamp getTimestamp(String columnLabel) throws SQLException {
-    int columnIndex = this.findColumn(columnLabel);
-    return this.getTimestamp(columnIndex);
+    return getTimestamp(columnLabel, null);
   }
 
   /** {@inheritDoc} */
@@ -3047,5 +3014,9 @@ public class BQForwardOnlyResultSet implements java.sql.ResultSet {
     } else {
       return null;
     }
+  }
+
+  public @Nullable String getQueryId() {
+    return queryId;
   }
 }

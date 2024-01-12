@@ -265,7 +265,8 @@ public abstract class BQStatementRoot {
               (long) querytimeout * 1000,
               (long) getMaxRows(),
               this.getAllLabels(),
-              this.connection.getUseQueryCache());
+              this.connection.getUseQueryCache(),
+              this.connection.getJobCreationMode());
       this.mostRecentJobReference.set(qr.getJobReference());
 
       if (defaultValueIfNull(qr.getJobComplete(), false)) {
@@ -327,7 +328,8 @@ public abstract class BQStatementRoot {
               (long) querytimeout * 1000,
               (long) getMaxRows(),
               this.getAllLabels(),
-              this.connection.getUseQueryCache());
+              this.connection.getUseQueryCache(),
+              this.connection.getJobCreationMode());
       this.mostRecentJobReference.set(qr.getJobReference());
 
       referencedJob =
@@ -362,7 +364,8 @@ public abstract class BQStatementRoot {
               qr.getCacheHit(),
               biEngineMode,
               biEngineReasons,
-              referencedJob.getJobReference());
+              referencedJob.getJobReference(),
+              qr.getQueryId());
         }
         jobAlreadyCompleted = true;
       }
@@ -384,7 +387,7 @@ public abstract class BQStatementRoot {
                 this);
           } else {
             return new BQForwardOnlyResultSet(
-                this.connection.getBigquery(), projectId, referencedJob, this);
+                this.connection.getBigquery(), projectId, referencedJob, null, this);
           }
         }
         // Pause execution for half second before polling job status

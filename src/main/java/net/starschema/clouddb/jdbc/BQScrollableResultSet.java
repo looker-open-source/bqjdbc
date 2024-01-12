@@ -22,8 +22,6 @@
  */
 package net.starschema.clouddb.jdbc;
 
-import static net.starschema.clouddb.jdbc.BQForwardOnlyResultSet.toDate;
-
 import com.google.api.client.util.Data;
 import com.google.api.services.bigquery.model.BiEngineReason;
 import com.google.api.services.bigquery.model.GetQueryResultsResponse;
@@ -36,7 +34,6 @@ import java.math.BigInteger;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.List;
 import javax.annotation.Nullable;
 
@@ -69,7 +66,10 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
    */
   private final @Nullable List<BiEngineReason> biEngineReasons;
 
-  private final JobReference jobReference;
+  private final @Nullable JobReference jobReference;
+
+  /** The BigQuery query ID; set if the query completed without a Job */
+  private final @Nullable String queryId;
 
   private TableSchema schema;
 
@@ -89,7 +89,8 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
         bigQueryGetQueryResultResponse.getCacheHit(),
         null,
         null,
-        bigQueryGetQueryResultResponse.getJobReference());
+        bigQueryGetQueryResultResponse.getJobReference(),
+        null);
 
     BigInteger maxrow;
     try {
@@ -107,7 +108,8 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
       @Nullable Boolean cacheHit,
       @Nullable String biEngineMode,
       @Nullable List<BiEngineReason> biEngineReasons,
-      JobReference jobReference) {
+      @Nullable JobReference jobReference,
+      @Nullable String queryId) {
     logger.debug("Created Scrollable resultset TYPE_SCROLL_INSENSITIVE");
     try {
       maxFieldSize = bqStatementRoot.getMaxFieldSize();
@@ -129,21 +131,13 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
     this.biEngineMode = biEngineMode;
     this.biEngineReasons = biEngineReasons;
     this.jobReference = jobReference;
+    this.queryId = queryId;
   }
 
   /** {@inheritDoc} */
   @Override
   public int findColumn(String columnLabel) throws SQLException {
-    if (this.isClosed()) {
-      throw new BQSQLException("This Resultset is Closed");
-    }
-    int columncount = this.getMetaData().getColumnCount();
-    for (int i = 1; i <= columncount; i++) {
-      if (this.getMetaData().getCatalogName(i).equals(columnLabel)) {
-        return i;
-      }
-    }
-    throw new BQSQLException("No Such column labeled: " + columnLabel);
+    return CommonResultSet.findColumn(columnLabel, getMetaData());
   }
 
   /** {@inheritDoc} */
@@ -204,20 +198,30 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
         if (Columntype.equals("INTEGER")) {
           return Long.parseLong(result);
         }
-        if (Columntype.equals("TIMESTAMP")) {
-          long val = new BigDecimal(result).longValue() * 1000;
-          return new Timestamp(val);
-        }
         if (Columntype.equals("DATETIME")) {
-          // Date time represents a "clock face" time and so should NOT be processed into an actual
-          // time
-          return result;
+          // A BigQuery DATETIME is essentially defined by its string representation;
+          // the "clock-calendar parameters" comprising year, month, day, hour, minute, etc.
+          // On the other hand, a [java.sql.Timestamp] object is defined as a global instant,
+          // similar to BQ TIMESTAMP. It has a [toString] method that interprets that instant in the
+          // system default time zone. Thus, in order to produce a [Timestamp] object whose
+          // [toString] method has the correct result, we must adjust the value of the instant
+          // according to the system default time zone (passing a null Calendar uses the system
+          // default).
+          return DateTimeUtils.parseDateTime(result, null);
+        }
+        if (Columntype.equals("TIMESTAMP")) {
+          // A BigQuery TIMESTAMP is defined as a global instant in time, so when we create the
+          // [java.sql.Timestamp] object to represent it, we must not make any time zone adjustment.
+          return DateTimeUtils.parseTimestamp(result);
+        }
+        if (Columntype.equals("DATE")) {
+          return DateTimeUtils.parseDate(result, null);
+        }
+        if (Columntype.equals("TIME")) {
+          return DateTimeUtils.parseTime(result, null);
         }
         if (Columntype.equals("NUMERIC")) {
           return new BigDecimal(result);
-        }
-        if (Columntype.equals("DATE")) {
-          return toDate(result, null);
         }
         throw new BQSQLException("Unsupported Type");
       } catch (NumberFormatException e) {
@@ -294,5 +298,9 @@ public class BQScrollableResultSet extends ScrollableResultset<Object>
     } else {
       return null;
     }
+  }
+
+  public @Nullable String getQueryId() {
+    return queryId;
   }
 }
