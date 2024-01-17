@@ -190,6 +190,17 @@ public class JdbcUrlTest {
     oauthProps.setProperty("oauthaccesstoken", accessToken);
     String url = BQSupportFuncts.constructUrlFromPropertiesFile(oauthProps, true, null);
     BQConnection bqConn = new BQConnection(url, new Properties());
+
+    Oauth2Bigquery.BigQueryRequestUserAgentInitializer initializer =
+        (Oauth2Bigquery.BigQueryRequestUserAgentInitializer)
+            bqConn.getBigquery().getGoogleClientRequestInitializer();
+
+    Assertions.assertThat(initializer.getOauthToken())
+        .withFailMessage(
+            "BigQueryRequestUserAgentInitializer.getOauthToken private API required"
+                + " by Looker; token must be present")
+        .isNotNull();
+
     BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
     Query query =
         BQSupportFuncts.getSyncQuery(
@@ -205,7 +216,7 @@ public class JdbcUrlTest {
             bqConn.getUseQueryCache(),
             JobCreationMode.JOB_CREATION_MODE_UNSPECIFIED);
     String oAuthToken = query.getOauthToken();
-    Assert.assertTrue(oAuthToken == null);
+    Assertions.assertThat(oAuthToken).isNull();
   }
 
   @Test

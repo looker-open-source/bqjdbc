@@ -119,6 +119,9 @@ public class Oauth2Bigquery {
       if (userAgent != null) {
         requestInitializer.setUserAgent(userAgent);
       }
+      if (oauthToken != null) {
+        requestInitializer.setOauthToken(oauthToken);
+      }
 
       bqBuilder.setBigqueryRequestInitializer(requestInitializer);
     }
@@ -500,12 +503,22 @@ public class Oauth2Bigquery {
     }
   }
 
-  private static class BigQueryRequestUserAgentInitializer extends BigqueryRequestInitializer {
+  static class BigQueryRequestUserAgentInitializer extends BigqueryRequestInitializer {
 
     String userAgent = null;
 
+    String oauthToken = null;
+
     public void setUserAgent(String userAgent) {
       this.userAgent = userAgent;
+    }
+
+    public String getOauthToken() {
+      return oauthToken;
+    }
+
+    public void setOauthToken(String oauthToken) {
+      this.oauthToken = oauthToken;
     }
 
     @Override
