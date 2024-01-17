@@ -503,21 +503,22 @@ public class Oauth2Bigquery {
     }
   }
 
-  private static class BigQueryRequestUserAgentInitializer extends BigqueryRequestInitializer {
+  static class BigQueryRequestUserAgentInitializer extends BigqueryRequestInitializer {
 
     String userAgent = null;
+
     String oauthToken = null;
 
     public void setUserAgent(String userAgent) {
       this.userAgent = userAgent;
     }
 
-    public void setOauthToken(String oauthToken) {
-      this.oauthToken = oauthToken;
+    public String getOauthToken() {
+      return oauthToken;
     }
 
-    public String getOauthToken() {
-      return this.oauthToken;
+    public void setOauthToken(String oauthToken) {
+      this.oauthToken = oauthToken;
     }
 
     @Override
@@ -528,9 +529,6 @@ public class Oauth2Bigquery {
         currentHeaders.setUserAgent(userAgent);
 
         request.setRequestHeaders(currentHeaders);
-      }
-      if (oauthToken != null) {
-        request.setOauthToken(oauthToken);
       }
     }
   }
