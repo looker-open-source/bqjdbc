@@ -171,12 +171,10 @@ public class BQConnection implements Connection {
       throw new BQSQLException(e1);
     }
 
-    Properties caseInsensitiveLoginProps = toCaseInsensitive(loginProp);
-    Properties caseInsensitiveProps;
-
+    final Properties caseInsensitiveProps;
     try {
       // parse the connection string and override anything passed via loginProps.
-      caseInsensitiveProps = BQSupportFuncts.getUrlQueryComponents(url, caseInsensitiveLoginProps);
+      caseInsensitiveProps = BQSupportFuncts.getUrlQueryComponents(url, toCaseInsensitive(loginProp));
     } catch (UnsupportedEncodingException e2) {
       throw new BQSQLException(e2);
     }
