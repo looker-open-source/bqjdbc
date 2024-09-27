@@ -20,13 +20,14 @@
  */
 package net.starschema.clouddb.jdbc;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import junit.framework.Assert;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,13 +55,13 @@ public class TimeoutTest {
     return true;
   }
 
-  @Before
+  @BeforeEach
   public void setConnection() throws SQLException, IOException {
     connection =
         ConnectionFromResources.connect("installedaccount1.properties", "&useLegacySql=true");
   }
 
-  @After
+  @AfterEach
   public void closeConnection() throws SQLException {
     connection.close();
   }
@@ -68,7 +69,7 @@ public class TimeoutTest {
   @Test
   public void isvalidtest() {
     try {
-      Assert.assertTrue(connection.isValid(0));
+      assertTrue(connection.isValid(0));
     } catch (SQLException e) {
 
     }
@@ -92,21 +93,21 @@ public class TimeoutTest {
       Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(Result);
+    assertNotNull(Result);
 
     this.logger.debug(description);
 
     HelperFunctions.printer(expectation);
 
     try {
-      Assert.assertTrue(
-          "Comparing failed in the String[][] array",
-          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
+      assertTrue(
+          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)),
+          "Comparing failed in the String[][] array");
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail(e.toString());
+      fail(e.toString());
     }
   }
 
@@ -127,21 +128,21 @@ public class TimeoutTest {
       Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(Result);
+    assertNotNull(Result);
 
     this.logger.debug(description);
 
     HelperFunctions.printer(expectation);
 
     try {
-      Assert.assertTrue(
-          "Comparing failed in the String[][] array",
-          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
+      assertTrue(
+          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)),
+          "Comparing failed in the String[][] array");
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail(e.toString());
+      fail(e.toString());
     }
   }
 
@@ -165,8 +166,7 @@ public class TimeoutTest {
     } catch (SQLException e) {
       this.logger.debug("SQLexception" + e.toString());
       // fail("SQLException" + e.toString());
-      Assert.assertTrue(
-          e.toString().contains("Access Denied: Table guid754187384106:m_lab.2010_01"));
+      assertTrue(e.toString().contains("Access Denied: Table guid754187384106:m_lab.2010_01"));
     }
   }
 
@@ -189,21 +189,21 @@ public class TimeoutTest {
       Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(Result);
+    assertNotNull(Result);
 
     this.logger.debug(description);
 
     HelperFunctions.printer(expectation);
 
     try {
-      Assert.assertTrue(
-          "Comparing failed in the String[][] array",
-          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
+      assertTrue(
+          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)),
+          "Comparing failed in the String[][] array");
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail(e.toString());
+      fail(e.toString());
     }
   }
 
@@ -223,16 +223,16 @@ public class TimeoutTest {
       this.logger.debug("{}", Result.getMetaData().getColumnCount());
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(Result);
+    assertNotNull(Result);
 
     this.logger.debug(description);
     try {
-      if (Result.getType() != ResultSet.TYPE_FORWARD_ONLY) Assert.assertFalse(Result.first());
+      if (Result.getType() != ResultSet.TYPE_FORWARD_ONLY) assertFalse(Result.first());
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail(e.toString());
+      fail(e.toString());
     }
   }
 
@@ -258,21 +258,21 @@ public class TimeoutTest {
       Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(Result);
+    assertNotNull(Result);
 
     this.logger.debug(description);
 
     HelperFunctions.printer(expectation);
 
     try {
-      Assert.assertTrue(
-          "Comparing failed in the String[][] array",
-          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
+      assertTrue(
+          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)),
+          "Comparing failed in the String[][] array");
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail(e.toString());
+      fail(e.toString());
     }
   }
 
@@ -298,21 +298,21 @@ public class TimeoutTest {
       Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(Result);
+    assertNotNull(Result);
 
     this.logger.debug(description);
 
     HelperFunctions.printer(expectation);
 
     try {
-      Assert.assertTrue(
-          "Comparing failed in the String[][] array",
-          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
+      assertTrue(
+          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)),
+          "Comparing failed in the String[][] array");
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail(e.toString());
+      fail(e.toString());
     }
   }
 
@@ -339,21 +339,21 @@ public class TimeoutTest {
       Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(Result);
+    assertNotNull(Result);
 
     this.logger.debug(description);
 
     HelperFunctions.printer(expectation);
 
     try {
-      Assert.assertTrue(
-          "Comparing failed in the String[][] array",
-          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
+      assertTrue(
+          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)),
+          "Comparing failed in the String[][] array");
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail(e.toString());
+      fail(e.toString());
     }
   }
 
@@ -377,20 +377,20 @@ public class TimeoutTest {
       Result = connection.createStatement().executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(Result);
+    assertNotNull(Result);
 
     this.logger.debug(description);
 
     HelperFunctions.printer(expectation);
     try {
-      Assert.assertTrue(
-          "Comparing failed in the String[][] array",
-          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
+      assertTrue(
+          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)),
+          "Comparing failed in the String[][] array");
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail(e.toString());
+      fail(e.toString());
     }
   }
 }

@@ -2,7 +2,7 @@ package net.starschema.clouddb.jdbc;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
-import org.junit.Assume;
+import org.junit.jupiter.api.Assumptions;
 
 /** Helpers for tests that require projects with stateless queries enabled */
 public final class StatelessQuery {
@@ -19,7 +19,7 @@ public final class StatelessQuery {
    * @param project the project to check - get it from {@link BQConnection#getCatalog() }
    */
   public static void assumeStatelessQueriesEnabled(String project) {
-    Assume.assumeTrue(ENABLED_PROJECTS.contains(project));
+    Assumptions.assumeTrue(ENABLED_PROJECTS.contains(project));
   }
 
   /**

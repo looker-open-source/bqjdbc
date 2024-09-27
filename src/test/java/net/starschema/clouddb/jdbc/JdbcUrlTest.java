@@ -1,5 +1,7 @@
 package net.starschema.clouddb.jdbc;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpRequest;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
@@ -13,13 +15,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
-import junit.framework.Assert;
 import net.starschema.clouddb.jdbc.BQConnection.JobCreationMode;
 import org.assertj.core.api.Assertions;
-import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Created by steven on 10/21/15. */
 public class JdbcUrlTest {
@@ -32,7 +33,7 @@ public class JdbcUrlTest {
 
   @Rule public final EnvironmentVariables environmentVariables = new EnvironmentVariables();
 
-  @Before
+  @BeforeEach
   public void setup() throws SQLException, IOException {
     properties = getProperties("/installedaccount.properties");
     URL = getUrl("/installedaccount.properties", null) + "&useLegacySql=true";
@@ -43,7 +44,7 @@ public class JdbcUrlTest {
 
   @Test
   public void urlWithDefaultDatasetShouldWork() throws SQLException {
-    Assert.assertEquals(properties.getProperty("dataset"), bq.getDataSet());
+    assertEquals(properties.getProperty("dataset"), bq.getDataSet());
   }
 
   @Test
@@ -51,8 +52,8 @@ public class JdbcUrlTest {
     String urlWithColonContainingProject = URL.replace(bq.getProjectId(), "example.com:project");
     try {
       BQConnection bqWithColons = new BQConnection(urlWithColonContainingProject, new Properties());
-      Assert.assertEquals("example.com:project", bqWithColons.getProjectId());
-      Assert.assertEquals("example.com:project", bqWithColons.getCatalog());
+      assertEquals("example.com:project", bqWithColons.getProjectId());
+      assertEquals("example.com:project", bqWithColons.getCatalog());
     } catch (SQLException e) {
       throw new AssertionError(e);
     }
@@ -65,8 +66,8 @@ public class JdbcUrlTest {
     try {
       BQConnection bqWithUnderscores =
           new BQConnection(urlWithUnderscoreContainingProject, new Properties());
-      Assert.assertEquals("example.com:project", bqWithUnderscores.getProjectId());
-      Assert.assertEquals("example.com:project", bqWithUnderscores.getCatalog());
+      assertEquals("example.com:project", bqWithUnderscores.getProjectId());
+      assertEquals("example.com:project", bqWithUnderscores.getCatalog());
     } catch (SQLException e) {
       throw new AssertionError(e);
     }
@@ -78,7 +79,7 @@ public class JdbcUrlTest {
       String url1 = URL + "&readTimeout=foo";
       new BQConnection(url1, new Properties());
     } catch (SQLException e) {
-      Assert.assertEquals(
+      assertEquals(
           "could not parse readTimeout parameter. - java.lang.NumberFormatException: For input"
               + " string: \"foo\"",
           e.getMessage());
@@ -88,7 +89,7 @@ public class JdbcUrlTest {
       String url1 = URL + "&connectTimeout=foo";
       new BQConnection(url1, new Properties());
     } catch (SQLException e) {
-      Assert.assertEquals(
+      assertEquals(
           "could not parse connectTimeout parameter. - java.lang.NumberFormatException: For input"
               + " string: \"foo\"",
           e.getMessage());
@@ -98,14 +99,14 @@ public class JdbcUrlTest {
       String url1 = URL + "&readTimeout=-1000";
       new BQConnection(url1, new Properties());
     } catch (SQLException e) {
-      Assert.assertEquals("readTimeout must be positive.", e.getMessage());
+      assertEquals("readTimeout must be positive.", e.getMessage());
     }
 
     try {
       String url1 = URL + "&connectTimeout=-1000";
       new BQConnection(url1, new Properties());
     } catch (SQLException e) {
-      Assert.assertEquals("connectTimeout must be positive.", e.getMessage());
+      assertEquals("connectTimeout must be positive.", e.getMessage());
     }
   }
 
@@ -289,7 +290,7 @@ public class JdbcUrlTest {
     stmt.executeQuery("SELECT * FROM bigquery-public-data.baseball.schedules limit 1");
     try {
       stmt.executeQuery("SELECT * FROM orders limit 1");
-      Assert.fail("The impersonated service account should not have access to the orders table");
+      fail("The impersonated service account should not have access to the orders table");
     } catch (SQLException e) {
       Assertions.assertThat(e.getCause().getMessage())
           .contains("User does not have permission to query table");
@@ -332,7 +333,7 @@ public class JdbcUrlTest {
     BQStatement stmt = new BQStatement(bqConn.getProjectId(), bqConn);
     try {
       stmt.executeQuery("SELECT * FROM bigquery-public-data.baseball.schedules limit 1");
-      Assert.fail("I should have failed when trying to execute the query.");
+      fail("I should have failed when trying to execute the query.");
     } catch (SQLException e) {
       Assertions.assertThat(e.getCause().getMessage()).contains("Error requesting access token");
     }
@@ -344,10 +345,9 @@ public class JdbcUrlTest {
     Properties protectedProperties = getProperties("/protectedaccount.properties");
     Properties components = BQSupportFuncts.getUrlQueryComponents(url, new Properties());
 
-    Assert.assertEquals(protectedProperties.getProperty("user"), components.getProperty("user"));
-    Assert.assertEquals(
-        protectedProperties.getProperty("password"), components.getProperty("password"));
-    Assert.assertEquals(protectedProperties.getProperty("path"), components.getProperty("path"));
+    assertEquals(protectedProperties.getProperty("user"), components.getProperty("user"));
+    assertEquals(protectedProperties.getProperty("password"), components.getProperty("password"));
+    assertEquals(protectedProperties.getProperty("path"), components.getProperty("path"));
   }
 
   @Test
@@ -355,11 +355,11 @@ public class JdbcUrlTest {
     String url = getUrl("/protectedaccount.properties", null);
     BQConnection bqConn = new BQConnection(url, new Properties());
     // default true
-    Assert.assertEquals(bqConn.getUseLegacySql(), false);
+    assertEquals(bqConn.getUseLegacySql(), false);
 
     String newUrl = url + "&useLegacySql=false";
     BQConnection bqConn2 = new BQConnection(newUrl, new Properties());
-    Assert.assertEquals(bqConn2.getUseLegacySql(), false);
+    assertEquals(bqConn2.getUseLegacySql(), false);
   }
 
   @Test
@@ -367,11 +367,11 @@ public class JdbcUrlTest {
     String url = getUrl("/protectedaccount.properties", null);
     BQConnection bqConn = new BQConnection(url, new Properties());
     // default null
-    Assert.assertNull(bqConn.getMaxBillingBytes());
+    assertNull(bqConn.getMaxBillingBytes());
 
     String newUrl = url + "&maxbillingbytes=1000000000";
     BQConnection bqConn2 = new BQConnection(newUrl, new Properties());
-    Assert.assertEquals((long) bqConn2.getMaxBillingBytes(), 1000000000);
+    assertEquals((long) bqConn2.getMaxBillingBytes(), 1000000000);
   }
 
   @Test
@@ -391,13 +391,13 @@ public class JdbcUrlTest {
     try {
       stmt.executeQuery(sqlStmt, false);
     } catch (SQLException e) {
-      Assert.assertTrue(
-          "Expected query to fail because it exceeds maximum billing bytes.",
-          e.toString().contains("Query exceeded limit for bytes billed: 1."));
+      assertTrue(
+          e.toString().contains("Query exceeded limit for bytes billed: 1."),
+          "Expected query to fail because it exceeds maximum billing bytes.");
       didFailAsExpected = true;
     }
 
-    Assert.assertTrue("Query did not fail as expected.", didFailAsExpected);
+    assertTrue(didFailAsExpected, "Query did not fail as expected.");
 
     // unlimited-bytes query should succeed
     stmt.executeQuery(sqlStmt, true);
@@ -429,8 +429,7 @@ public class JdbcUrlTest {
     stmt.executeQuery(sqlStmt);
 
     MockLowLevelHttpRequest request = mockTransport.getLowLevelHttpRequest();
-    Assert.assertTrue(
-        request.getUrl().startsWith("https://restricted.googleapis.com/bigquery/v2/"));
+    assertTrue(request.getUrl().startsWith("https://restricted.googleapis.com/bigquery/v2/"));
   }
 
   @Test
@@ -438,12 +437,12 @@ public class JdbcUrlTest {
     try {
       new BQConnection(URL + "&timeoutMs=-1", new Properties());
     } catch (BQSQLException e) {
-      Assert.assertEquals(e.getMessage().contains("timeoutMs must be positive."), true);
+      assertEquals(e.getMessage().contains("timeoutMs must be positive."), true);
     }
     try {
       new BQConnection(URL + "&timeoutMs=NotANumber", new Properties());
     } catch (BQSQLException e) {
-      Assert.assertEquals(e.getMessage().contains("could not parse timeoutMs parameter."), true);
+      assertEquals(e.getMessage().contains("could not parse timeoutMs parameter."), true);
     }
   }
 
@@ -453,27 +452,26 @@ public class JdbcUrlTest {
     this.URL += "&timeoutMs=1";
     this.bq = new BQConnection(URL, new Properties());
     // ensure that the url string was parsed properly
-    Assert.assertEquals(this.bq.getTimeoutMs(), Integer.valueOf(1));
+    assertEquals(this.bq.getTimeoutMs(), Integer.valueOf(1));
     // this query takes about 50 second to complete normally
     String sqlStmt = "SELECT * from publicdata:samples.wikipedia";
     BQStatement stmt = new BQStatement(this.properties.getProperty("projectid"), this.bq);
     try {
       stmt.executeQuery(sqlStmt);
-      Assert.fail("Query job should have timed out");
+      fail("Query job should have timed out");
     } catch (BQSQLException e) {
-      Assert.assertEquals(
-          e.getMessage().contains("Query run took more than the specified timeout"), true);
+      assertEquals(e.getMessage().contains("Query run took more than the specified timeout"), true);
     }
   }
 
   @Test
   public void queryCacheIsOnByDefault() throws Exception {
     // Sanity check to make sure the queryCache param is not set.
-    Assert.assertFalse(this.URL.toLowerCase().contains("querycache"));
+    assertFalse(this.URL.toLowerCase().contains("querycache"));
 
     // It's possible that this may fail for unforeseeable reasons,
     // but we expect it to be true the vast majority of the time.
-    Assert.assertTrue(runSimpleQueryTwiceAndReturnLastCacheHit());
+    assertTrue(runSimpleQueryTwiceAndReturnLastCacheHit());
   }
 
   @Test
@@ -482,7 +480,7 @@ public class JdbcUrlTest {
     this.bq = new BQConnection(URL, new Properties());
 
     // This should never fail.
-    Assert.assertFalse(runSimpleQueryTwiceAndReturnLastCacheHit());
+    assertFalse(runSimpleQueryTwiceAndReturnLastCacheHit());
   }
 
   private boolean runSimpleQueryTwiceAndReturnLastCacheHit() throws Exception {
@@ -512,11 +510,11 @@ public class JdbcUrlTest {
     stmt.executeQuery("SELECT * FROM orders LIMIT 1");
 
     sentLabels = stmt.getLabelsFromMostRecentQuery(this.bq);
-    Assert.assertEquals(4, sentLabels.size());
-    Assert.assertEquals("connection-label", sentLabels.get("this"));
-    Assert.assertEquals("another-connection-label", sentLabels.get("that"));
-    Assert.assertEquals("query-label", sentLabels.get("the-other"));
-    Assert.assertEquals("another-query-label", sentLabels.get("and-then"));
+    assertEquals(4, sentLabels.size());
+    assertEquals("connection-label", sentLabels.get("this"));
+    assertEquals("another-connection-label", sentLabels.get("that"));
+    assertEquals("query-label", sentLabels.get("the-other"));
+    assertEquals("another-query-label", sentLabels.get("and-then"));
   }
 
   @Test
@@ -529,11 +527,11 @@ public class JdbcUrlTest {
     stmt.executeUpdate("SELECT * FROM orders LIMIT 1");
 
     sentLabels = stmt.getLabelsFromMostRecentQuery(this.bq);
-    Assert.assertEquals(4, sentLabels.size());
-    Assert.assertEquals("connection-label", sentLabels.get("this"));
-    Assert.assertEquals("another-connection-label", sentLabels.get("that"));
-    Assert.assertEquals("query-label", sentLabels.get("the-other"));
-    Assert.assertEquals("another-query-label", sentLabels.get("and-then"));
+    assertEquals(4, sentLabels.size());
+    assertEquals("connection-label", sentLabels.get("this"));
+    assertEquals("another-connection-label", sentLabels.get("that"));
+    assertEquals("query-label", sentLabels.get("the-other"));
+    assertEquals("another-query-label", sentLabels.get("and-then"));
   }
 
   private BQStatement prepareStatementWithLabels() throws Exception {

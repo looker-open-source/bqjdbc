@@ -30,9 +30,9 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * This Junit test runs query with preparedstatement, while changing the number of results
@@ -68,7 +68,7 @@ public class PreparedStatementTests {
    * Makes a new Bigquery Connection to Hardcoded URL and gives back the Connection to static con
    * member.
    */
-  @Before
+  @BeforeEach
   public void Connect() throws Exception {
     try {
       Class.forName("net.starschema.clouddb.jdbc.BQDriver");
@@ -98,7 +98,7 @@ public class PreparedStatementTests {
       stm.setBigDecimal(2, BigDecimal.valueOf((double) limit));
       stm.setString(3, first);
     } catch (SQLException e) {
-      Assert.assertTrue(true);
+      Assertions.assertTrue(true);
     }
     try {
       con.close();
@@ -115,9 +115,9 @@ public class PreparedStatementTests {
     try {
       PreparedStatement stm = PreparedStatementTests.con.prepareStatement(sql);
       java.sql.ResultSet theResult = stm.executeQuery();
-      Assert.assertNotNull(theResult);
+      Assertions.assertNotNull(theResult);
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       con.close();
@@ -175,23 +175,23 @@ public class PreparedStatementTests {
         String expectedStringValue = queries[i][1];
         java.sql.ResultSet theResult = stm.executeQuery();
 
-        Assert.assertNotNull(theResult);
-        Assert.assertEquals(
-            "Expected type was not returned in metadata",
+        Assertions.assertNotNull(theResult);
+        Assertions.assertEquals(
             expectedType[i],
-            theResult.getMetaData().getColumnType(1));
+            theResult.getMetaData().getColumnType(1),
+            "Expected type was not returned in metadata");
         while (theResult.next()) {
           // should only be one row for each of these, but lets validate that we can read the object
           // and string
-          Assert.assertNotNull(theResult.getObject(1));
+          Assertions.assertNotNull(theResult.getObject(1));
           if (expectedStringValue != null) {
-            Assert.assertEquals(expectedStringValue, theResult.getString(1));
+            Assertions.assertEquals(expectedStringValue, theResult.getString(1));
           } else {
             theResult.getString(1);
           }
         }
       } catch (SQLException e) {
-        Assert.fail(e.toString());
+        Assertions.fail(e.toString());
       }
     }
 
@@ -222,7 +222,7 @@ public class PreparedStatementTests {
       stm.setBigDecimal(2, BigDecimal.valueOf((double) limit));
       theResult = stm.executeQuery();
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       ResultSetMetaData metadata = theResult.getMetaData();
@@ -238,7 +238,7 @@ public class PreparedStatementTests {
         Line = "";
         for (int i = 0; i < ColumnCount; i++) {
           if (i == 0) {
-            Assert.assertEquals(second, theResult.getString(i + 1));
+            Assertions.assertEquals(second, theResult.getString(i + 1));
           }
           Line += String.format("%-32s", theResult.getString(i + 1));
         }
@@ -246,7 +246,7 @@ public class PreparedStatementTests {
       }
 
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       con.close();
@@ -254,7 +254,7 @@ public class PreparedStatementTests {
       e.printStackTrace();
     }
     con = null;
-    Assert.assertTrue(limit >= actual);
+    Assertions.assertTrue(limit >= actual);
   }
 
   @Test
@@ -270,7 +270,7 @@ public class PreparedStatementTests {
       stm.setByte(1, COUNT);
       theResult = stm.executeQuery();
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       // Count Column Values
@@ -278,7 +278,7 @@ public class PreparedStatementTests {
         Actual++;
       }
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       con.close();
@@ -288,7 +288,7 @@ public class PreparedStatementTests {
     con = null;
 
     Byte Act = Byte.parseByte(Integer.toString(Actual));
-    Assert.assertEquals(COUNT, Act);
+    Assertions.assertEquals(COUNT, Act);
   }
 
   @Test
@@ -307,16 +307,16 @@ public class PreparedStatementTests {
       PreparedStatement stm = PreparedStatementTests.con.prepareStatement(sql);
       stm.setCharacterStream(1, reader);
       Result = stm.executeQuery();
-      Assert.assertNotNull(Result);
+      Assertions.assertNotNull(Result);
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
-      Assert.assertTrue(
-          "Comparing failed in the String[][] array",
-          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)));
+      Assertions.assertTrue(
+          this.comparer(expectation, BQSupportMethods.GetQueryResult(Result)),
+          "Comparing failed in the String[][] array");
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       con.close();
@@ -341,7 +341,7 @@ public class PreparedStatementTests {
     try {
       date = formatter.parse(first);
     } catch (ParseException e2) {
-      Assert.fail();
+      Assertions.fail();
       e2.printStackTrace();
     }
     java.sql.ResultSet theResult = null;
@@ -354,7 +354,7 @@ public class PreparedStatementTests {
       stm.setBoolean(3, istrue);
       theResult = stm.executeQuery();
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       ResultSetMetaData metadata = theResult.getMetaData();
@@ -379,7 +379,7 @@ public class PreparedStatementTests {
         }
       }
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       con.close();
@@ -387,7 +387,7 @@ public class PreparedStatementTests {
       e.printStackTrace();
     }
     con = null;
-    Assert.assertTrue(true);
+    Assertions.assertTrue(true);
   }
 
   @Test
@@ -403,9 +403,9 @@ public class PreparedStatementTests {
       stm.setInt(1, 2);
       stm.setDouble(2, number);
       Result = stm.executeQuery();
-      Assert.assertNotNull(Result);
+      Assertions.assertNotNull(Result);
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       Result.first();
@@ -417,11 +417,11 @@ public class PreparedStatementTests {
       }
     }
     try {
-      Assert.assertTrue(
-          "The result was not as expected: " + Result.getString(1),
-          Result.getString(1).equals("tamingoftheshrew"));
+      Assertions.assertTrue(
+          Result.getString(1).equals("tamingoftheshrew"),
+          "The result was not as expected: " + Result.getString(1));
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       con.close();
@@ -444,9 +444,9 @@ public class PreparedStatementTests {
       stm.setInt(1, 2);
       stm.setFloat(2, number);
       Result = stm.executeQuery();
-      Assert.assertNotNull(Result);
+      Assertions.assertNotNull(Result);
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       Result.first();
@@ -457,11 +457,11 @@ public class PreparedStatementTests {
       }
     }
     try {
-      Assert.assertTrue(
-          "The result was not as expected: " + Result.getString(1),
-          Result.getString(1).equals("tamingoftheshrew"));
+      Assertions.assertTrue(
+          Result.getString(1).equals("tamingoftheshrew"),
+          "The result was not as expected: " + Result.getString(1));
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       con.close();
@@ -488,7 +488,7 @@ public class PreparedStatementTests {
       stm.setInt(1, COUNT);
       theResult = stm.executeQuery();
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       ResultSetMetaData metadata = theResult.getMetaData();
@@ -508,7 +508,7 @@ public class PreparedStatementTests {
         Actual++;
       }
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       con.close();
@@ -516,7 +516,7 @@ public class PreparedStatementTests {
       e.printStackTrace();
     }
     con = null;
-    Assert.assertEquals(COUNT, Actual);
+    Assertions.assertEquals(COUNT, Actual);
   }
 
   @Test
@@ -531,10 +531,10 @@ public class PreparedStatementTests {
       PreparedStatement stm = PreparedStatementTests.con.prepareStatement(sql);
       stm.setLong(1, number);
       Result = stm.executeQuery();
-      Assert.assertNotNull(Result);
+      Assertions.assertNotNull(Result);
     } catch (SQLException e) {
       // BIGQUERY Can only store long as a string
-      Assert.assertTrue(e.toString().contains("Argument type mismatch in function GREATER"));
+      Assertions.assertTrue(e.toString().contains("Argument type mismatch in function GREATER"));
     }
     try {
       con.close();
@@ -574,7 +574,7 @@ public class PreparedStatementTests {
       stm.setInt(2, limit);
       theResult = stm.executeQuery();
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       ResultSetMetaData metadata = theResult.getMetaData();
@@ -590,14 +590,14 @@ public class PreparedStatementTests {
         Line = "";
         for (int i = 0; i < ColumnCount; i++) {
           if (i == 0) {
-            Assert.assertEquals(second, theResult.getString(i + 1));
+            Assertions.assertEquals(second, theResult.getString(i + 1));
           }
           Line += String.format("%-32s", theResult.getString(i + 1));
         }
         actual++;
       }
     } catch (SQLException e) {
-      Assert.fail(e.toString());
+      Assertions.fail(e.toString());
     }
     try {
       con.close();
@@ -605,7 +605,7 @@ public class PreparedStatementTests {
       e.printStackTrace();
     }
     con = null;
-    Assert.assertTrue(limit >= actual);
+    Assertions.assertTrue(limit >= actual);
   }
 
   @Test
