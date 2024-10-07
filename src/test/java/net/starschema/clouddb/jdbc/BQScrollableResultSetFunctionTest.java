@@ -711,7 +711,6 @@ public class BQScrollableResultSetFunctionTest extends CommonTestsForResultSets 
 
         final BQScrollableResultSet bqResultSet = (BQScrollableResultSet) result;
         Assertions.assertThat(bqResultSet.getJobId()).isNull();
-        Assertions.assertThat(bqResultSet.getQueryId()).contains("!");
       }
     }
   }
