@@ -3,6 +3,7 @@ package net.starschema.clouddb.jdbc;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpRequest;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
+import com.google.api.services.bigquery.Bigquery.Jobs.Query;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,6 +14,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import junit.framework.Assert;
+import net.starschema.clouddb.jdbc.BQConnection.JobCreationMode;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Rule;
@@ -170,6 +172,51 @@ public class JdbcUrlTest {
 
     BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
     stmt.executeQuery("SELECT * FROM orders limit 1");
+  }
+
+  @Test
+  public void oAuthAccessTokenOnlyInHeader()
+      throws SQLException, IOException, GeneralSecurityException {
+    // generate access token from service account credentials
+    Properties serviceProps = getProperties("/protectedaccount.properties");
+    String accessToken =
+        Oauth2Bigquery.generateAccessToken(
+            serviceProps.getProperty("user"),
+            serviceProps.getProperty("path"),
+            serviceProps.getProperty("password"),
+            null);
+
+    Properties oauthProps = getProperties("/oauthaccount.properties");
+    oauthProps.setProperty("oauthaccesstoken", accessToken);
+    String url = BQSupportFuncts.constructUrlFromPropertiesFile(oauthProps, true, null);
+    BQConnection bqConn = new BQConnection(url, new Properties());
+
+    Oauth2Bigquery.BigQueryRequestUserAgentInitializer initializer =
+        (Oauth2Bigquery.BigQueryRequestUserAgentInitializer)
+            bqConn.getBigquery().getGoogleClientRequestInitializer();
+
+    Assertions.assertThat(initializer.getOauthToken())
+        .withFailMessage(
+            "BigQueryRequestUserAgentInitializer.getOauthToken private API required"
+                + " by Looker; token must be present")
+        .isNotNull();
+
+    BQStatement stmt = new BQStatement(oauthProps.getProperty("projectid"), bqConn);
+    Query query =
+        BQSupportFuncts.getSyncQuery(
+            bqConn.getBigquery(),
+            oauthProps.getProperty("projectid"),
+            "SELECT * FROM orders limit 1",
+            bqConn.getDataSet(),
+            bqConn.getUseLegacySql(),
+            null,
+            stmt.getSyncTimeoutMillis(),
+            (long) stmt.getMaxRows(),
+            stmt.getAllLabels(),
+            bqConn.getUseQueryCache(),
+            JobCreationMode.JOB_CREATION_MODE_UNSPECIFIED);
+    String oAuthToken = query.getOauthToken();
+    Assertions.assertThat(oAuthToken).isNull();
   }
 
   @Test
@@ -507,5 +554,28 @@ public class JdbcUrlTest {
 
   private String getUrl(String pathToProp, String dataset) throws IOException {
     return BQSupportFuncts.constructUrlFromPropertiesFile(getProperties(pathToProp), true, dataset);
+  }
+
+  @Test
+  public void missingJobCreationModeDefaultsToNull() throws Exception {
+    final String url = getUrl("/protectedaccount.properties", null);
+    Assertions.assertThat(url).doesNotContain("jobcreationmode");
+    bq = new BQConnection(url, new Properties());
+    final JobCreationMode mode = bq.getJobCreationMode();
+    Assertions.assertThat(mode).isNull();
+  }
+
+  @Test
+  public void jobCreationModeTest() throws Exception {
+    final String url = getUrl("/protectedaccount.properties", null);
+    Assertions.assertThat(url).doesNotContain("jobcreationmode");
+    final JobCreationMode[] modes = JobCreationMode.values();
+    for (JobCreationMode mode : modes) {
+      final String fullURL = String.format("%s&jobcreationmode=%s", url, mode.name());
+      try (BQConnection bq = new BQConnection(fullURL, new Properties())) {
+        final JobCreationMode parsedMode = bq.getJobCreationMode();
+        Assertions.assertThat(parsedMode).isEqualTo(mode);
+      }
+    }
   }
 }

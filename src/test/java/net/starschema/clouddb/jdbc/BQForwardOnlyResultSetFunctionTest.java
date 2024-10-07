@@ -28,14 +28,26 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 import junit.framework.Assert;
+import org.assertj.core.api.Assertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -47,29 +59,45 @@ import org.slf4j.LoggerFactory;
  * @author Horváth Attila
  * @author Gunics Balazs
  */
-public class BQForwardOnlyResultSetFunctionTest {
+public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets {
 
-  private static java.sql.Connection con = null;
+  private java.sql.Connection connection;
+  private java.sql.Connection standardSqlConnection;
   private java.sql.ResultSet resultForTest = null;
 
   Logger logger = LoggerFactory.getLogger(BQForwardOnlyResultSetFunctionTest.class);
   private Integer maxRows = null;
-  private String defaultProjectId = null;
-  private BQConnection defaultConn = null;
 
-  @Before
-  public void setup() throws SQLException, IOException {
-    Properties props =
-        BQSupportFuncts.readFromPropFile(
-            getClass().getResource("/installedaccount.properties").getFile());
-    String url = BQSupportFuncts.constructUrlFromPropertiesFile(props, true, null);
-    url += "&useLegacySql=false";
-    this.defaultProjectId = props.getProperty("projectid");
-    this.defaultConn = new BQConnection(url, new Properties());
+  private Connection connect(final String extraUrl) throws SQLException, IOException {
+    return ConnectionFromResources.connect("installedaccount1.properties", extraUrl);
   }
 
-  private BQConnection conn() throws SQLException, IOException {
-    return this.defaultConn;
+  @Before
+  public void setConnection() throws SQLException, IOException {
+    connection = connect("&useLegacySql=true");
+  }
+
+  @Before
+  public void setStandardSqlConnection() throws SQLException, IOException {
+    standardSqlConnection = connect("&useLegacySql=false");
+  }
+
+  @After
+  public void closeConnection() throws SQLException {
+    connection.close();
+  }
+
+  @After
+  public void closeStandardSqlConnection() throws SQLException {
+    standardSqlConnection.close();
+  }
+
+  private BQConnection bqConnection() {
+    return (BQConnection) connection;
+  }
+
+  private BQConnection bqStandardSqlConnection() {
+    return (BQConnection) standardSqlConnection;
   }
 
   @Test
@@ -122,7 +150,10 @@ public class BQForwardOnlyResultSetFunctionTest {
     this.QueryLoad();
     ResultSet result = null;
     try {
-      result = con.getMetaData().getColumns(null, "starschema_net__clouddb", "OUTLET_LOOKUP", null);
+      result =
+          connection
+              .getMetaData()
+              .getColumns(null, "starschema_net__clouddb", "OUTLET_LOOKUP", null);
     } catch (SQLException e) {
       e.printStackTrace();
       Assert.fail();
@@ -155,72 +186,41 @@ public class BQForwardOnlyResultSetFunctionTest {
   public void isClosedValidtest() {
     this.QueryLoad();
     try {
-      Assert.assertEquals(true, BQForwardOnlyResultSetFunctionTest.con.isValid(0));
+      Assert.assertEquals(true, connection.isValid(0));
     } catch (SQLException e) {
       Assert.fail("Got an exception" + e.toString());
       e.printStackTrace();
     }
     try {
-      Assert.assertEquals(true, BQForwardOnlyResultSetFunctionTest.con.isValid(10));
+      Assert.assertEquals(true, connection.isValid(10));
     } catch (SQLException e) {
       Assert.fail("Got an exception" + e.toString());
       e.printStackTrace();
     }
     try {
-      BQForwardOnlyResultSetFunctionTest.con.isValid(-10);
+      connection.isValid(-10);
     } catch (SQLException e) {
       Assert.assertTrue(true);
       // e.printStackTrace();
     }
 
     try {
-      BQForwardOnlyResultSetFunctionTest.con.close();
+      connection.close();
     } catch (SQLException e) {
       e.printStackTrace();
     }
     try {
-      Assert.assertTrue(BQForwardOnlyResultSetFunctionTest.con.isClosed());
+      Assert.assertTrue(connection.isClosed());
     } catch (SQLException e1) {
       e1.printStackTrace();
     }
 
     try {
-      BQForwardOnlyResultSetFunctionTest.con.isValid(0);
+      connection.isValid(0);
     } catch (SQLException e) {
       Assert.assertTrue(true);
       e.printStackTrace();
     }
-  }
-
-  /**
-   * Makes a new Bigquery Connection to URL in file and gives back the Connection to static con
-   * member.
-   */
-  @Before
-  public void NewConnection() {
-    NewConnection(true);
-  }
-
-  void NewConnection(boolean useLegacySql) {
-
-    this.logger.info("Testing the JDBC driver");
-    try {
-      Class.forName("net.starschema.clouddb.jdbc.BQDriver");
-      Properties props =
-          BQSupportFuncts.readFromPropFile(
-              getClass().getResource("/installedaccount1.properties").getFile());
-      props.setProperty("useLegacySql", String.valueOf(useLegacySql));
-      BQForwardOnlyResultSetFunctionTest.con =
-          DriverManager.getConnection(
-              BQSupportFuncts.constructUrlFromPropertiesFile(props),
-              BQSupportFuncts.readFromPropFile(
-                  getClass().getResource("/installedaccount1.properties").getFile()));
-    } catch (Exception e) {
-      e.printStackTrace();
-      this.logger.error("Error in connection" + e.toString());
-      Assert.fail("General Exception:" + e.toString());
-    }
-    this.logger.info(((BQConnection) BQForwardOnlyResultSetFunctionTest.con).getURLPART());
   }
 
   // Comprehensive Tests:
@@ -234,8 +234,7 @@ public class BQForwardOnlyResultSetFunctionTest {
     try {
       // Statement stmt = BQResultSetFunctionTest.con.createStatement();
       Statement stmt =
-          BQForwardOnlyResultSetFunctionTest.con.createStatement(
-              ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+          connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       stmt.setQueryTimeout(500);
       if (this.maxRows != null) {
         stmt.setMaxRows(this.maxRows);
@@ -432,13 +431,12 @@ public class BQForwardOnlyResultSetFunctionTest {
             + "['a', 'b', 'c'], "
             + "[STRUCT(1 as a, 'hello' as b), STRUCT(2 as a, 'goodbye' as b)], "
             + "STRUCT(1 as a, ['an', 'array'] as b),"
-            + "TIMESTAMP('2012-01-01 00:00:03.032') as t";
+            + "TIMESTAMP('2012-01-01 00:00:03.0000') as t";
 
-    this.NewConnection(false);
     java.sql.ResultSet result = null;
     try {
       Statement stmt =
-          BQForwardOnlyResultSetFunctionTest.con.createStatement(
+          standardSqlConnection.createStatement(
               ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       stmt.setQueryTimeout(500);
       result = stmt.executeQuery(sql);
@@ -486,25 +484,85 @@ public class BQForwardOnlyResultSetFunctionTest {
         new Gson().toJson(new String[] {"an", "array"}),
         new Gson().toJson(mixedBagActual.get("b")));
 
-    Assert.assertEquals("2012-01-01 00:00:03.032", result.getString(5));
+    Assert.assertEquals("2012-01-01 00:00:03 UTC", result.getString(5));
+  }
+
+  @Test
+  public void testResultSetDateTimeType() throws SQLException, ParseException {
+    final String sql = "SELECT DATETIME('2012-01-01 01:02:03.04567')";
+    final Calendar istCalendar = new GregorianCalendar(TimeZone.getTimeZone("Asia/Kolkata"));
+    final DateFormat utcDateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    utcDateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+    Statement stmt =
+        standardSqlConnection.createStatement(
+            ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    stmt.setQueryTimeout(500);
+    ResultSet result = stmt.executeQuery(sql);
+    Assert.assertTrue(result.next());
+
+    Timestamp resultTimestamp = result.getTimestamp(1);
+    Object resultObject = result.getObject(1);
+    String resultString = result.getString(1);
+
+    // getObject() and getTimestamp() should behave the same for DATETIME.
+    Assert.assertEquals(resultTimestamp, resultObject);
+
+    // getTimestamp().toString() should be equivalent to getString(), with full microsecond support.
+    Assert.assertEquals("2012-01-01 01:02:03.04567", resultTimestamp.toString());
+    Assert.assertEquals("2012-01-01T01:02:03.045670", resultString);
+
+    // If a different calendar is used, the string representation should be adjusted.
+    Timestamp adjustedTimestamp = result.getTimestamp(1, istCalendar);
+    // Render it from the perspective of UTC.
+    // Since it was created for IST, it should be adjusted by -5:30.
+    String adjustedString = utcDateFormatter.format(adjustedTimestamp);
+    Assert.assertEquals("2011-12-31 19:32:03.045", adjustedString);
+    // SimpleDateFormat does not support microseconds,
+    // but they should be correct on the adjusted timestamp.
+    Assert.assertEquals(45670000, adjustedTimestamp.getNanos());
+  }
+
+  @Test
+  public void testResultSetTimestampType() throws SQLException, ParseException {
+    final String sql = "SELECT TIMESTAMP('2012-01-01 01:02:03.04567')";
+
+    Statement stmt =
+        standardSqlConnection.createStatement(
+            ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    stmt.setQueryTimeout(500);
+    ResultSet result = stmt.executeQuery(sql);
+    Assert.assertTrue(result.next());
+
+    Timestamp resultTimestamp = result.getTimestamp(1);
+    Object resultObject = result.getObject(1);
+    String resultString = result.getString(1);
+
+    // getObject() and getTimestamp() should behave the same for TIMESTAMP.
+    Assert.assertEquals(resultTimestamp, resultObject);
+
+    // getString() should be the string representation in UTC+0.
+    Assert.assertEquals("2012-01-01 01:02:03.04567 UTC", resultString);
+
+    // getTimestamp() should have the right number of milliseconds elapsed since epoch.
+    // 1325379723045 milliseconds after epoch, the time is 2012-01-01 01:02:03.045 in UTC+0.
+    Assert.assertEquals(1325379723045L, resultTimestamp.getTime());
+    // The microseconds should also be correct, but nanoseconds are not supported by BigQuery.
+    Assert.assertEquals(45670000, resultTimestamp.getNanos());
   }
 
   @Test
   public void testResultSetTypesInGetObject() throws SQLException, ParseException {
     final String sql =
         "SELECT "
-            + "DATETIME('2012-01-01 00:00:02'), "
-            + "TIMESTAMP('2012-01-01 00:00:03'), "
             + "CAST('2312412432423423334.234234234' AS NUMERIC), "
             + "CAST('2011-04-03' AS DATE), "
             + "CAST('nan' AS FLOAT)";
 
-    this.NewConnection(true);
     java.sql.ResultSet result = null;
     try {
       Statement stmt =
-          BQForwardOnlyResultSetFunctionTest.con.createStatement(
-              ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+          connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       stmt.setQueryTimeout(500);
       result = stmt.executeQuery(sql);
     } catch (SQLException e) {
@@ -513,30 +571,24 @@ public class BQForwardOnlyResultSetFunctionTest {
     }
     Assert.assertNotNull(result);
     Assert.assertTrue(result.next());
-    Assert.assertEquals("2012-01-01T00:00:02", result.getObject(1));
 
-    SimpleDateFormat timestampDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss z");
-    Date parsedDate = timestampDateFormat.parse("2012-01-01 00:00:03 UTC");
-    Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
-    Assert.assertEquals(timestamp, result.getObject(2));
+    Assert.assertEquals(new BigDecimal("2312412432423423334.234234234"), result.getObject(1));
 
-    Assert.assertEquals(new BigDecimal("2312412432423423334.234234234"), result.getObject(3));
     SimpleDateFormat dateDateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date parsedDateDate = new java.sql.Date(dateDateFormat.parse("2011-04-03").getTime());
-    Assert.assertEquals(parsedDateDate, result.getObject(4));
+    Assert.assertEquals(parsedDateDate, result.getObject(2));
 
-    Assert.assertEquals(Double.NaN, result.getObject(5));
+    Assert.assertEquals(Double.NaN, result.getObject(3));
   }
 
   @Test
   public void testResultSetArraysInGetObject() throws SQLException, ParseException {
     final String sql = "SELECT [1, 2, 3], [TIMESTAMP(\"2010-09-07 15:30:00 America/Los_Angeles\")]";
 
-    this.NewConnection(false);
     java.sql.ResultSet result = null;
     try {
       Statement stmt =
-          BQForwardOnlyResultSetFunctionTest.con.createStatement(
+          standardSqlConnection.createStatement(
               ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       stmt.setQueryTimeout(500);
       result = stmt.executeQuery(sql);
@@ -565,12 +617,12 @@ public class BQForwardOnlyResultSetFunctionTest {
 
   @Test
   public void testResultSetTimeType() throws SQLException, ParseException {
-    final String sql = "select current_time(), CAST('00:00:02.123455' AS TIME)";
-    this.NewConnection(false);
+    final String sql = "select current_time(), CAST('00:00:02.12345' AS TIME)";
+
     java.sql.ResultSet result = null;
     try {
       Statement stmt =
-          BQForwardOnlyResultSetFunctionTest.con.createStatement(
+          standardSqlConnection.createStatement(
               ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       stmt.setQueryTimeout(500);
       result = stmt.executeQuery(sql);
@@ -585,14 +637,28 @@ public class BQForwardOnlyResultSetFunctionTest {
     Object resultObject = result.getObject(1);
     String resultString = result.getString(1);
 
-    // getObject() and getString() should behave the same for TIME
-    Assert.assertEquals(resultString, (String) resultObject);
+    // getObject() and getTime() should behave the same for TIME.
+    Assert.assertEquals(resultTime, resultObject);
 
-    // getTime() will return a 'time' without milliseconds
+    // getTime().toString() should be equivalent to getString() without milliseconds.
     Assert.assertTrue(resultString.startsWith(resultTime.toString()));
 
-    // also check that explicit casts to TIME work as expected
-    Assert.assertEquals(result.getTime(2).toString(), "00:00:02");
+    // getTime() should have milliseconds, though. They're just not included in toString().
+    // Get whole milliseconds (modulo whole seconds) from resultTime.
+    long timeMillis = resultTime.getTime() % 1000;
+    // Get whole milliseconds from resultString.
+    int decimalPlace = resultString.lastIndexOf('.');
+    long stringMillis = Long.parseLong(resultString.substring(decimalPlace + 1, decimalPlace + 4));
+    Assert.assertEquals(timeMillis, stringMillis);
+
+    // Check that explicit casts to TIME work as expected.
+    Time fixedTime = result.getTime(2);
+    Assert.assertEquals("00:00:02", fixedTime.toString());
+    // The object should have milliseconds even though they're hidden by toString().
+    // AFAICT [java.sql.Time] does not support microseconds.
+    Assert.assertEquals(123, fixedTime.getTime() % 1000);
+    // getString() should show microseconds.
+    Assert.assertEquals("00:00:02.123450", result.getString(2));
   }
 
   @Test
@@ -609,11 +675,10 @@ public class BQForwardOnlyResultSetFunctionTest {
     final String sql =
         "CREATE PROCEDURE looker_test.procedure_test(target_id INT64)\n" + "BEGIN\n" + "END;";
 
-    this.NewConnection(false);
     java.sql.ResultSet result = null;
     try {
       Statement stmt =
-          BQForwardOnlyResultSetFunctionTest.con.createStatement(
+          standardSqlConnection.createStatement(
               ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       stmt.setQueryTimeout(500);
       result = stmt.executeQuery(sql);
@@ -623,23 +688,22 @@ public class BQForwardOnlyResultSetFunctionTest {
     } finally {
       String cleanupSql = "DROP PROCEDURE looker_test.procedure_test;\n";
       Statement stmt =
-          BQForwardOnlyResultSetFunctionTest.con.createStatement(
+          standardSqlConnection.createStatement(
               ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       stmt.setQueryTimeout(500);
       stmt.executeQuery(cleanupSql);
     }
 
-    System.out.println(result.toString());
+    // System.out.println(result.toString());
   }
 
   @Test
   public void testResultSetProceduresAsync() throws SQLException {
     final String sql =
         "CREATE PROCEDURE looker_test.long_procedure(target_id INT64)\n" + "BEGIN\n" + "END;";
-    this.NewConnection(false);
 
     try {
-      BQConnection bq = conn();
+      BQConnection bq = bqStandardSqlConnection();
       BQStatement stmt =
           new BQStatement(
               bq.getProjectId(), bq, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY) {
@@ -651,13 +715,13 @@ public class BQForwardOnlyResultSetFunctionTest {
 
       stmt.setQueryTimeout(500);
       stmt.executeQuery(sql);
-    } catch (SQLException | IOException e) {
+    } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
       Assert.fail("SQLException" + e.toString());
     } finally {
       String cleanupSql = "DROP PROCEDURE looker_test.long_procedure;\n";
       Statement stmt =
-          BQForwardOnlyResultSetFunctionTest.con.createStatement(
+          standardSqlConnection.createStatement(
               ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       stmt.setQueryTimeout(500);
       stmt.executeQuery(cleanupSql);
@@ -666,20 +730,20 @@ public class BQForwardOnlyResultSetFunctionTest {
 
   @Test
   public void testBQForwardOnlyResultSetDoesntThrowNPE() throws Exception {
-    BQConnection bq = conn();
+    BQConnection bq = bqConnection();
     BQStatement stmt = (BQStatement) bq.createStatement();
     QueryResponse qr = stmt.runSyncQuery("SELECT 1", false);
     Job ref =
         bq.getBigquery()
             .jobs()
-            .get(defaultProjectId, qr.getJobReference().getJobId())
+            .get(bq.getProjectId(), qr.getJobReference().getJobId())
             .setLocation(qr.getJobReference().getLocation())
             .execute();
     // Under certain race conditions we could close the connection after the job is complete but
     // before the results have been fetched. This was throwing a NPE.
     bq.close();
     try {
-      new BQForwardOnlyResultSet(bq.getBigquery(), defaultProjectId, ref, stmt);
+      new BQForwardOnlyResultSet(bq.getBigquery(), bq.getProjectId(), ref, null, stmt);
       Assert.fail("Initalizing BQForwardOnlyResultSet should throw something other than a NPE.");
     } catch (SQLException e) {
       Assert.assertEquals(e.getMessage(), "Failed to fetch results. Connection is closed.");
@@ -695,6 +759,61 @@ public class BQForwardOnlyResultSetFunctionTest {
       return;
     }
     throw new AssertionError("Expected graceful failure due to lack of job reference");
+  }
+
+  @Test
+  public void testHandlesNullTimeDateObjects() throws Exception {
+    Statement stmt =
+        standardSqlConnection.createStatement(
+            ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+
+    final String date = "2011-11-11";
+    final String time = "12:12:12";
+    final String dateTime = date + " " + time;
+    final String dateTimeWithT = date + "T" + time;
+    // The number of milliseconds between epoch and 2011-11-11 12:12:12 UTC+0.
+    final long millis = 1321013532000L;
+
+    // spotless:off
+    String sql = "SELECT " +
+        "TIMESTAMP('" + dateTime + "') AS ts, " +
+        "DATETIME('" + dateTime + "') AS dt, " +
+        "DATE('" + date + "') AS d, " +
+        "TIME(12, 12, 12) AS t\n" +
+        "UNION ALL SELECT " +
+        "CASE WHEN 1 = 0 THEN TIMESTAMP('" + dateTime + "') ELSE NULL END, " +
+        "CASE WHEN 1 = 0 THEN DATETIME('" + dateTime + "') ELSE NULL END, " +
+        "CASE WHEN 1 = 0 THEN DATE('" + date + "') ELSE NULL END, " +
+        "CASE WHEN 1 = 0 THEN TIME(12, 12, 12) ELSE NULL END";
+    // spotless:on
+
+    ResultSet results = stmt.executeQuery(sql);
+
+    // First row has all non-null objects.
+    Assertions.assertThat(results.next()).isTrue();
+    Assertions.assertThat(results.getObject("ts"))
+        .isEqualTo(Timestamp.from(Instant.ofEpochMilli(millis)));
+    Assertions.assertThat(results.getString("ts")).isEqualTo(dateTime + " UTC");
+    Assertions.assertThat(results.getObject("dt")).isEqualTo(Timestamp.valueOf(dateTime));
+    Assertions.assertThat(results.getString("dt")).isEqualTo(dateTimeWithT);
+    Assertions.assertThat(results.getObject("d")).isEqualTo(java.sql.Date.valueOf(date));
+    Assertions.assertThat(results.getString("d")).isEqualTo(date);
+    Assertions.assertThat(results.getObject("t")).isEqualTo(java.sql.Time.valueOf(time));
+    Assertions.assertThat(results.getString("t")).isEqualTo(time);
+
+    // Second row is all null.
+    Assertions.assertThat(results.next()).isTrue();
+    Assertions.assertThat(results.getObject("ts")).isNull();
+    Assertions.assertThat(results.getString("ts")).isNull();
+    Assertions.assertThat(results.getObject("dt")).isNull();
+    Assertions.assertThat(results.getString("dt")).isNull();
+    Assertions.assertThat(results.getObject("d")).isNull();
+    Assertions.assertThat(results.getString("d")).isNull();
+    Assertions.assertThat(results.getObject("t")).isNull();
+    Assertions.assertThat(results.getString("t")).isNull();
+
+    // Only two rows.
+    Assertions.assertThat(results.next()).isFalse();
   }
 
   @Test
@@ -729,5 +848,30 @@ public class BQForwardOnlyResultSetFunctionTest {
     results.getJobId();
     results.getBiEngineMode();
     results.getBiEngineReasons();
+  }
+
+  @Test
+  public void testStatelessQuery() throws SQLException, IOException {
+    try (Connection statelessConnection =
+        connect("&useLegacySql=false&jobcreationmode=JOB_CREATION_OPTIONAL")) {
+      StatelessQuery.assumeStatelessQueriesEnabled(statelessConnection.getCatalog());
+      try (Statement stmt =
+          statelessConnection.createStatement(
+              ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+        final ResultSet result = stmt.executeQuery(StatelessQuery.exampleQuery());
+        final String[][] rows = BQSupportMethods.GetQueryResult(result);
+        Assertions.assertThat(rows).isEqualTo(StatelessQuery.exampleValues());
+
+        final BQForwardOnlyResultSet bqResultSet = (BQForwardOnlyResultSet) result;
+        Assertions.assertThat(bqResultSet.getJobId()).isNull();
+        Assertions.assertThat(bqResultSet.getQueryId()).contains("!");
+      }
+    }
+  }
+
+  @Override
+  protected Statement createStatementForCommonTests(final Connection connection)
+      throws SQLException {
+    return connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
   }
 }

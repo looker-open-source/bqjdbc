@@ -43,7 +43,8 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.regepijelkfjeqw;lfkjwe;flkjwef;lwekjf;ewlkjx.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
+import java.util.stream.Stream
+import net.starschema.clouddb.jdbc.BQConnection.JobCreationMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -644,7 +645,40 @@ public class BQSupportFuncts {
       Long queryTimeoutMs,
       Long maxResults,
       Map<String, String> labels,
-      boolean useQueryCache)
+      boolean useQueryCache,
+      JobCreationMode jobCreationMode)
+      throws IOException {
+    return getSyncQuery(
+            bigquery,
+            projectId,
+            querySql,
+            dataSet,
+            useLegacySql,
+            maxBillingBytes,
+            queryTimeoutMs,
+            maxResults,
+            labels,
+            useQueryCache,
+            jobCreationMode)
+        .execute();
+  }
+
+  /*
+   * Gets a query as specified, but does not execute it.
+   * Introduced for assertions on the property of the query.
+   * */
+  static Bigquery.Jobs.Query getSyncQuery(
+      Bigquery bigquery,
+      String projectId,
+      String querySql,
+      String dataSet,
+      Boolean useLegacySql,
+      Long maxBillingBytes,
+      Long queryTimeoutMs,
+      Long maxResults,
+      Map<String, String> labels,
+      boolean useQueryCache,
+      JobCreationMode jobCreationMode)
       throws IOException {
     QueryRequest qr =
         new QueryRequest()
@@ -654,6 +688,9 @@ public class BQSupportFuncts {
             .setQuery(querySql)
             .setUseLegacySql(useLegacySql)
             .setMaximumBytesBilled(maxBillingBytes);
+    if (jobCreationMode != null) {
+      qr = qr.setJobCreationMode(jobCreationMode.name());
+    }
     if (dataSet != null) {
       qr.setDefaultDataset(new DatasetReference().setDatasetId(dataSet).setProjectId(projectId));
     }
@@ -661,7 +698,7 @@ public class BQSupportFuncts {
       qr.setMaxResults(maxResults);
     }
 
-    return bigquery.jobs().query(projectId, qr).execute();
+    return bigquery.jobs().query(projectId, qr);
   }
 
   /**
