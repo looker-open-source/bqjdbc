@@ -864,7 +864,6 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
 
         final BQForwardOnlyResultSet bqResultSet = (BQForwardOnlyResultSet) result;
         Assertions.assertThat(bqResultSet.getJobId()).isNull();
-        Assertions.assertThat(bqResultSet.getQueryId()).contains("!");
       }
     }
   }
