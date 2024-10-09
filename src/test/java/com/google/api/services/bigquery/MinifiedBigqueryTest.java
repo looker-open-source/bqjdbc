@@ -4,7 +4,7 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.json.MockJsonFactory;
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MinifiedBigqueryTest {
 

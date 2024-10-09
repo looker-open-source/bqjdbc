@@ -18,9 +18,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.stream.Collectors;
 import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * An abstract class that contains tests common to {@link ResultSet} implementations. Its name
@@ -33,13 +33,13 @@ public abstract class CommonTestsForResultSets {
 
   private Connection connection;
 
-  @Before
+  @BeforeEach
   public void connectForCommonTests() throws SQLException, IOException {
     connection =
         ConnectionFromResources.connect("installedaccount1.properties", "&useLegacySql=false");
   }
 
-  @After
+  @AfterEach
   public void closeConnectionForCommonTests() throws SQLException {
     connection.close();
   }

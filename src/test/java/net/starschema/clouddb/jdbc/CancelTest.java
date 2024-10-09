@@ -1,7 +1,6 @@
 package net.starschema.clouddb.jdbc;
 
-import static junit.framework.Assert.*;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobReference;
@@ -16,9 +15,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import junit.framework.Assert;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /** Created by steven on 11/2/15. */
 public class CancelTest {
@@ -37,7 +36,7 @@ public class CancelTest {
     return new BQConnection(url, new Properties());
   }
 
-  @After
+  @AfterEach
   public void teardown() throws Throwable {
     if (this.unexpectedDiedWith.get() != null) {
       throw this.unexpectedDiedWith.get();
@@ -112,7 +111,7 @@ public class CancelTest {
     stmt.cancel();
     backgroundThread.join();
     SQLException exception = expectedSqlException.get();
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "Job execution was cancelled: User requested cancellation",
         ((com.google.api.client.googleapis.json.GoogleJsonResponseException) exception.getCause())
             .getDetails()
@@ -133,7 +132,7 @@ public class CancelTest {
     stmt.cancel();
     backgroundThread.join();
     SQLException exception = expectedSqlException.get();
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "Job execution was cancelled: User requested cancellation",
         ((com.google.api.client.googleapis.json.GoogleJsonResponseException) exception.getCause())
             .getDetails()
@@ -166,8 +165,8 @@ public class CancelTest {
     Thread backgroundThread2 = getAndRunBackgroundQuery(stmt2);
     stmt1.waitForTestPoint();
     stmt2.waitForTestPoint();
-    assertTrue("Must see both running queries", bq.getNumberRunningQueries() == 2);
-    assertTrue("Must not fail to cancel queries", bq.cancelRunningQueries() == 0);
+    assertTrue(bq.getNumberRunningQueries() == 2, "Must see both running queries");
+    assertTrue(bq.cancelRunningQueries() == 0, "Must not fail to cancel queries");
     backgroundThread1.join();
     backgroundThread2.join();
   }
@@ -223,7 +222,7 @@ public class CancelTest {
             .setStatistics(new JobStatistics().setCreationTime(12345567789L))
             .setJobReference(new JobReference().setJobId("Job Id"));
     String result = BQSupportFuncts.logAndGetQueryState(testJob);
-    Assert.assertEquals(result, "PENDING");
+    Assertions.assertEquals(result, "PENDING");
   }
 
   @Test
@@ -237,19 +236,16 @@ public class CancelTest {
             .setJobReference(new JobReference().setJobId("Job Id"));
     Throwable exception =
         assertThrows(
-            IllegalStateException.class,
-            () -> {
-              BQSupportFuncts.logAndGetQueryState(testJob);
-            });
+            IllegalStateException.class, () -> BQSupportFuncts.logAndGetQueryState(testJob));
     assertEquals("Failed to fetch start or creation time.", exception.getMessage());
   }
 
   private void assertPollJobException(Exception exception) {
-    Assert.assertTrue(
+    Assertions.assertTrue(
         exception.getMessage().contains("Something went wrong getting results for the job"));
-    Assert.assertEquals(exception.getClass(), BQSQLException.class);
-    Assert.assertEquals(exception.getCause().getMessage(), "Failed to fetch query state.");
-    Assert.assertEquals(exception.getCause().getClass(), IOException.class);
+    Assertions.assertEquals(exception.getClass(), BQSQLException.class);
+    Assertions.assertEquals(exception.getCause().getMessage(), "Failed to fetch query state.");
+    Assertions.assertEquals(exception.getCause().getClass(), IOException.class);
   }
 
   private static class TestableBQStatementWithBadPollJobs extends TestableBQStatement {

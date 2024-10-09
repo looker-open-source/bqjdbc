@@ -20,6 +20,8 @@
  */
 package net.starschema.clouddb.jdbc;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.api.services.bigquery.model.Job;
@@ -45,11 +47,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
-import junit.framework.Assert;
 import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,22 +73,22 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     return ConnectionFromResources.connect("installedaccount1.properties", extraUrl);
   }
 
-  @Before
+  @BeforeEach
   public void setConnection() throws SQLException, IOException {
     connection = connect("&useLegacySql=true");
   }
 
-  @Before
+  @BeforeEach
   public void setStandardSqlConnection() throws SQLException, IOException {
     standardSqlConnection = connect("&useLegacySql=false");
   }
 
-  @After
+  @AfterEach
   public void closeConnection() throws SQLException {
     connection.close();
   }
 
-  @After
+  @AfterEach
   public void closeStandardSqlConnection() throws SQLException {
     standardSqlConnection.close();
   }
@@ -105,42 +106,42 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     this.QueryLoad();
     this.logger.info("ChainedFunctionTest");
     try {
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("you", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("you", resultForTest.getString(1));
 
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
     try {
       resultForTest.absolute(10);
     } catch (SQLException e) {
-      Assert.assertTrue(true);
+      assertTrue(true);
     }
 
     try {
       for (int i = 0; i < 9; i++) {
-        Assert.assertTrue(resultForTest.next());
+        assertTrue(resultForTest.next());
       }
-      Assert.assertFalse(resultForTest.next());
+      assertFalse(resultForTest.next());
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
 
     try {
-      Assert.assertEquals("", resultForTest.getString(1));
+      assertEquals("", resultForTest.getString(1));
     } catch (SQLException e) {
-      Assert.assertTrue(true);
+      assertTrue(true);
     }
 
     QueryLoad();
     try {
       resultForTest.next();
-      Assert.assertEquals("you", resultForTest.getString(1));
+      assertEquals("you", resultForTest.getString(1));
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
     this.logger.info("chainedfunctiontest end");
   }
@@ -156,10 +157,10 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
               .getColumns(null, "starschema_net__clouddb", "OUTLET_LOOKUP", null);
     } catch (SQLException e) {
       e.printStackTrace();
-      Assert.fail();
+      fail();
     }
     try {
-      Assert.assertTrue(result.first());
+      assertTrue(result.first());
       while (!result.isAfterLast()) {
         String toprint = "";
         toprint += result.getString(1) + " , ";
@@ -177,7 +178,7 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
       }
     } catch (SQLException e) {
       e.printStackTrace();
-      Assert.fail();
+      fail();
     }
   }
 
@@ -186,21 +187,21 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
   public void isClosedValidtest() {
     this.QueryLoad();
     try {
-      Assert.assertEquals(true, connection.isValid(0));
+      assertEquals(true, connection.isValid(0));
     } catch (SQLException e) {
-      Assert.fail("Got an exception" + e.toString());
+      fail("Got an exception" + e.toString());
       e.printStackTrace();
     }
     try {
-      Assert.assertEquals(true, connection.isValid(10));
+      assertEquals(true, connection.isValid(10));
     } catch (SQLException e) {
-      Assert.fail("Got an exception" + e.toString());
+      fail("Got an exception" + e.toString());
       e.printStackTrace();
     }
     try {
       connection.isValid(-10);
     } catch (SQLException e) {
-      Assert.assertTrue(true);
+      assertTrue(true);
       // e.printStackTrace();
     }
 
@@ -210,7 +211,7 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
       e.printStackTrace();
     }
     try {
-      Assert.assertTrue(connection.isClosed());
+      assertTrue(connection.isClosed());
     } catch (SQLException e1) {
       e1.printStackTrace();
     }
@@ -218,7 +219,7 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     try {
       connection.isValid(0);
     } catch (SQLException e) {
-      Assert.assertTrue(true);
+      assertTrue(true);
       e.printStackTrace();
     }
   }
@@ -242,9 +243,9 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
       resultForTest = stmt.executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(resultForTest);
+    assertNotNull(resultForTest);
   }
 
   @Test
@@ -256,7 +257,7 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
     }
-    Assert.assertTrue(true);
+    assertTrue(true);
   }
 
   @Test
@@ -265,7 +266,7 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     try {
       this.logger.debug("{}", resultForTest.getBoolean(99));
     } catch (SQLException e) {
-      Assert.assertTrue(true);
+      assertTrue(true);
       this.logger.error("SQLexception" + e.toString());
     }
   }
@@ -276,10 +277,10 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     try {
       //            Assert.assertTrue(resultForTest.first());
       resultForTest.next();
-      Assert.assertTrue(resultForTest.isFirst());
+      assertTrue(resultForTest.isFirst());
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
   }
 
@@ -287,11 +288,11 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
   public void TestResultSetgetBoolean() {
     this.QueryLoad();
     try {
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals(Boolean.parseBoolean("42"), resultForTest.getBoolean(2));
+      assertTrue(resultForTest.next());
+      assertEquals(Boolean.parseBoolean("42"), resultForTest.getBoolean(2));
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
   }
 
@@ -299,11 +300,11 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
   public void TestResultSetgetFloat() {
     this.QueryLoad();
     try {
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals(42f, resultForTest.getFloat(2));
+      assertTrue(resultForTest.next());
+      assertEquals(42f, resultForTest.getFloat(2));
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
   }
 
@@ -311,11 +312,11 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
   public void TestResultSetgetInteger() {
     this.QueryLoad();
     try {
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals(42, resultForTest.getInt(2));
+      assertTrue(resultForTest.next());
+      assertEquals(42, resultForTest.getInt(2));
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
   }
 
@@ -323,10 +324,10 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
   public void TestResultSetgetRow() {
     this.QueryLoad();
     try {
-      Assert.assertTrue(resultForTest.next());
+      assertTrue(resultForTest.next());
       resultForTest.getRow();
     } catch (SQLException e) {
-      Assert.assertTrue(true);
+      assertTrue(true);
     }
   }
 
@@ -334,11 +335,11 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
   public void TestResultSetgetString() {
     this.QueryLoad();
     try {
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("you", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("you", resultForTest.getString(1));
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
   }
 
@@ -353,35 +354,35 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     this.QueryLoad();
     try {
       //            Assert.assertTrue(resultForTest.first());
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("yet", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("would", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("world", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("without", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("with", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("will", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("why", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("whose", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("whom", resultForTest.getString(1));
-      Assert.assertFalse(resultForTest.next());
+      assertTrue(resultForTest.next());
+      assertTrue(resultForTest.next());
+      assertEquals("yet", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("would", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("world", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("without", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("with", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("will", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("why", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("whose", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("whom", resultForTest.getString(1));
+      assertFalse(resultForTest.next());
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
 
     try {
-      Assert.assertEquals("", resultForTest.getString(1));
+      assertEquals("", resultForTest.getString(1));
     } catch (SQLException e) {
-      Assert.assertTrue(true);
+      assertTrue(true);
     }
   }
 
@@ -391,35 +392,35 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     resultForTest.setFetchSize(2);
     try {
       //            Assert.assertTrue(resultForTest.first());
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("yet", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("would", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("world", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("without", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("with", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("will", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("why", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("whose", resultForTest.getString(1));
-      Assert.assertTrue(resultForTest.next());
-      Assert.assertEquals("whom", resultForTest.getString(1));
-      Assert.assertFalse(resultForTest.next());
+      assertTrue(resultForTest.next());
+      assertTrue(resultForTest.next());
+      assertEquals("yet", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("would", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("world", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("without", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("with", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("will", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("why", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("whose", resultForTest.getString(1));
+      assertTrue(resultForTest.next());
+      assertEquals("whom", resultForTest.getString(1));
+      assertFalse(resultForTest.next());
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
 
     try {
-      Assert.assertEquals("", resultForTest.getString(1));
+      assertEquals("", resultForTest.getString(1));
     } catch (SQLException e) {
-      Assert.assertTrue(true);
+      assertTrue(true);
     }
   }
 
@@ -442,10 +443,10 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
       result = stmt.executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(result);
-    Assert.assertTrue(result.next());
+    assertNotNull(result);
+    assertTrue(result.next());
 
     HashMap<String, String> hello =
         new HashMap() {
@@ -462,29 +463,29 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
           }
         };
 
-    Assert.assertEquals(
+    assertEquals(
         hello,
         new Gson()
             .fromJson(result.getString(1), new TypeToken<Map<String, String>>() {}.getType()));
 
-    Assert.assertEquals("[\"a\",\"b\",\"c\"]", result.getString(2));
+    assertEquals("[\"a\",\"b\",\"c\"]", result.getString(2));
 
     Map<String, String>[] arrayOfMapsActual =
         new Gson()
             .fromJson(result.getString(3), new TypeToken<Map<String, String>[]>() {}.getType());
-    Assert.assertEquals(2, arrayOfMapsActual.length);
-    Assert.assertEquals(hello, arrayOfMapsActual[0]);
-    Assert.assertEquals(goodbye, arrayOfMapsActual[1]);
+    assertEquals(2, arrayOfMapsActual.length);
+    assertEquals(hello, arrayOfMapsActual[0]);
+    assertEquals(goodbye, arrayOfMapsActual[1]);
 
     Map<String, Object> mixedBagActual =
         new Gson().fromJson(result.getString(4), new TypeToken<Map<String, Object>>() {}.getType());
-    Assert.assertEquals(2, mixedBagActual.size());
-    Assert.assertEquals("1", mixedBagActual.get("a"));
-    Assert.assertEquals(
+    assertEquals(2, mixedBagActual.size());
+    assertEquals("1", mixedBagActual.get("a"));
+    assertEquals(
         new Gson().toJson(new String[] {"an", "array"}),
         new Gson().toJson(mixedBagActual.get("b")));
 
-    Assert.assertEquals("2012-01-01 00:00:03 UTC", result.getString(5));
+    assertEquals("2012-01-01 00:00:03 UTC", result.getString(5));
   }
 
   @Test
@@ -499,28 +500,28 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
             ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     stmt.setQueryTimeout(500);
     ResultSet result = stmt.executeQuery(sql);
-    Assert.assertTrue(result.next());
+    assertTrue(result.next());
 
     Timestamp resultTimestamp = result.getTimestamp(1);
     Object resultObject = result.getObject(1);
     String resultString = result.getString(1);
 
     // getObject() and getTimestamp() should behave the same for DATETIME.
-    Assert.assertEquals(resultTimestamp, resultObject);
+    assertEquals(resultTimestamp, resultObject);
 
     // getTimestamp().toString() should be equivalent to getString(), with full microsecond support.
-    Assert.assertEquals("2012-01-01 01:02:03.04567", resultTimestamp.toString());
-    Assert.assertEquals("2012-01-01T01:02:03.045670", resultString);
+    assertEquals("2012-01-01 01:02:03.04567", resultTimestamp.toString());
+    assertEquals("2012-01-01T01:02:03.045670", resultString);
 
     // If a different calendar is used, the string representation should be adjusted.
     Timestamp adjustedTimestamp = result.getTimestamp(1, istCalendar);
     // Render it from the perspective of UTC.
     // Since it was created for IST, it should be adjusted by -5:30.
     String adjustedString = utcDateFormatter.format(adjustedTimestamp);
-    Assert.assertEquals("2011-12-31 19:32:03.045", adjustedString);
+    assertEquals("2011-12-31 19:32:03.045", adjustedString);
     // SimpleDateFormat does not support microseconds,
     // but they should be correct on the adjusted timestamp.
-    Assert.assertEquals(45670000, adjustedTimestamp.getNanos());
+    assertEquals(45670000, adjustedTimestamp.getNanos());
   }
 
   @Test
@@ -532,23 +533,23 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
             ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     stmt.setQueryTimeout(500);
     ResultSet result = stmt.executeQuery(sql);
-    Assert.assertTrue(result.next());
+    assertTrue(result.next());
 
     Timestamp resultTimestamp = result.getTimestamp(1);
     Object resultObject = result.getObject(1);
     String resultString = result.getString(1);
 
     // getObject() and getTimestamp() should behave the same for TIMESTAMP.
-    Assert.assertEquals(resultTimestamp, resultObject);
+    assertEquals(resultTimestamp, resultObject);
 
     // getString() should be the string representation in UTC+0.
-    Assert.assertEquals("2012-01-01 01:02:03.04567 UTC", resultString);
+    assertEquals("2012-01-01 01:02:03.04567 UTC", resultString);
 
     // getTimestamp() should have the right number of milliseconds elapsed since epoch.
     // 1325379723045 milliseconds after epoch, the time is 2012-01-01 01:02:03.045 in UTC+0.
-    Assert.assertEquals(1325379723045L, resultTimestamp.getTime());
+    assertEquals(1325379723045L, resultTimestamp.getTime());
     // The microseconds should also be correct, but nanoseconds are not supported by BigQuery.
-    Assert.assertEquals(45670000, resultTimestamp.getNanos());
+    assertEquals(45670000, resultTimestamp.getNanos());
   }
 
   @Test
@@ -567,18 +568,18 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
       result = stmt.executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(result);
-    Assert.assertTrue(result.next());
+    assertNotNull(result);
+    assertTrue(result.next());
 
-    Assert.assertEquals(new BigDecimal("2312412432423423334.234234234"), result.getObject(1));
+    assertEquals(new BigDecimal("2312412432423423334.234234234"), result.getObject(1));
 
     SimpleDateFormat dateDateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date parsedDateDate = new java.sql.Date(dateDateFormat.parse("2011-04-03").getTime());
-    Assert.assertEquals(parsedDateDate, result.getObject(2));
+    assertEquals(parsedDateDate, result.getObject(2));
 
-    Assert.assertEquals(Double.NaN, result.getObject(3));
+    assertEquals(Double.NaN, result.getObject(3));
   }
 
   @Test
@@ -594,25 +595,25 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
       result = stmt.executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLException" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(result);
-    Assert.assertTrue(result.next());
+    assertNotNull(result);
+    assertTrue(result.next());
 
     // for arrays, getObject() and getString() should behave identically, allowing consumers
     // to interpret/convert types as needed
     String expected = "[\"1\",\"2\",\"3\"]";
     Object resultObject = result.getObject(1);
     String resultString = result.getString(1);
-    Assert.assertEquals(expected, (String) resultObject);
-    Assert.assertEquals(expected, resultString);
+    assertEquals(expected, (String) resultObject);
+    assertEquals(expected, resultString);
 
     // timestamp conversion should occur consumer-side for arrays
     String expectedTwo = "[\"1.2838986E9\"]";
     Object resultObjectTwo = result.getObject(2);
     String resultStringTwo = result.getString(2);
-    Assert.assertEquals(expectedTwo, (String) resultObjectTwo);
-    Assert.assertEquals(expectedTwo, resultStringTwo);
+    assertEquals(expectedTwo, (String) resultObjectTwo);
+    assertEquals(expectedTwo, resultStringTwo);
   }
 
   @Test
@@ -628,20 +629,20 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
       result = stmt.executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     }
-    Assert.assertNotNull(result);
-    Assert.assertTrue(result.next());
+    assertNotNull(result);
+    assertTrue(result.next());
 
     java.sql.Time resultTime = result.getTime(1);
     Object resultObject = result.getObject(1);
     String resultString = result.getString(1);
 
     // getObject() and getTime() should behave the same for TIME.
-    Assert.assertEquals(resultTime, resultObject);
+    assertEquals(resultTime, resultObject);
 
     // getTime().toString() should be equivalent to getString() without milliseconds.
-    Assert.assertTrue(resultString.startsWith(resultTime.toString()));
+    assertTrue(resultString.startsWith(resultTime.toString()));
 
     // getTime() should have milliseconds, though. They're just not included in toString().
     // Get whole milliseconds (modulo whole seconds) from resultTime.
@@ -649,25 +650,25 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     // Get whole milliseconds from resultString.
     int decimalPlace = resultString.lastIndexOf('.');
     long stringMillis = Long.parseLong(resultString.substring(decimalPlace + 1, decimalPlace + 4));
-    Assert.assertEquals(timeMillis, stringMillis);
+    assertEquals(timeMillis, stringMillis);
 
     // Check that explicit casts to TIME work as expected.
     Time fixedTime = result.getTime(2);
-    Assert.assertEquals("00:00:02", fixedTime.toString());
+    assertEquals("00:00:02", fixedTime.toString());
     // The object should have milliseconds even though they're hidden by toString().
     // AFAICT [java.sql.Time] does not support microseconds.
-    Assert.assertEquals(123, fixedTime.getTime() % 1000);
+    assertEquals(123, fixedTime.getTime() % 1000);
     // getString() should show microseconds.
-    Assert.assertEquals("00:00:02.123450", result.getString(2));
+    assertEquals("00:00:02.123450", result.getString(2));
   }
 
   @Test
   public void TestResultSetTotalBytesProcessedCacheHit() {
     QueryLoad();
-    Assert.assertTrue(resultForTest instanceof BQForwardOnlyResultSet);
+    assertTrue(resultForTest instanceof BQForwardOnlyResultSet);
     BQForwardOnlyResultSet results = (BQForwardOnlyResultSet) resultForTest;
     final Boolean processedNoBytes = new Long(0L).equals(results.getTotalBytesProcessed());
-    Assert.assertEquals(processedNoBytes, results.getCacheHit());
+    assertEquals(processedNoBytes, results.getCacheHit());
   }
 
   @Test
@@ -684,7 +685,7 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
       result = stmt.executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     } finally {
       String cleanupSql = "DROP PROCEDURE looker_test.procedure_test;\n";
       Statement stmt =
@@ -717,7 +718,7 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
       stmt.executeQuery(sql);
     } catch (SQLException e) {
       this.logger.error("SQLexception" + e.toString());
-      Assert.fail("SQLException" + e.toString());
+      fail("SQLException" + e.toString());
     } finally {
       String cleanupSql = "DROP PROCEDURE looker_test.long_procedure;\n";
       Statement stmt =
@@ -744,9 +745,9 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     bq.close();
     try {
       new BQForwardOnlyResultSet(bq.getBigquery(), bq.getProjectId(), ref, null, stmt);
-      Assert.fail("Initalizing BQForwardOnlyResultSet should throw something other than a NPE.");
+      fail("Initalizing BQForwardOnlyResultSet should throw something other than a NPE.");
     } catch (SQLException e) {
-      Assert.assertEquals(e.getMessage(), "Failed to fetch results. Connection is closed.");
+      assertEquals(e.getMessage(), "Failed to fetch results. Connection is closed.");
     }
   }
 
@@ -755,7 +756,7 @@ public class BQForwardOnlyResultSetFunctionTest extends CommonTestsForResultSets
     try {
       mockResponse("{}");
     } catch (BQSQLException e) {
-      Assert.assertTrue(e.getMessage().contains("without a job reference"));
+      assertTrue(e.getMessage().contains("without a job reference"));
       return;
     }
     throw new AssertionError("Expected graceful failure due to lack of job reference");

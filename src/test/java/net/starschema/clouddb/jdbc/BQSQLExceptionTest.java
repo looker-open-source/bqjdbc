@@ -5,8 +5,8 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpResponseException;
 import java.io.IOException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class BQSQLExceptionTest {
 
@@ -16,7 +16,7 @@ public class BQSQLExceptionTest {
     BQSQLException exception = new BQSQLException("Oops! Something went wrong:", ioException);
 
     String actualMessage = exception.getMessage();
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "Oops! Something went wrong: - java.io.IOException: Read timed out!", actualMessage);
   }
 
@@ -31,7 +31,7 @@ public class BQSQLExceptionTest {
     BQSQLException exception = new BQSQLException("Oops! Something went wrong:", cause);
 
     String actualMessage = exception.getMessage();
-    Assert.assertEquals("Oops! Something went wrong: - You don't have access", actualMessage);
+    Assertions.assertEquals("Oops! Something went wrong: - You don't have access", actualMessage);
   }
 
   @Test
@@ -40,7 +40,7 @@ public class BQSQLExceptionTest {
     BQSQLException sqlException = new BQSQLException("Oops! Something went wrong:", exception);
 
     String actualMessage = sqlException.getMessage();
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "Oops! Something went wrong: - java.lang.RuntimeException: something went horribly wrong",
         actualMessage);
   }
