@@ -11,18 +11,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-abstract public class CommonTestsForStatements<T extends Statement & LabelledStatement> {
+public abstract class CommonTestsForStatements<T extends Statement & LabelledStatement> {
   protected static final String SMALL_SELECT = "SELECT 1";
-  protected static final String BIG_SELECT = "SELECT * FROM "
-      + "`bigquery-public-data.pypi.file_downloads`"
-      + " WHERE datetime >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)";
-
+  protected static final String BIG_SELECT =
+      "SELECT * FROM "
+          + "`bigquery-public-data.pypi.file_downloads`"
+          + " WHERE datetime >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)";
 
   private BQConnection connection;
   private T statement;
 
   abstract T createStatement(final BQConnection connection);
-
 
   protected BQConnection connect(final String extraUrl) throws SQLException, IOException {
     return ConnectionFromResources.connect("installedaccount1.properties", extraUrl);
@@ -42,22 +41,22 @@ abstract public class CommonTestsForStatements<T extends Statement & LabelledSta
 
   @Test
   public void testGetAllLabels() throws SQLException, IOException {
-    final String params = new QueryStringBuilder()
-        .put("useLegacySql", "false")
-        .put("labels", "label1=value,label2=other-value")
-        .build();
+    final String params =
+        new QueryStringBuilder()
+            .put("useLegacySql", "false")
+            .put("labels", "label1=value,label2=other-value")
+            .build();
 
-    try (
-        BQConnection labeledConnection = connect("&" + params);
-        T statement = createStatement(labeledConnection)
-    ) {
+    try (BQConnection labeledConnection = connect("&" + params);
+        T statement = createStatement(labeledConnection)) {
       statement.setLabels(ImmutableMap.of("label2", "overridden-value", "label3", "statement"));
       final Map<String, String> allLabels = statement.getAllLabels();
       Assertions.assertThat(allLabels)
-          .isEqualTo(ImmutableMap.of(
-              "label1", "value",
-              "label2", "overridden-value",
-              "label3", "statement"));
+          .isEqualTo(
+              ImmutableMap.of(
+                  "label1", "value",
+                  "label2", "overridden-value",
+                  "label3", "statement"));
     }
   }
 

@@ -20,7 +20,5 @@ public class BQPolledStatementTests {
   }
 
   @Test
-  public void testGetAllLabels() {
-
-  }
+  public void testGetAllLabels() {}
 }

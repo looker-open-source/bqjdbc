@@ -1,5 +1,6 @@
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.services.bigquery.model.DmlStatistics;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobReference;
 import com.google.common.collect.ImmutableMap;
@@ -12,9 +13,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class BQPolledStatement
-    extends BQStatementRoot
+public class BQPolledStatement extends BQStatementRoot
     implements java.sql.Statement, LabelledStatement {
+
   private static final long MAX_LABELS = 64;
 
   static final int MAX_IO_FAILURES_RETRIES = 3;
@@ -32,11 +33,9 @@ public class BQPolledStatement
   // statement labels
 
   public BQPolledStatement(
-      final String projectId,
-      final BQConnection connection,
-      final int pollInterval
-  ) {
-    this(projectId,
+      final String projectId, final BQConnection connection, final int pollInterval) {
+    this(
+        projectId,
         connection,
         pollInterval,
         ResultSet.TYPE_FORWARD_ONLY,
@@ -48,14 +47,9 @@ public class BQPolledStatement
       final BQConnection connection,
       final int pollInterval,
       final int resultSetType,
-      final int resultSetConcurrency
-  )  {
-    this(projectId,
-        connection,
-        pollInterval,
-        resultSetType,
-        resultSetConcurrency,
-        System::nanoTime);
+      final int resultSetConcurrency) {
+    this(
+        projectId, connection, pollInterval, resultSetType, resultSetConcurrency, System::nanoTime);
   }
 
   BQPolledStatement(
@@ -64,9 +58,7 @@ public class BQPolledStatement
       final int pollInterval,
       final int resultSetType,
       final int resultSetConcurrency,
-      final Supplier<Long> nanoNow
-  )
-  {
+      final Supplier<Long> nanoNow) {
     this.projectId = projectId;
     this.connection = connection;
     this.pollInterval = pollInterval;
@@ -77,6 +69,7 @@ public class BQPolledStatement
 
   /**
    * Set BigQuery labels for statement
+   *
    * @param statementLabels the labels
    */
   public void setLabels(Map<String, String> statementLabels) {
@@ -125,6 +118,35 @@ public class BQPolledStatement
     return querytimeout * 1000;
   }
 
+  private void pollForJobDone() throws SQLException {
+    int retries = 0;
+    final Long deadline = nanoNow.get() + (long) querytimeout * 1_000_000;
+    do {
+      synchronized (this) {
+        final String queryJobState;
+        try {
+          queryJobState = activeQuery.getQueryJobState(connection);
+        } catch (SQLException e) {
+          if (retries++ < MAX_IO_FAILURES_RETRIES) {
+            continue;
+          }
+          throw e;
+        }
+
+        if (queryJobState.equals("DONE")) {
+          return;
+        }
+        try {
+          wait(pollInterval);
+        } catch (InterruptedException e) {
+          throw activeQuery.jobExecutionException(e);
+        }
+      }
+    } while (running.get() && nanoNow.get() < deadline);
+
+    throw new BQSQLException("Query run took more than the specified timeout");
+  }
+
   private ResultSet pollForResultSet() throws SQLException {
     int retries = 0;
     final Long deadline = nanoNow.get() + (long) querytimeout * 1_000_000;
@@ -149,8 +171,7 @@ public class BQPolledStatement
               connection.getProjectId(),
               activeQuery.getJob(),
               null,
-              this
-          );
+              this);
         }
         try {
           wait(pollInterval);
@@ -163,8 +184,14 @@ public class BQPolledStatement
     throw new BQSQLException("Query run took more than the specified timeout");
   }
 
+  /**
+   * @param querySql an SQL Data Manipulation Language (DML) statement, such as <code>INSERT</code>,
+   *     <code>UPDATE</code> or <code>DELETE</code>; or an SQL statement that returns nothing, such
+   *     as a DDL statement.
+   * @return Updated row count for Insert/Update/Delete and 0 otherwise
+   */
   @Override
-  public ResultSet executeQuery(final String querySql) throws SQLException {
+  public int executeUpdate(String querySql) throws SQLException {
     if (isClosed()) {
       throw new BQSQLException("This Statement is Closed");
     }
@@ -176,6 +203,65 @@ public class BQPolledStatement
         activeQuery.throwAlreadyRunningException();
       }
       activeQuery = ActivePollableQuery.startQueryJob(connection, querySql);
+      mostRecentJobReference.set(activeQuery.getJob().getJobReference());
+    }
+    Job queryJob = activeQuery.getJob();
+    DmlStatistics stats = null;
+    pollForJobDone();
+    try {
+      // Refresh Job Status from remote API
+      queryJob =
+          BQSupportFuncts.getPollJob(
+              queryJob.getJobReference(), connection.getBigquery(), connection.getProjectId());
+    } catch (Exception e) {
+      throw new BQSQLException(
+          "Something went wrong when getting Job info: " + e.getClass() + " " + e.getMessage());
+    }
+    if (queryJob == null) {
+      throw new BQSQLException("Lost track of the query job.");
+    }
+    if (queryJob.getStatus() == null) {
+      throw new BQSQLException("Lost track of the query job status.");
+    }
+
+    if (queryJob.getStatus().getErrors() != null && queryJob.getStatus().getErrors().size() > 0) {
+      throw new BQSQLException("Query failed: " + queryJob.getStatus().getErrors());
+    }
+    if (queryJob.getStatistics() == null
+        || queryJob.getStatistics().getQuery() == null
+        || queryJob.getStatistics().getQuery().getDmlStats() == null) {
+      return 0;
+    }
+    stats = queryJob.getStatistics().getQuery().getDmlStats();
+    // Default return 0, if statement is Delete/Update/Insert, return the changed row count
+    Long ret = 0L;
+    ret = defaultValueIfNull(stats.getDeletedRowCount(), ret);
+    ret = defaultValueIfNull(stats.getUpdatedRowCount(), ret);
+    ret = defaultValueIfNull(stats.getInsertedRowCount(), ret);
+
+    // This is what we do in the BQStatementRoot base class.
+    return Math.toIntExact(ret);
+  }
+
+  @Override
+  public ResultSet executeQuery(String querySql) throws SQLException {
+    return executeQuery(querySql, false);
+  }
+
+  @Override
+  public ResultSet executeQuery(final String querySql, boolean unlimitedBillingBytes)
+      throws SQLException {
+    if (isClosed()) {
+      throw new BQSQLException("This Statement is Closed");
+    }
+
+    connection.addRunningStatement(this);
+
+    synchronized (this) {
+      if (activeQuery != null) {
+        activeQuery.throwAlreadyRunningException();
+      }
+      activeQuery = ActivePollableQuery.startQueryJob(connection, querySql, unlimitedBillingBytes);
       mostRecentJobReference.set(activeQuery.getJob().getJobReference());
     }
 
@@ -199,9 +285,7 @@ public class BQPolledStatement
     }
     try {
       BQSupportFuncts.cancelQuery(
-          activeQuery.getJob().getJobReference(),
-          connection.getBigquery(),
-          projectId);
+          activeQuery.getJob().getJobReference(), connection.getBigquery(), projectId);
     } catch (IOException e) {
       throw new SQLException("Failed to kill query", e);
     }
@@ -227,5 +311,9 @@ public class BQPolledStatement
       cancel();
     }
     super.close();
+  }
+
+  private static <T> T defaultValueIfNull(T value, T defaultValue) {
+    return value == null ? defaultValue : value;
   }
 }

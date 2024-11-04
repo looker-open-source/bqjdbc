@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
  * @author Gunics Balázs, Horváth Attila
  */
 public class BQConnection implements Connection {
-  private static int DEFAULT_POLL_MS = 250;
 
+  private static int DEFAULT_POLL_MS = 250;
 
   /** Variable to store auto commit mode */
   private boolean autoCommitEnabled = false;

@@ -1,5 +1,7 @@
 package net.starschema.clouddb.jdbc;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -28,6 +30,9 @@ public class ConnectionFromResources {
     final ClassLoader loader = ConnectionFromResources.class.getClassLoader();
     try (InputStream stream = loader.getResourceAsStream(propertiesFilePath)) {
       properties.load(stream);
+    } catch (NullPointerException e) {
+      File file = new File(propertiesFilePath);
+      properties.load(new FileInputStream(file));
     }
     final StringBuilder jdcbUrlBuilder =
         new StringBuilder(BQSupportFuncts.constructUrlFromPropertiesFile(properties));
