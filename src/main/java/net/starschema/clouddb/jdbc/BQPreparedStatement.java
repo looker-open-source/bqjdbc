@@ -236,6 +236,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
               this.projectId,
               this.RunnableStatement,
               this.connection.getDataSet(),
+              this.connection.getDataSetProjectId(),
               this.connection.getUseLegacySql(),
               this.connection.getMaxBillingBytes());
       this.logger.info("Executing Query: " + this.RunnableStatement);

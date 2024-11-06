@@ -68,11 +68,13 @@ public class BQSupportFuncts {
    */
   public static String constructUrlFromPropertiesFile(
       Properties properties, boolean full, String dataset) throws UnsupportedEncodingException {
-    String projectId = properties.getProperty("projectid");
+    String projectId = properties.getProperty("projectid"); // Represents the billing project.
     logger.debug("projectId is: " + projectId);
     String User = properties.getProperty("user");
     String Password = properties.getProperty("password");
     String path = properties.getProperty("path");
+    // The dataset property value can optionally include a reference to a project id, which will be
+    // used in conjunction with the default dataset to handle unqualified table references.
     dataset = dataset == null ? properties.getProperty("dataset") : dataset;
 
     String forreturn = "";
@@ -621,10 +623,12 @@ public class BQSupportFuncts {
    * Run a query using the synchronous jobs.query() BigQuery endpoint.
    *
    * @param bigquery The BigQuery API wrapper
-   * @param projectId
+   * @param projectId The ProjectId to use for billing
    * @param querySql The SQL to execute
    * @param dataSet default dataset, can be null
-   * @param useLegacySql
+   * @param dataSetProjectId default dataset project id, only specified when the default dataset is
+   *     non-null
+   * @param useLegacySql Use the legacy SQL dialect when true
    * @param maxBillingBytes Maximum bytes that the API will allow to bill
    * @param queryTimeoutMs The timeout at which point the API will return with an incomplete result
    *     NOTE: this does _not_ mean the query fails, just we have to get the results async
@@ -640,6 +644,7 @@ public class BQSupportFuncts {
       String projectId,
       String querySql,
       String dataSet,
+      String dataSetProjectId,
       Boolean useLegacySql,
       Long maxBillingBytes,
       Long queryTimeoutMs,
@@ -653,6 +658,7 @@ public class BQSupportFuncts {
             projectId,
             querySql,
             dataSet,
+            dataSetProjectId,
             useLegacySql,
             maxBillingBytes,
             queryTimeoutMs,
@@ -672,6 +678,7 @@ public class BQSupportFuncts {
       String projectId,
       String querySql,
       String dataSet,
+      String dataSetProjectId,
       Boolean useLegacySql,
       Long maxBillingBytes,
       Long queryTimeoutMs,
@@ -692,7 +699,8 @@ public class BQSupportFuncts {
       qr = qr.setJobCreationMode(jobCreationMode.name());
     }
     if (dataSet != null) {
-      qr.setDefaultDataset(new DatasetReference().setDatasetId(dataSet).setProjectId(projectId));
+      qr.setDefaultDataset(
+          new DatasetReference().setDatasetId(dataSet).setProjectId(dataSetProjectId));
     }
     if (maxResults != null) {
       qr.setMaxResults(maxResults);
@@ -704,9 +712,14 @@ public class BQSupportFuncts {
   /**
    * Starts a new query in async mode.
    *
+   * <p>This method exists to maintain backwards compatibility with prior bqjdbc releases.
+   *
    * @param bigquery The bigquery instance, which is authorized
-   * @param projectId The project's ID
+   * @param projectId The project ID to use for both the billing and default dataset project ids
    * @param querySql The sql query which we want to run
+   * @param dataSet The default dataset, can be null
+   * @param useLegacySql Use the legacy SQL dialect when true
+   * @param maxBillingBytes Maximum bytes that the API will allow to bill
    * @return A JobReference which we'll use to poll the bigquery, for its state, then for its mined
    *     data.
    * @throws IOException
@@ -717,6 +730,34 @@ public class BQSupportFuncts {
       String projectId,
       String querySql,
       String dataSet,
+      Boolean useLegacySql,
+      Long maxBillingBytes)
+      throws IOException {
+    return startQuery(
+        bigquery, projectId, querySql, dataSet, projectId, useLegacySql, maxBillingBytes);
+  }
+
+  /**
+   * Starts a new query in async mode.
+   *
+   * @param bigquery The bigquery instance, which is authorized
+   * @param projectId The project ID to use for billing
+   * @param querySql The sql query which we want to run
+   * @param dataSet The default dataset, can be null
+   * @param dataSetProjectId The default dataset project id, only specified when the default dataset
+   *     is non-null
+   * @param useLegacySql Use the legacy SQL dialect when true
+   * @return A JobReference which we'll use to poll the bigquery, for its state, then for its mined
+   *     data.
+   * @throws IOException
+   *     <p>if the request for initializing or executing job fails
+   */
+  public static Job startQuery(
+      Bigquery bigquery,
+      String projectId,
+      String querySql,
+      String dataSet,
+      String dataSetProjectId,
       Boolean useLegacySql,
       Long maxBillingBytes)
       throws IOException {
@@ -732,7 +773,7 @@ public class BQSupportFuncts {
 
     if (dataSet != null)
       queryConfig.setDefaultDataset(
-          new DatasetReference().setDatasetId(dataSet).setProjectId(projectId));
+          new DatasetReference().setDatasetId(dataSet).setProjectId(dataSetProjectId));
 
     job.setConfiguration(config);
     queryConfig.setQuery(querySql);

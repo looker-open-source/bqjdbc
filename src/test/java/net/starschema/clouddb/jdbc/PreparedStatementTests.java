@@ -21,15 +21,18 @@
 package net.starschema.clouddb.jdbc;
 
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Properties;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,9 +44,11 @@ import org.junit.Test;
  * @author Balazs Gunics
  */
 public class PreparedStatementTests {
-
   /** Static reference to the connection object */
   static Connection con = null;
+
+  /** Properties used to create connection object */
+  private Properties connectionProperties;
 
   /**
    * Compares two String[][]
@@ -71,12 +76,14 @@ public class PreparedStatementTests {
   @Before
   public void Connect() throws Exception {
     try {
+      connectionProperties =
+          BQSupportFuncts.readFromPropFile(
+              getClass().getResource("/installedaccount1.properties").getFile());
+      String url =
+          BQSupportFuncts.constructUrlFromPropertiesFile(connectionProperties)
+              + "&useLegacySql=true";
       Class.forName("net.starschema.clouddb.jdbc.BQDriver");
-      PreparedStatementTests.con =
-          DriverManager.getConnection(
-              BQSupportFuncts.constructUrlFromPropertiesFile(
-                  BQSupportFuncts.readFromPropFile("installedaccount1.properties")),
-              BQSupportFuncts.readFromPropFile("installedaccount1.properties"));
+      PreparedStatementTests.con = DriverManager.getConnection(url, connectionProperties);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -146,11 +153,7 @@ public class PreparedStatementTests {
           {"SELECT CAST('2021-04-09T20:24:39' AS DATETIME)", "2021-04-09T20:24:39"},
           {"SELECT CAST('1:23:45' AS TIME)", "01:23:45"},
           {"SELECT CAST('test' AS BYTES)", "dGVzdA=="},
-          {"SELECT CAST('123' as BIGNUMERIC)", "123"},
-          {
-            "SELECT ST_GEOGFROMTEXT('LINESTRING(6.2312655 51.9967517, 6.2312606 51.9968043)')",
-            "LINESTRING(6.2312655 51.9967517, 6.2312606 51.9968043)"
-          }
+          {"SELECT CAST('123' as BIGNUMERIC)", "123"}
         };
 
     final int[] expectedType =
@@ -165,8 +168,7 @@ public class PreparedStatementTests {
           java.sql.Types.TIMESTAMP,
           java.sql.Types.TIME,
           java.sql.Types.VARCHAR,
-          java.sql.Types.NUMERIC,
-          java.sql.Types.VARCHAR
+          java.sql.Types.NUMERIC
         };
 
     for (int i = 0; i < queries.length; i++) {
@@ -201,6 +203,33 @@ public class PreparedStatementTests {
       e.printStackTrace();
     }
     con = null;
+  }
+
+  @Test
+  public void ResultSetMetadataFunctionTestTypesOnQueryThatRequiresGoogleSQL()
+      throws SQLException, UnsupportedEncodingException {
+    String query =
+        "SELECT ST_GEOGFROMTEXT('LINESTRING(6.2312655 51.9967517, 6.2312606 51.9968043)')";
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(connectionProperties)
+            + "&useLegacySql=false";
+    int expectedTye = Types.VARCHAR;
+    String expectedResult = "LINESTRING(6.2312655 51.9967517, 6.2312606 51.9968043)";
+    try (Connection connection = DriverManager.getConnection(url, connectionProperties);
+        PreparedStatement stm = connection.prepareStatement(query)) {
+
+      java.sql.ResultSet result = stm.executeQuery();
+
+      Assert.assertNotNull(result);
+      Assert.assertEquals(
+          "Expected type was not returned in metadata",
+          expectedTye,
+          result.getMetaData().getColumnType(1));
+      while (result.next()) {
+        Assert.assertNotNull(result.getObject(1));
+        Assert.assertEquals(expectedResult, result.getString(1));
+      }
+    }
   }
 
   /** setBigDecimal test */

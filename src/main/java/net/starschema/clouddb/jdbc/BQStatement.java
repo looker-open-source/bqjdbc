@@ -341,6 +341,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
                     projectId,
                     querySql,
                     connection.getDataSet(),
+                    connection.getDataSetProjectId(),
                     this.connection.getUseLegacySql(),
                     !unlimitedBillingBytes ? this.connection.getMaxBillingBytes() : null,
                     getSyncTimeoutMillis(), // we need this to respond fast enough to avoid any
