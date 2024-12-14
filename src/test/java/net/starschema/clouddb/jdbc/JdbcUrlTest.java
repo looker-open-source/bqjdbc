@@ -4,13 +4,19 @@ import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpRequest;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.api.services.bigquery.Bigquery.Jobs.Query;
+import com.google.api.services.bigquery.model.DatasetReference;
 import com.google.common.collect.ImmutableMap;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
 import junit.framework.Assert;
@@ -36,14 +42,187 @@ public class JdbcUrlTest {
   public void setup() throws SQLException, IOException {
     properties = getProperties("/installedaccount.properties");
     URL = getUrl("/installedaccount.properties", null) + "&useLegacySql=true";
-    ;
+
     this.bq = new BQConnection(URL, new Properties());
     this.environmentVariables.set("GOOGLE_APPLICATION_CREDENTIALS", defaultServiceAccount);
   }
 
   @Test
+  public void constructorForBQConnectionWorksWithoutProjectIdAndWithoutDataset()
+      throws SQLException {
+    // This test demonstrates that the constructor for BQConnection allows for an empty project id
+    // (see regex for pathParamsMatcher).
+    String url =
+        "jdbc:BQDriver:?"
+            + "withServiceAccount=true"
+            + "&user=697117590302-76cr6q3217nck6gks0kf4r151j4d9f8e@developer.gserviceaccount.com"
+            + "&password=src/test/resources/bigquery_credentials.p12"
+            + "&useLegacySql=true";
+
+    BQConnection connection = new BQConnection(url, new Properties());
+
+    Assert.assertEquals("", connection.getProjectId());
+  }
+
+  @Test
+  public void constructorForBQConnectionWorksWithEmptyDatasetId() throws SQLException {
+    // This test demonstrates that the constructor for BQConnection allows for an empty default
+    // dataset id (see regex for projectAndDatasetMatcher).
+    String url =
+        "jdbc:BQDriver:disco-parsec-659/?"
+            + "withServiceAccount=true"
+            + "&user=697117590302-76cr6q3217nck6gks0kf4r151j4d9f8e@developer.gserviceaccount.com"
+            + "&password=src/test/resources/bigquery_credentials.p12"
+            + "&useLegacySql=true";
+
+    BQConnection connection = new BQConnection(url, new Properties());
+
+    Assert.assertEquals("disco-parsec-659", connection.getProjectId());
+    Assert.assertEquals("disco-parsec-659", connection.getDataSetProjectId());
+    Assert.assertEquals("", connection.getDataSet());
+  }
+
+  @Test
+  public void parseDatasetRefShouldWorkWithFullyQualifiedDataset() {
+    DatasetReference datasetRef1 = BQConnection.parseDatasetRef("project1.dataset1");
+    DatasetReference datasetRef2 = BQConnection.parseDatasetRef("project2:dataset2");
+    DatasetReference datasetRef3 = BQConnection.parseDatasetRef("domain.com:project3:dataset3");
+    DatasetReference datasetRef4 = BQConnection.parseDatasetRef("domain.com:project4.dataset4");
+    DatasetReference datasetRef5 = BQConnection.parseDatasetRef("project5.dataset-5");
+    DatasetReference datasetRef6 = BQConnection.parseDatasetRef("project6:dataset-6");
+
+    Assert.assertEquals(
+        new DatasetReference().setProjectId("project1").setDatasetId("dataset1"), datasetRef1);
+    Assert.assertEquals(
+        new DatasetReference().setProjectId("project2").setDatasetId("dataset2"), datasetRef2);
+    Assert.assertEquals(
+        new DatasetReference().setProjectId("domain.com:project3").setDatasetId("dataset3"),
+        datasetRef3);
+    Assert.assertEquals(
+        new DatasetReference().setProjectId("domain.com:project4").setDatasetId("dataset4"),
+        datasetRef4);
+    Assert.assertEquals(
+        new DatasetReference().setProjectId("project5").setDatasetId("dataset-5"), datasetRef5);
+    Assert.assertEquals(
+        new DatasetReference().setProjectId("project6").setDatasetId("dataset-6"), datasetRef6);
+  }
+
+  @Test
+  public void parseDatasetRefShouldWorkWithoutDatasetId() {
+    DatasetReference datasetRef1 = BQConnection.parseDatasetRef("project1.");
+    DatasetReference datasetRef2 = BQConnection.parseDatasetRef("project2:");
+    DatasetReference datasetRef3 = BQConnection.parseDatasetRef(":");
+    DatasetReference datasetRef4 = BQConnection.parseDatasetRef(".");
+    DatasetReference datasetRef5 = BQConnection.parseDatasetRef("");
+    DatasetReference datasetRef6 = BQConnection.parseDatasetRef(null);
+
+    Assert.assertEquals(
+        new DatasetReference().setProjectId("project1").setDatasetId(""), datasetRef1);
+    Assert.assertEquals(
+        new DatasetReference().setProjectId("project2").setDatasetId(""), datasetRef2);
+    Assert.assertEquals(new DatasetReference().setProjectId("").setDatasetId(""), datasetRef3);
+    Assert.assertEquals(new DatasetReference().setProjectId("").setDatasetId(""), datasetRef4);
+    Assert.assertEquals(new DatasetReference().setProjectId(null).setDatasetId(""), datasetRef5);
+    Assert.assertEquals(new DatasetReference().setProjectId(null).setDatasetId(null), datasetRef6);
+  }
+
+  @Test
+  public void parseDatasetRefShouldWorkWithoutDatasetProjectId() {
+    DatasetReference datasetRef1 = BQConnection.parseDatasetRef("dataset1");
+    DatasetReference datasetRef2 = BQConnection.parseDatasetRef(".dataset2");
+    DatasetReference datasetRef3 = BQConnection.parseDatasetRef(":dataset3");
+
+    Assert.assertEquals(
+        new DatasetReference().setProjectId(null).setDatasetId("dataset1"), datasetRef1);
+    Assert.assertEquals(
+        new DatasetReference().setProjectId("").setDatasetId("dataset2"), datasetRef2);
+    Assert.assertEquals(
+        new DatasetReference().setProjectId("").setDatasetId("dataset3"), datasetRef3);
+  }
+
+  @Test
+  public void constructUrlFromPropertiesFileShouldWorkWhenProjectIdAndDatasetProjectIdAreSet()
+      throws IOException, SQLException {
+    properties.put("projectid", "disco-parsec-659");
+    properties.put("dataset", "publicdata.samples");
+    File tempFile = File.createTempFile("tmp_installedaccount", ".properties");
+    tempFile.deleteOnExit();
+    try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+      properties.store(
+          outputStream,
+          "JdbcUrlTest#constructUrlFromPropertiesFileShouldWorkWhenProjectIdAndDatasetProjectIdAreSet");
+    }
+    Properties customProperties = BQSupportFuncts.readFromPropFile(tempFile.getAbsolutePath());
+    String url = BQSupportFuncts.constructUrlFromPropertiesFile(customProperties, true, null);
+
+    BQConnection connection = new BQConnection(url, new Properties());
+
+    Assert.assertEquals("disco-parsec-659", connection.getProjectId());
+    Assert.assertEquals("publicdata", connection.getDataSetProjectId());
+    Assert.assertEquals("samples", connection.getDataSet());
+  }
+
+  @Test
+  public void constructUrlFromPropertiesFileShouldWorkWhenOnlyProjectIdSet()
+      throws IOException, SQLException {
+    properties.put("projectid", "disco-parsec-659");
+    properties.put("dataset", "looker_test");
+    File tempFile = File.createTempFile("tmp_installedaccount", ".properties");
+    tempFile.deleteOnExit();
+    try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+      properties.store(
+          outputStream, "JdbcUrlTest#constructUrlFromPropertiesFileShouldWorkWhenOnlyProjectIdSet");
+    }
+    Properties customProperties = BQSupportFuncts.readFromPropFile(tempFile.getAbsolutePath());
+    String url = BQSupportFuncts.constructUrlFromPropertiesFile(customProperties, true, null);
+
+    BQConnection connection = new BQConnection(url, new Properties());
+
+    Assert.assertEquals("disco-parsec-659", connection.getProjectId());
+    Assert.assertEquals("disco-parsec-659", connection.getDataSetProjectId());
+    Assert.assertEquals("looker_test", connection.getDataSet());
+  }
+
+  @Test
   public void urlWithDefaultDatasetShouldWork() throws SQLException {
     Assert.assertEquals(properties.getProperty("dataset"), bq.getDataSet());
+  }
+
+  @Test
+  public void urlWithoutDatasetProjectIdShouldWorkAndGetDataSetProjectIdShouldReturnProjectId() {
+    Assert.assertEquals("disco-parsec-659", bq.getDataSetProjectId());
+  }
+
+  @Test
+  public void urlWithoutDatasetShouldWorkAndGetDataSetProjectIdShouldReturnProjectId() {
+    String urlWithoutDataset = URL.replace("/" + properties.getProperty("dataset"), "");
+
+    try {
+      BQConnection bqWithoutDataset = new BQConnection(urlWithoutDataset, new Properties());
+
+      Assert.assertEquals("disco-parsec-659", bqWithoutDataset.getDataSetProjectId());
+      Assert.assertEquals(null, bqWithoutDataset.getDataSet());
+    } catch (SQLException e) {
+      throw new AssertionError(e);
+    }
+  }
+
+  @Test
+  public void urlWithDatasetProjectIdShouldWorkAndBeReturnedByGetDataSetProjectId() {
+    String urlWithDatasetProjectId =
+        URL.replace(
+            "/" + properties.getProperty("dataset"),
+            "/looker-test-db." + properties.getProperty("dataset"));
+
+    try {
+      BQConnection bqWithDatasetProjectId =
+          new BQConnection(urlWithDatasetProjectId, new Properties());
+
+      Assert.assertEquals("disco-parsec-659", bqWithDatasetProjectId.getProjectId());
+      Assert.assertEquals("looker-test-db", bqWithDatasetProjectId.getDataSetProjectId());
+    } catch (SQLException e) {
+      throw new AssertionError(e);
+    }
   }
 
   @Test
@@ -70,6 +249,55 @@ public class JdbcUrlTest {
     } catch (SQLException e) {
       throw new AssertionError(e);
     }
+  }
+
+  @Test
+  public void mungedDatasetProjectName() throws SQLException {
+    String urlWithDatasetProjectIdContainingUnderscores =
+        URL.replace(
+            "/" + properties.getProperty("dataset"),
+            "/example_com__project." + properties.getProperty("dataset"));
+
+    try {
+      BQConnection bqWithUnderscores =
+          new BQConnection(urlWithDatasetProjectIdContainingUnderscores, new Properties());
+
+      Assert.assertEquals("example.com:project", bqWithUnderscores.getDataSetProjectId());
+    } catch (SQLException e) {
+      throw new AssertionError(e);
+    }
+  }
+
+  @Test
+  public void setSchemaWorksWhenDatasetProjectIdIsUnspecified() throws SQLException {
+    this.bq.setSchema("tokyo_star");
+
+    Assert.assertEquals("tokyo_star", this.bq.getDataSet());
+    Assert.assertEquals("disco-parsec-659", this.bq.getDataSetProjectId());
+  }
+
+  @Test
+  public void setSchemaWorksWhenDatasetProjectIdIsSpecified() {
+    this.bq.setSchema("publicdata.samples");
+
+    Assert.assertEquals("samples", this.bq.getDataSet());
+    Assert.assertEquals("publicdata", this.bq.getDataSetProjectId());
+  }
+
+  @Test
+  public void setSchemaWorksWhenInputIsEmpty() {
+    this.bq.setSchema("");
+
+    Assert.assertEquals("", this.bq.getDataSet());
+    Assert.assertEquals("disco-parsec-659", this.bq.getDataSetProjectId());
+  }
+
+  @Test
+  public void setSchemaWorksWhenInputIsNull() {
+    this.bq.setSchema(null);
+
+    Assert.assertEquals(null, this.bq.getDataSet());
+    Assert.assertEquals("disco-parsec-659", this.bq.getDataSetProjectId());
   }
 
   @Test
@@ -115,6 +343,268 @@ public class JdbcUrlTest {
 
     // This should not blow up with a "No dataset specified" exception
     stmt.executeQuery("SELECT * FROM orders limit 1");
+  }
+
+  @Test
+  public void canRunQueryOnStatementWithEmptyDatasetProjectId()
+      throws SQLException, UnsupportedEncodingException {
+    properties.put("dataset", ".looker_test");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    Statement stmt = bqConnection.createStatement();
+
+    // Specifying an empty dataset project id results in the billing project id being used instead.
+    Assert.assertEquals("", bqConnection.getDataSetProjectId());
+    Assert.assertEquals("looker_test", bqConnection.getDataSet());
+    stmt.executeQuery("SELECT * FROM orders limit 1");
+  }
+
+  @Test
+  public void canRunQueryOnPreparedStatementWithEmptyDatasetProjectId()
+      throws SQLException, UnsupportedEncodingException {
+    properties.put("dataset", ".looker_test");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    PreparedStatement stmt = bqConnection.prepareStatement("SELECT * FROM orders limit 1");
+
+    // Specifying an empty dataset project id results in the billing project id being used instead.
+    Assert.assertEquals("", bqConnection.getDataSetProjectId());
+    Assert.assertEquals("looker_test", bqConnection.getDataSet());
+    stmt.executeQuery();
+  }
+
+  @Test
+  public void canNotRunQueryOnStatementWithoutDatasetProjectId() throws SQLException, IOException {
+    // The query should fail since the billing project 'disco-parsec-659' does not have the dataset
+    // 'samples'.
+    properties.put("dataset", "samples");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    Statement stmt = bqConnection.createStatement();
+
+    Assert.assertEquals("disco-parsec-659", bqConnection.getDataSetProjectId());
+    Assert.assertEquals("samples", bqConnection.getDataSet());
+    try {
+      stmt.executeQuery("SELECT * FROM shakespeare LIMIT 1");
+      Assert.fail("Expected SQLException to be thrown without default dataset project id");
+    } catch (SQLException e) {
+      Assert.assertTrue(e.getMessage().contains("disco-parsec-659:samples was not found in"));
+    }
+  }
+
+  @Test
+  public void canNotRunQueryOnStatementWithEmptyDatasetProjectId()
+      throws SQLException, IOException {
+    // Specifying an empty string for the dataset project id should result in the billing project
+    // id being used instead. The query should fail since the billing project 'disco-parsec-659'
+    // does not have the dataset 'samples'.
+    properties.put("dataset", ".samples");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    Statement stmt = bqConnection.createStatement();
+
+    Assert.assertEquals("", bqConnection.getDataSetProjectId());
+    Assert.assertEquals("samples", bqConnection.getDataSet());
+    try {
+      stmt.executeQuery("SELECT * FROM shakespeare LIMIT 1");
+      Assert.fail("Expected SQLException to be thrown without default dataset project id");
+    } catch (SQLException e) {
+      Assert.assertTrue(e.getMessage().contains("disco-parsec-659:samples was not found in"));
+    }
+  }
+
+  @Test
+  public void canNotRunQueryOnStatementWithoutDataset() throws SQLException, IOException {
+    // The query should fail since there is no default dataset specified in the connection and the
+    // query has an unqualified table reference.
+    properties.remove("dataset");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    Statement stmt = bqConnection.createStatement();
+
+    Assert.assertEquals("disco-parsec-659", bqConnection.getDataSetProjectId());
+    Assert.assertEquals(null, bqConnection.getDataSet());
+    try {
+      stmt.executeQuery("SELECT * FROM shakespeare LIMIT 1");
+      Assert.fail("Expected SQLException to be thrown without default dataset");
+    } catch (SQLException e) {
+      Assert.assertTrue(e.getMessage().contains("must be qualified with a dataset"));
+    }
+  }
+
+  @Test
+  public void canNotRunQueryOnStatementWithEmptyDatasetId() throws SQLException, IOException {
+    // The query should fail since the default dataset id is empty.
+    properties.put("dataset", "publicdata.");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    Statement stmt = bqConnection.createStatement();
+
+    Assert.assertEquals("publicdata", bqConnection.getDataSetProjectId());
+    Assert.assertEquals("", bqConnection.getDataSet());
+    try {
+      stmt.executeQuery("SELECT * FROM shakespeare LIMIT 1");
+      Assert.fail("Expected SQLException to be thrown without default dataset id");
+    } catch (SQLException e) {
+      Assert.assertTrue(e.getMessage().contains("parameter is missing: dataset_id"));
+    }
+  }
+
+  @Test
+  public void canRunQueryOnStatementWithFullyQualifiedDataset() throws SQLException, IOException {
+    // Add the dataset project id that houses the 'samples' dataset. We do not have the ability to
+    // create BigQuery jobs in 'publicdata', but we can read from the 'samples' dataset in that
+    // project. If we fail to respect the dataset project id, then the query will fail, since the
+    // billing project 'disco-parsec-659' does not have that dataset.
+    properties.put("dataset", "publicdata.samples");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    Statement stmt = bqConnection.createStatement();
+
+    // This should succeed. We use the default dataset and project for the read query, but we charge
+    // the computation to 'disco-parsec-659'.
+    Assert.assertEquals("publicdata", bqConnection.getDataSetProjectId());
+    Assert.assertEquals("samples", bqConnection.getDataSet());
+    stmt.executeQuery("SELECT * FROM shakespeare LIMIT 1");
+  }
+
+  @Test
+  public void canNotRunQueryOnPreparedStatementWithoutDatasetProjectId()
+      throws SQLException, IOException {
+    // The query should fail since the billing project 'disco-parsec-659' does not have the dataset
+    // 'samples'.
+    properties.put("dataset", "samples");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    PreparedStatement stmt =
+        bqConnection.prepareStatement("SELECT TOP(word, 3), COUNT(*) FROM shakespeare");
+
+    Assert.assertEquals("disco-parsec-659", bqConnection.getDataSetProjectId());
+    Assert.assertEquals("samples", bqConnection.getDataSet());
+    try {
+      stmt.executeQuery();
+      Assert.fail("Expected SQLException to be thrown without default dataset project id");
+    } catch (SQLException e) {
+      Assert.assertTrue(e.getMessage().contains("disco-parsec-659:samples was not found in"));
+    }
+  }
+
+  @Test
+  public void canNotRunQueryOnPreparedStatementWithEmptyDatasetProjectId()
+      throws SQLException, IOException {
+    // Specifying an empty string for the dataset project id should result in the billing project
+    // id being used instead. The query should fail since the billing project 'disco-parsec-659'
+    // does not have the dataset 'samples'.
+    properties.put("dataset", ".samples");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    PreparedStatement stmt =
+        bqConnection.prepareStatement("SELECT TOP(word, 3), COUNT(*) FROM shakespeare");
+
+    Assert.assertEquals("", bqConnection.getDataSetProjectId());
+    Assert.assertEquals("samples", bqConnection.getDataSet());
+    try {
+      stmt.executeQuery();
+      Assert.fail("Expected SQLException to be thrown without default dataset project id");
+    } catch (SQLException e) {
+      Assert.assertTrue(e.getMessage().contains("disco-parsec-659:samples was not found in"));
+    }
+  }
+
+  @Test
+  public void canNotRunQueryOnPreparedStatementWithoutDataset() throws SQLException, IOException {
+    // The query should fail since there is no default dataset specified in the connection and the
+    // query has an unqualified table reference.
+    properties.remove("dataset");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    PreparedStatement stmt =
+        bqConnection.prepareStatement("SELECT TOP(word, 3), COUNT(*) FROM shakespeare");
+
+    Assert.assertEquals("disco-parsec-659", bqConnection.getDataSetProjectId());
+    Assert.assertEquals(null, bqConnection.getDataSet());
+    try {
+      stmt.executeQuery();
+      Assert.fail("Expected SQLException to be thrown without default dataset");
+    } catch (SQLException e) {
+      Assert.assertTrue(e.getMessage().contains("must be qualified with a dataset"));
+    }
+  }
+
+  @Test
+  public void canNotRunQueryOnnPreparedStatementWithEmptyDatasetId()
+      throws SQLException, IOException {
+    // The query should fail since the default dataset id is empty.
+    properties.put("dataset", "publicdata.");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    PreparedStatement stmt =
+        bqConnection.prepareStatement("SELECT TOP(word, 3), COUNT(*) FROM shakespeare");
+
+    Assert.assertEquals("publicdata", bqConnection.getDataSetProjectId());
+    Assert.assertEquals("", bqConnection.getDataSet());
+    try {
+      stmt.executeQuery();
+      Assert.fail("Expected SQLException to be thrown without default dataset id");
+    } catch (SQLException e) {
+      Assert.assertTrue(e.getMessage().contains("parameter is missing: dataset_id"));
+    }
+  }
+
+  @Test
+  public void canRunQueryOnPreparedStatementWithFullyQualifiedDataset()
+      throws SQLException, IOException {
+    // Add the dataset project id that houses the 'samples' dataset. We do not have the ability to
+    // create BigQuery jobs in 'publicdata', but we can read from the 'samples' dataset in that
+    // project. If we fail to respect the dataset project id, then the query will fail, since the
+    // billing project 'disco-parsec-659' does not have that dataset.
+    properties.put("dataset", "publicdata.samples");
+    String url =
+        BQSupportFuncts.constructUrlFromPropertiesFile(properties, true, null)
+            + "&useLegacySql=true";
+    BQConnection bqConnection = new BQConnection(url, new Properties());
+
+    PreparedStatement stmt =
+        bqConnection.prepareStatement("SELECT TOP(word, 3), COUNT(*) FROM shakespeare");
+
+    // This should succeed. We use the default dataset and project for the read query, but we charge
+    // the computation to 'disco-parsec-659'.
+    Assert.assertEquals("publicdata", bqConnection.getDataSetProjectId());
+    Assert.assertEquals("samples", bqConnection.getDataSet());
+    stmt.executeQuery();
   }
 
   @Test
@@ -208,6 +698,7 @@ public class JdbcUrlTest {
             oauthProps.getProperty("projectid"),
             "SELECT * FROM orders limit 1",
             bqConn.getDataSet(),
+            bqConn.getDataSetProjectId(),
             bqConn.getUseLegacySql(),
             null,
             stmt.getSyncTimeoutMillis(),

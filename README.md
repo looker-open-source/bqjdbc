@@ -12,6 +12,7 @@ For instance for a _service account_ in a properties file:
 
 ```ini
 projectid=disco-parsec-659
+dataset=publicdata.samples
 type=service
 user=abc123e@developer.gserviceaccount.com
 password=bigquery_credentials.p12

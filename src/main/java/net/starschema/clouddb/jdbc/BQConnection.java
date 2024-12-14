@@ -22,6 +22,7 @@ package net.starschema.clouddb.jdbc;
 
 import com.google.api.client.http.HttpTransport;
 import com.google.api.services.bigquery.Bigquery;
+import com.google.api.services.bigquery.model.DatasetReference;
 import com.google.common.base.Splitter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -42,6 +43,13 @@ import org.slf4j.LoggerFactory;
  * @author Gunics Balázs, Horváth Attila
  */
 public class BQConnection implements Connection {
+
+  // We permit using either a "." or ":" as the delimiter between the dataset and project ids.
+  private static final String PROJECT_DELIMITERS = ":.";
+  // The following regex uses a lookahead to match the last occurrence of a project delimiter.
+  private static final String LAST_PROJECT_DELIMITER_REGEX =
+      "[" + PROJECT_DELIMITERS + "](?=[^" + PROJECT_DELIMITERS + "]*$)";
+
   /** Variable to store auto commit mode */
   private boolean autoCommitEnabled = false;
 
@@ -50,10 +58,19 @@ public class BQConnection implements Connection {
   /** The bigquery client to access the service. */
   private Bigquery bigquery = null;
 
+  /** The default dataset id to configure on queries processed by this connection. */
   private String dataset = null;
 
-  /** The ProjectId for the connection */
-  private String projectId = null;
+  /**
+   * The default dataset project id to configure on queries processed by this connection.
+   *
+   * <p>We follow the same naming convention as the corresponding system variable <a
+   * href="https://cloud.google.com/bigquery/docs/reference/system-variables">@@dataset_project_id</a>.
+   */
+  private String datasetProjectId = null;
+
+  /** The ProjectId to use for billing on queries processed by this connection. */
+  private final String projectId;
 
   /** Boolean to determine if the Connection is closed */
   private boolean isclosed = false;
@@ -152,7 +169,7 @@ public class BQConnection implements Connection {
 
       if (matchData.find()) {
         this.projectId = CatalogName.toProjectId(matchData.group(1));
-        this.dataset = matchData.group(2);
+        configureDataSet(matchData.group(2), this.projectId);
       } else {
         this.projectId = CatalogName.toProjectId(pathParams);
       }
@@ -415,6 +432,25 @@ public class BQConnection implements Connection {
     }
   }
 
+  /**
+   * Parses the input dataset expression and sets the values for the dataset and datasetProjectId
+   * instance variables.
+   *
+   * @param datasetExpr Dataset expression, generally taken from the BQJDBC connection string. Can
+   *     be null.
+   * @param defaultProjectId Project id to set as the value for datasetProjectId if no project id is
+   *     found in {@code datasetExpr}.
+   */
+  private void configureDataSet(String datasetExpr, String defaultProjectId) {
+    DatasetReference datasetRef = parseDatasetRef(datasetExpr);
+    this.dataset = datasetRef.getDatasetId();
+    this.datasetProjectId =
+        datasetRef.getProjectId() == null ? defaultProjectId : datasetRef.getProjectId();
+  }
+
+  /**
+   * Returns the default dataset that should be configured on queries processed by this connection.
+   */
   public String getDataSet() {
     return this.dataset;
   }
@@ -577,7 +613,7 @@ public class BQConnection implements Connection {
 
   @Override
   public void setSchema(String schema) {
-    this.dataset = schema;
+    configureDataSet(schema, this.projectId);
   }
 
   @Override
@@ -694,9 +730,17 @@ public class BQConnection implements Connection {
     return metadata;
   }
 
-  /** Getter method for projectId */
+  /** Getter method for the projectId to use for billing. */
   public String getProjectId() {
     return projectId;
+  }
+
+  /**
+   * Returns the default dataset project id that should be configured on queries processed by this
+   * connection.
+   */
+  public String getDataSetProjectId() {
+    return this.datasetProjectId;
   }
 
   /**
@@ -1257,5 +1301,45 @@ public class BQConnection implements Connection {
 
   public JobCreationMode getJobCreationMode() {
     return jobCreationMode;
+  }
+
+  /**
+   * Returns a DatasetReference extracted from the input dataset expression, which may optionally
+   * include a project id reference.
+   *
+   * <p>This method parses the dataset expression into discrete components, using either a dot ('.')
+   * or colon (':') as the delimiter between the dataset and project identifiers. We split the
+   * string on the last occurrence of either delimiter, and we use the length of the split array to
+   * determine whether the input contains a project id reference. If no project id is found, we set
+   * the project id field to null in the returned DatasetReference. If the {@code datasetExpr} is
+   * null, we return a DatasetReference with both its project id and dataset id set to null.
+   *
+   * <p>We don't perform any validation on the result; while there are well-defined rules regarding
+   * <a href="https://cloud.google.com/resource-manager/docs/creating-managing-projects">project
+   * ids</a> and <a href="https://cloud.google.com/bigquery/docs/datasets#dataset-naming">dataset
+   * names</a>, we must handle references to both that don't adhere to the documented requirements
+   * (such as having a domain name with a colon as part of the project id). Rather than deal with
+   * the various corner cases for each type of identifier, we defer to the BigQuery API to validate
+   * the default dataset configured on queries.
+   *
+   * <p>Visible for testing.
+   *
+   * @param datasetExpr Dataset expression, generally taken from the BQJDBC connection string. Can
+   *     be null.
+   * @return DatasetReference
+   */
+  static DatasetReference parseDatasetRef(String datasetExpr) {
+    if (datasetExpr == null) {
+      return new DatasetReference().setDatasetId(null).setProjectId(null);
+    }
+    // We split datasetExpr on the last occurrence of a project delimiter. To account for each
+    // delimiter appearance in the expression, we pass -1 as the limit value to disable discarding
+    // trailing empty strings.
+    String[] datasetComponents = datasetExpr.split(LAST_PROJECT_DELIMITER_REGEX, -1);
+    boolean isDatasetIdOnly = datasetComponents.length == 1;
+    String datasetId = isDatasetIdOnly ? datasetComponents[0] : datasetComponents[1];
+    String datasetProjectId =
+        isDatasetIdOnly ? null : CatalogName.toProjectId(datasetComponents[0]);
+    return new DatasetReference().setDatasetId(datasetId).setProjectId(datasetProjectId);
   }
 }
