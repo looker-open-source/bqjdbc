@@ -77,7 +77,7 @@ public class BQConnection implements Connection {
 
   private Long maxBillingBytes;
 
-  private Integer timeoutMs;
+  private final Integer timeoutMs;
 
   private final Map<String, String> labels;
 
@@ -95,7 +95,7 @@ public class BQConnection implements Connection {
    * href="https://github.com/googleapis/java-bigquery/blob/v2.34.0/google-cloud-bigquery/src/main/java/com/google/cloud/bigquery/QueryJobConfiguration.java#L98-L111">google-cloud-bigquery
    * 2.34.0</a>
    */
-  public static enum JobCreationMode {
+  public enum JobCreationMode {
     /** If unspecified JOB_CREATION_REQUIRED is the default. */
     JOB_CREATION_MODE_UNSPECIFIED,
     /** Default. Job creation is always required. */
@@ -111,11 +111,11 @@ public class BQConnection implements Connection {
      */
     JOB_CREATION_OPTIONAL;
 
-    private JobCreationMode() {}
+    JobCreationMode() {}
   }
 
   /** The job creation mode - */
-  private JobCreationMode jobCreationMode = JobCreationMode.JOB_CREATION_MODE_UNSPECIFIED;
+  private final JobCreationMode jobCreationMode;
 
   /** getter for useLegacySql */
   public boolean getUseLegacySql() {
@@ -123,7 +123,7 @@ public class BQConnection implements Connection {
   }
 
   /** List to contain sql warnings in */
-  private List<SQLWarning> SQLWarningList = new ArrayList<SQLWarning>();
+  private final List<SQLWarning> SQLWarningList = new ArrayList<>();
 
   /** String to contain the url except the url prefix */
   private String URLPART = null;
@@ -139,6 +139,17 @@ public class BQConnection implements Connection {
    */
   public BQConnection(String url, Properties loginProp) throws SQLException {
     this(url, loginProp, Oauth2Bigquery.HTTP_TRANSPORT);
+  }
+
+  static Properties toCaseInsensitive(Properties props) {
+    final Properties ret = new Properties();
+    if (props != null) {
+      for (Object o : props.keySet()) {
+        String prop = (String) o;
+        ret.setProperty(prop.toLowerCase(), props.getProperty(prop));
+      }
+    }
+    return ret;
   }
 
   /**
@@ -177,21 +188,10 @@ public class BQConnection implements Connection {
       throw new BQSQLException(e1);
     }
 
-    Properties caseInsensitiveLoginProps = new Properties();
-
-    if (loginProp != null) {
-      Iterator props = loginProp.keySet().iterator();
-      while (props.hasNext()) {
-        String prop = (String) props.next();
-        caseInsensitiveLoginProps.setProperty(prop.toLowerCase(), loginProp.getProperty(prop));
-      }
-    }
-
-    Properties caseInsensitiveProps;
-
+    final Properties caseInsensitiveProps;
     try {
       // parse the connection string and override anything passed via loginProps.
-      caseInsensitiveProps = BQSupportFuncts.getUrlQueryComponents(url, caseInsensitiveLoginProps);
+      caseInsensitiveProps = BQSupportFuncts.getUrlQueryComponents(url, toCaseInsensitive(loginProp));
     } catch (UnsupportedEncodingException e2) {
       throw new BQSQLException(e2);
     }
@@ -255,17 +255,7 @@ public class BQConnection implements Connection {
     this.useQueryCache =
         parseBooleanQueryParam(caseInsensitiveProps.getProperty("querycache"), true);
 
-    final String jobCreationModeString = caseInsensitiveProps.getProperty("jobcreationmode");
-    if (jobCreationModeString == null) {
-      jobCreationMode = null;
-    } else {
-      try {
-        jobCreationMode = JobCreationMode.valueOf(jobCreationModeString);
-      } catch (IllegalArgumentException e) {
-        throw new BQSQLException(
-            "could not parse " + jobCreationModeString + " as job creation mode", e);
-      }
-    }
+    this.jobCreationMode = determineJobCreationMode(caseInsensitiveProps);
 
     // Create Connection to BigQuery
     if (serviceAccount) {
@@ -289,9 +279,7 @@ public class BQConnection implements Connection {
                 targetServiceAccounts,
                 this.getProjectId());
         this.logger.info("Authorized with service account");
-      } catch (GeneralSecurityException e) {
-        throw new BQSQLException(e);
-      } catch (IOException e) {
+      } catch (GeneralSecurityException | IOException e) {
         throw new BQSQLException(e);
       }
     } else if (oAuthAccessToken != null) {
@@ -328,6 +316,33 @@ public class BQConnection implements Connection {
       throw new IllegalArgumentException("Must provide a valid mechanism to authenticate.");
     }
     logger.debug("The project id for this connections is: " + projectId);
+  }
+
+  public BQConnection(Bigquery bigquery, Properties properties) throws SQLException {
+    final Properties caseInsensitiveProps = toCaseInsensitive(properties);
+
+    // required final fields
+    this.timeoutMs = parseIntQueryParam("timeoutMs", caseInsensitiveProps.getProperty("timeoutms"));
+    this.labels = tryParseLabels(caseInsensitiveProps.getProperty("labels"));
+    this.useQueryCache =
+        parseBooleanQueryParam(caseInsensitiveProps.getProperty("querycache"), true);
+    this.useLegacySql =
+        parseBooleanQueryParam(caseInsensitiveProps.getProperty("uselegacysql"), false);
+    this.jobCreationMode = determineJobCreationMode(caseInsensitiveProps);
+  }
+
+  static JobCreationMode determineJobCreationMode(Properties caseInsensitiveProps)
+      throws SQLException {
+    final String jobCreationModeString = caseInsensitiveProps.getProperty("jobcreationmode");
+    if (jobCreationModeString == null) {
+      return JobCreationMode.JOB_CREATION_MODE_UNSPECIFIED;
+    }
+    try {
+      return JobCreationMode.valueOf(jobCreationModeString);
+    } catch (IllegalArgumentException e) {
+      throw new BQSQLException(
+          "could not parse " + jobCreationModeString + " as job creation mode", e);
+    }
   }
 
   private static Map<String, String> tryParseLabels(@Nullable String labels) {
