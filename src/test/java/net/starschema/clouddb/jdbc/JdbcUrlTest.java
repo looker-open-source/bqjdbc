@@ -925,6 +925,30 @@ public class JdbcUrlTest {
   }
 
   @Test
+  public void urlWithRequestReasonSendsHeader() throws Exception {
+    properties = getProperties("/vpcaccount.properties");
+    String url = getUrl("/vpcaccount.properties", null) + "&requestReason=test_reason";
+    String mockResponse =
+        "{ \"jobComplete\": true, "
+            + "\"totalRows\": \"0\", "
+            + "\"rows\": [], "
+            + "\"totalBytesProcessed\": \"0\", "
+            + "\"cacheHit\": false }";
+    MockHttpTransport mockTransport =
+        new MockHttpTransport.Builder()
+            .setLowLevelHttpResponse(new MockLowLevelHttpResponse().setContent(mockResponse))
+            .build();
+    bq = new BQConnection(url, properties, mockTransport);
+    BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bq);
+    String sqlStmt = "SELECT word from publicdata:samples.shakespeare LIMIT 100";
+
+    stmt.executeQuery(sqlStmt);
+
+    MockLowLevelHttpRequest request = mockTransport.getLowLevelHttpRequest();
+    Assert.assertEquals("test_reason", request.getFirstHeaderValue("X-Goog-Request-Reason"));
+  }
+
+  @Test
   public void timeoutMsRejectsBadValues() throws Exception {
     try {
       new BQConnection(URL + "&timeoutMs=-1", new Properties());

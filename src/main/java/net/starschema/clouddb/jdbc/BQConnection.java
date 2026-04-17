@@ -246,6 +246,9 @@ public class BQConnection implements Connection {
     // extract UA String
     String userAgent = caseInsensitiveProps.getProperty("useragent");
 
+    // extract requestReason property
+    String requestReason = caseInsensitiveProps.getProperty("requestreason");
+
     // extract any labels
     this.labels = tryParseLabels(caseInsensitiveProps.getProperty("labels"));
     // extract custom endpoint for connections through restricted VPC
@@ -287,7 +290,8 @@ public class BQConnection implements Connection {
                 rootUrl,
                 httpTransport,
                 targetServiceAccounts,
-                this.getProjectId());
+                this.getProjectId(),
+                requestReason);
         this.logger.info("Authorized with service account");
       } catch (GeneralSecurityException e) {
         throw new BQSQLException(e);
@@ -305,7 +309,8 @@ public class BQConnection implements Connection {
                 rootUrl,
                 httpTransport,
                 targetServiceAccounts,
-                this.getProjectId());
+                this.getProjectId(),
+                requestReason);
         this.logger.info("Authorized with OAuth access token");
       } catch (SQLException e) {
         throw new BQSQLException(e);
@@ -320,7 +325,8 @@ public class BQConnection implements Connection {
                 rootUrl,
                 httpTransport,
                 targetServiceAccounts,
-                this.getProjectId());
+                this.getProjectId(),
+                requestReason);
       } catch (IOException e) {
         throw new BQSQLException(e);
       }

@@ -22,7 +22,6 @@
  */
 package net.starschema.clouddb.jdbc;
 
-import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
@@ -31,7 +30,6 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Builder;
-import com.google.api.services.bigquery.BigqueryRequest;
 import com.google.api.services.bigquery.BigqueryRequestInitializer;
 import com.google.api.services.bigquery.BigqueryScopes;
 import com.google.api.services.bigquery.MinifiedBigquery;
@@ -101,13 +99,15 @@ public class Oauth2Bigquery {
       String rootUrl,
       List<String> targetServiceAccounts,
       @Nullable String oauthToken,
-      @Nullable String projectId) {
+      @Nullable String projectId,
+      @Nullable String requestReason) {
 
     // If targetServiceAccounts is empty this returns the original credential
     credential = impersonateServiceAccount(credential, targetServiceAccounts, projectId);
 
     HttpRequestTimeoutInitializer httpRequestInitializer =
-        createRequestTimeoutInitalizer(credential, connectTimeout, readTimeout);
+        createRequestTimeoutInitalizer(
+            credential, connectTimeout, readTimeout, requestReason, userAgent);
 
     Bigquery.Builder bqBuilder =
         new Builder(httpTransport, JSON_FACTORY, httpRequestInitializer)
@@ -140,7 +140,11 @@ public class Oauth2Bigquery {
    * @return HttpRequestTimeoutInitializer suitable for use with Bigquery.Builder
    */
   private static HttpRequestTimeoutInitializer createRequestTimeoutInitalizer(
-      GoogleCredentials credential, Integer connectTimeout, Integer readTimeout) {
+      GoogleCredentials credential,
+      Integer connectTimeout,
+      Integer readTimeout,
+      String requestReason,
+      String userAgent) {
     HttpRequestTimeoutInitializer httpRequestInitializer =
         new HttpRequestTimeoutInitializer(credential);
     if (connectTimeout != null) {
@@ -148,6 +152,12 @@ public class Oauth2Bigquery {
     }
     if (readTimeout != null) {
       httpRequestInitializer.setReadTimeout(readTimeout);
+    }
+    if (requestReason != null) {
+      httpRequestInitializer.setRequestReason(requestReason);
+    }
+    if (userAgent != null) {
+      httpRequestInitializer.setUserAgent(userAgent);
     }
 
     return httpRequestInitializer;
@@ -168,7 +178,8 @@ public class Oauth2Bigquery {
       String rootUrl,
       HttpTransport httpTransport,
       List<String> targetServiceAccounts,
-      String projectId)
+      String projectId,
+      String requestReason)
       throws SQLException {
     GoogleCredentials credential =
         GoogleCredentials.create(new AccessToken(oauthToken, null))
@@ -186,7 +197,8 @@ public class Oauth2Bigquery {
             rootUrl,
             targetServiceAccounts,
             oauthToken,
-            projectId);
+            projectId,
+            requestReason);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -279,7 +291,8 @@ public class Oauth2Bigquery {
       String rootUrl,
       HttpTransport httpTransport,
       List<String> targetServiceAccounts,
-      String projectId)
+      String projectId,
+      String requestReason)
       throws GeneralSecurityException, IOException {
     GoogleCredentials credential =
         createServiceAccountCredential(
@@ -297,7 +310,8 @@ public class Oauth2Bigquery {
             rootUrl,
             targetServiceAccounts,
             /* oauthToken= */ null,
-            projectId);
+            projectId,
+            requestReason);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -333,7 +347,8 @@ public class Oauth2Bigquery {
       String rootUrl,
       HttpTransport httpTransport,
       List<String> targetServiceAccounts,
-      String projectId)
+      String projectId,
+      String requestReason)
       throws IOException {
     GoogleCredentials credential =
         GoogleCredentials.getApplicationDefault().createScoped(GenerateScopes(false));
@@ -350,7 +365,8 @@ public class Oauth2Bigquery {
             rootUrl,
             targetServiceAccounts,
             /* oauthToken= */ null,
-            projectId);
+            projectId,
+            requestReason);
 
     return new MinifiedBigquery(bqBuilder);
   }
@@ -459,9 +475,11 @@ public class Oauth2Bigquery {
     return (PrivateKey) keystore.getKey(keystore.aliases().nextElement(), password.toCharArray());
   }
 
-  private static class HttpRequestTimeoutInitializer extends HttpCredentialsAdapter {
+  static class HttpRequestTimeoutInitializer extends HttpCredentialsAdapter {
     private Integer readTimeout = null;
     private Integer connectTimeout = null;
+    private String requestReason = null;
+    private String userAgent = null;
 
     public HttpRequestTimeoutInitializer(GoogleCredentials credential) {
       super(credential);
@@ -475,6 +493,18 @@ public class Oauth2Bigquery {
       connectTimeout = timeout;
     }
 
+    public void setRequestReason(String requestReason) {
+      this.requestReason = requestReason;
+    }
+
+    public String getRequestReason() {
+      return requestReason;
+    }
+
+    public void setUserAgent(String userAgent) {
+      this.userAgent = userAgent;
+    }
+
     @Override
     public void initialize(HttpRequest httpRequest) throws IOException {
       super.initialize(httpRequest);
@@ -484,6 +514,12 @@ public class Oauth2Bigquery {
       }
       if (readTimeout != null) {
         httpRequest.setReadTimeout(readTimeout);
+      }
+      if (userAgent != null) {
+        httpRequest.getHeaders().setUserAgent(userAgent);
+      }
+      if (requestReason != null) {
+        httpRequest.getHeaders().set("X-Goog-Request-Reason", requestReason);
       }
     }
 
@@ -519,17 +555,6 @@ public class Oauth2Bigquery {
 
     public void setOauthToken(String oauthToken) {
       this.oauthToken = oauthToken;
-    }
-
-    @Override
-    public void initializeBigqueryRequest(BigqueryRequest<?> request) throws IOException {
-      if (userAgent != null) {
-        HttpHeaders currentHeaders = request.getRequestHeaders();
-
-        currentHeaders.setUserAgent(userAgent);
-
-        request.setRequestHeaders(currentHeaders);
-      }
     }
   }
 }
