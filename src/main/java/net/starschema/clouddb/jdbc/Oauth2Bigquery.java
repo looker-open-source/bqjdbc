@@ -106,7 +106,7 @@ public class Oauth2Bigquery {
     credential = impersonateServiceAccount(credential, targetServiceAccounts, projectId);
 
     HttpRequestTimeoutInitializer httpRequestInitializer =
-        createRequestTimeoutInitalizer(
+        createRequestTimeoutInitializer(
             credential, connectTimeout, readTimeout, requestReason, userAgent);
 
     Bigquery.Builder bqBuilder =
