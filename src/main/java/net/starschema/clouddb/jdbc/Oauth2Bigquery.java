@@ -139,7 +139,7 @@ public class Oauth2Bigquery {
    * @param credential a valid GoogleCredential
    * @return HttpRequestTimeoutInitializer suitable for use with Bigquery.Builder
    */
-  private static HttpRequestTimeoutInitializer createRequestTimeoutInitalizer(
+  private static HttpRequestTimeoutInitializer createRequestTimeoutInitializer(
       GoogleCredentials credential,
       Integer connectTimeout,
       Integer readTimeout,
