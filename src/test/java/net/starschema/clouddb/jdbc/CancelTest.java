@@ -33,7 +33,7 @@ public class CancelTest {
                 getClass().getResource("/installedaccount.properties").getFile()),
             true,
             null);
-    url += "&useLegacySql=false";
+    url += "&useLegacySql=false&queryCache=false";
     return new BQConnection(url, new Properties());
   }
 
