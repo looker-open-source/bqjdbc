@@ -1064,7 +1064,8 @@ public class JdbcUrlTest {
   }
 
   private Properties getProperties(String pathToProp) throws IOException {
-    return BQSupportFuncts.readFromPropFile(getClass().getResource(pathToProp).getFile());
+    return BQSupportFuncts.readFromPropFile(
+        new java.io.File("src/test/resources" + pathToProp).getAbsolutePath());
   }
 
   private String getUrl(String pathToProp, String dataset) throws IOException {

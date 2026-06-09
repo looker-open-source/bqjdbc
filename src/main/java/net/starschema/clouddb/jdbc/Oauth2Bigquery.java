@@ -106,7 +106,7 @@ public class Oauth2Bigquery {
     credential = impersonateServiceAccount(credential, targetServiceAccounts, projectId);
 
     HttpRequestTimeoutInitializer httpRequestInitializer =
-        createRequestTimeoutInitalizer(
+        createRequestTimeoutInitializer(
             credential, connectTimeout, readTimeout, requestReason, userAgent);
 
     Bigquery.Builder bqBuilder =
@@ -139,7 +139,7 @@ public class Oauth2Bigquery {
    * @param credential a valid GoogleCredential
    * @return HttpRequestTimeoutInitializer suitable for use with Bigquery.Builder
    */
-  private static HttpRequestTimeoutInitializer createRequestTimeoutInitalizer(
+  private static HttpRequestTimeoutInitializer createRequestTimeoutInitializer(
       GoogleCredentials credential,
       Integer connectTimeout,
       Integer readTimeout,
@@ -475,11 +475,12 @@ public class Oauth2Bigquery {
     return (PrivateKey) keystore.getKey(keystore.aliases().nextElement(), password.toCharArray());
   }
 
-  static class HttpRequestTimeoutInitializer extends HttpCredentialsAdapter {
-    private Integer readTimeout = null;
-    private Integer connectTimeout = null;
-    private String requestReason = null;
-    private String userAgent = null;
+  private static class HttpRequestTimeoutInitializer extends HttpCredentialsAdapter {
+    private static final String REQUEST_REASON_HEADER = "X-Goog-Request-Reason";
+    @Nullable private Integer readTimeout = null;
+    @Nullable private Integer connectTimeout = null;
+    @Nullable private String requestReason = null;
+    @Nullable private String userAgent = null;
 
     public HttpRequestTimeoutInitializer(GoogleCredentials credential) {
       super(credential);
@@ -519,7 +520,7 @@ public class Oauth2Bigquery {
         httpRequest.getHeaders().setUserAgent(userAgent);
       }
       if (requestReason != null) {
-        httpRequest.getHeaders().set("X-Goog-Request-Reason", requestReason);
+        httpRequest.getHeaders().set(REQUEST_REASON_HEADER, requestReason);
       }
     }
 

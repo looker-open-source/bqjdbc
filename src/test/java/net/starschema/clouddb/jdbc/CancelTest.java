@@ -33,7 +33,7 @@ public class CancelTest {
                 getClass().getResource("/installedaccount.properties").getFile()),
             true,
             null);
-    url += "&useLegacySql=false";
+    url += "&useLegacySql=false&queryCache=false";
     return new BQConnection(url, new Properties());
   }
 
@@ -86,11 +86,12 @@ public class CancelTest {
                       + "  (SELECT 391187 AS num) UNION ALL\n"
                       + "  (SELECT 391188 AS num) UNION ALL\n"
                       + "  (SELECT 391189 AS num))\n"
-                      + "SELECT count(*) from d d1, d d2, d d3, d d4, d d5, d d6, d d7, d d8, d d9"
+                      + "SELECT count(*) from d d1, d d2, d d3, d d4, d d5, d d6, d d7, d d8, d d9, d d10"
                       + " LIMIT "
                       + limit;
               stmt.executeQuery(longQuery);
             } catch (SQLException e) {
+              e.printStackTrace();
               expectedSqlException.set(e);
             }
           }
