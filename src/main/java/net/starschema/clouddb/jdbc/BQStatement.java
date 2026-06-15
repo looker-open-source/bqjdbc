@@ -152,6 +152,7 @@ public class BQStatement extends BQStatementRoot implements java.sql.Statement {
       return executeQueryHelper(querySql, unlimitedBillingBytes);
     } finally {
       this.job = null;
+      this.syncResponseFromCurrentQuery.set(null);
       this.connection.removeRunningStatement(this);
     }
   }
