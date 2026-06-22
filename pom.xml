@@ -26,16 +26,6 @@
       <id>github-pages</id>
       <url>http://looker-open-source.github.io/bqjdbc/</url>
     </site>
-
-    <repository>
-      <id>ossrh</id>
-      <name>Central Repository OSSRH</name>
-      <url>https://google.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://google.oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
   </distributionManagement>
 
   <scm>
@@ -204,7 +194,7 @@
         <version>0.7.0</version>
         <extensions>true</extensions>
         <configuration>
-          <publishingServerId>central</publishingServerId>
+          <publishingServerId>ossrh</publishingServerId>
           <autoPublish>true</autoPublish>
         </configuration>
       </plugin>
