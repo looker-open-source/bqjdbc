@@ -926,8 +926,9 @@ public class JdbcUrlTest {
 
   @Test
   public void urlWithRequestReasonSendsHeader() throws Exception {
-    properties = getProperties("/vpcaccount.properties");
-    String url = getUrl("/vpcaccount.properties", null) + "&requestReason=test_reason";
+    String url =
+        "jdbc:BQDriver:super-party-888/shakespeare?withServiceAccount=false&oauthAccessToken=test_token"
+            + "&requestReason=test_reason&userAgent=Looker%2F26.12.0+%28GPN%3ALooker%3B%29";
     String mockResponse =
         "{ \"jobComplete\": true, "
             + "\"totalRows\": \"0\", "
@@ -938,14 +939,43 @@ public class JdbcUrlTest {
         new MockHttpTransport.Builder()
             .setLowLevelHttpResponse(new MockLowLevelHttpResponse().setContent(mockResponse))
             .build();
-    bq = new BQConnection(url, properties, mockTransport);
-    BQStatement stmt = new BQStatement(properties.getProperty("projectid"), bq);
+    bq = new BQConnection(url, new Properties(), mockTransport);
+    BQStatement stmt = new BQStatement("super-party-888", bq);
     String sqlStmt = "SELECT word from publicdata:samples.shakespeare LIMIT 100";
 
     stmt.executeQuery(sqlStmt);
 
     MockLowLevelHttpRequest request = mockTransport.getLowLevelHttpRequest();
     Assert.assertEquals("test_reason", request.getFirstHeaderValue("X-Goog-Request-Reason"));
+    Assert.assertTrue(
+        request.getFirstHeaderValue("User-Agent").startsWith("Looker/26.12.0 (GPN:Looker;)"));
+  }
+
+  @Test
+  public void urlWithBase64RequestReasonContainingEqualsSendsHeader() throws Exception {
+    String url =
+        "jdbc:BQDriver:super-party-888/shakespeare?withServiceAccount=false&oauthAccessToken=test_token"
+            + "&userAgent=Looker%2F26.17.0+%28GPN%3ALooker%3B%29&requestreason=4rmHwAsCCgA=";
+    String mockResponse =
+        "{ \"jobComplete\": true, "
+            + "\"totalRows\": \"0\", "
+            + "\"rows\": [], "
+            + "\"totalBytesProcessed\": \"0\", "
+            + "\"cacheHit\": false }";
+    MockHttpTransport mockTransport =
+        new MockHttpTransport.Builder()
+            .setLowLevelHttpResponse(new MockLowLevelHttpResponse().setContent(mockResponse))
+            .build();
+    bq = new BQConnection(url, new Properties(), mockTransport);
+    BQStatement stmt = new BQStatement("super-party-888", bq);
+    String sqlStmt = "SELECT word from publicdata:samples.shakespeare LIMIT 100";
+
+    stmt.executeQuery(sqlStmt);
+
+    MockLowLevelHttpRequest request = mockTransport.getLowLevelHttpRequest();
+    Assert.assertEquals("4rmHwAsCCgA=", request.getFirstHeaderValue("X-Goog-Request-Reason"));
+    Assert.assertTrue(
+        request.getFirstHeaderValue("User-Agent").startsWith("Looker/26.17.0 (GPN:Looker;)"));
   }
 
   @Test

@@ -59,6 +59,8 @@ public class BQSupportFuncts {
   /** log4j.Logger instance */
   static Logger logger = LoggerFactory.getLogger(BQSupportFuncts.class);
 
+  private static final Pattern QUERY_PARAM_PATTERN = Pattern.compile("([^=]+)=(.*)");
+
   /**
    * Constructs a valid BigQuery JDBC driver URL from the specified properties File
    *
@@ -178,7 +180,7 @@ public class BQSupportFuncts {
 
     String[] querySubComponents = queryString.split("&");
     for (String subComponent : querySubComponents) {
-      Matcher m = Pattern.compile("(.*)=(.*)").matcher(subComponent);
+      Matcher m = QUERY_PARAM_PATTERN.matcher(subComponent);
       if (m.find()) {
         components.setProperty(m.group(1).toLowerCase(), URLDecoder.decode(m.group(2), "UTF-8"));
       }

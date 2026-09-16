@@ -22,6 +22,7 @@
  */
 package net.starschema.clouddb.jdbc;
 
+import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
@@ -30,6 +31,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Builder;
+import com.google.api.services.bigquery.BigqueryRequest;
 import com.google.api.services.bigquery.BigqueryRequestInitializer;
 import com.google.api.services.bigquery.BigqueryScopes;
 import com.google.api.services.bigquery.MinifiedBigquery;
@@ -113,11 +115,14 @@ public class Oauth2Bigquery {
         new Builder(httpTransport, JSON_FACTORY, httpRequestInitializer)
             .setApplicationName(applicationName);
 
-    if (oauthToken != null || userAgent != null) {
+    if (oauthToken != null || userAgent != null || requestReason != null) {
       BigQueryRequestUserAgentInitializer requestInitializer =
           new BigQueryRequestUserAgentInitializer();
       if (userAgent != null) {
         requestInitializer.setUserAgent(userAgent);
+      }
+      if (requestReason != null) {
+        requestInitializer.setRequestReason(requestReason);
       }
       if (oauthToken != null) {
         requestInitializer.setOauthToken(oauthToken);
@@ -546,8 +551,14 @@ public class Oauth2Bigquery {
 
     String oauthToken = null;
 
+    String requestReason = null;
+
     public void setUserAgent(String userAgent) {
       this.userAgent = userAgent;
+    }
+
+    public void setRequestReason(String requestReason) {
+      this.requestReason = requestReason;
     }
 
     public String getOauthToken() {
@@ -556,6 +567,18 @@ public class Oauth2Bigquery {
 
     public void setOauthToken(String oauthToken) {
       this.oauthToken = oauthToken;
+    }
+
+    @Override
+    public void initializeBigqueryRequest(BigqueryRequest<?> request) throws IOException {
+      HttpHeaders currentHeaders = request.getRequestHeaders();
+      if (userAgent != null) {
+        currentHeaders.setUserAgent(userAgent);
+      }
+      if (requestReason != null) {
+        currentHeaders.set(HttpRequestTimeoutInitializer.REQUEST_REASON_HEADER, requestReason);
+      }
+      request.setRequestHeaders(currentHeaders);
     }
   }
 }
