@@ -329,7 +329,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
         throw new BQSQLException(e);
       }
       String theString = writer.toString();
-      this.SetParameter(parameterIndex, "\"" + theString + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(theString));
     }
   }
 
@@ -353,7 +353,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
         throw new BQSQLException(e);
       }
       String theString = writer.toString();
-      this.SetParameter(parameterIndex, "\"" + theString + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(theString));
     }
   }
 
@@ -377,7 +377,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
         throw new BQSQLException(e);
       }
       String theString = writer.toString();
-      this.SetParameter(parameterIndex, "\"" + theString + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(theString));
     }
   }
 
@@ -488,7 +488,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
       } catch (IOException e) {
         throw new BQSQLException(e);
       }
-      this.SetParameter(parameterIndex, "\"" + buf.toString() + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(buf.toString()));
     }
   }
 
@@ -532,7 +532,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
       throw new BQSQLException("Index is not valid");
     } else {
       Date s = new Date(x.getTime() + Calendar.getInstance().getTimeZone().getRawOffset());
-      this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(s.toString()));
     }
   }
 
@@ -554,7 +554,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
                   + ((cal == null)
                       ? Calendar.getInstance().getTimeZone().getRawOffset()
                       : cal.getTimeZone().getRawOffset()));
-      this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(s.toString()));
     }
   }
 
@@ -752,6 +752,41 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
     throw new BQSQLException(new SQLFeatureNotSupportedException());
   }
 
+  /**
+   * Quotes {@code value} as a double-quoted BigQuery string literal.
+   *
+   * <p>Parameters are spliced into the SQL text on the client, so every character that could end
+   * the literal early must be escaped. Backslash and double quote are escaped so the literal can
+   * only end at the closing quote added here. CR and LF are escaped because BigQuery rejects raw
+   * newlines inside a quoted string. These escape sequences are valid in both Standard and Legacy
+   * SQL.
+   */
+  static String quoteStringLiteral(String value) {
+    StringBuilder sb = new StringBuilder(value.length() + 2);
+    sb.append('"');
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      switch (c) {
+        case '\\':
+          sb.append("\\\\");
+          break;
+        case '"':
+          sb.append("\\\"");
+          break;
+        case '\n':
+          sb.append("\\n");
+          break;
+        case '\r':
+          sb.append("\\r");
+          break;
+        default:
+          sb.append(c);
+      }
+    }
+    sb.append('"');
+    return sb.toString();
+  }
+
   /** Sets the given paramter for the prepared statement (its a string value to change the ? for) */
   private void SetParameter(int paramterNumber, String value) {
     this.Parameters[paramterNumber - 1] = value;
@@ -775,7 +810,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
     if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
       throw new BQSQLException("Index is not valid");
     } else {
-      this.SetParameter(parameterIndex, "\"" + x.toString() + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(x.toString()));
     }
   }
 
@@ -797,7 +832,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
     if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
       throw new BQSQLException("Index is not valid");
     } else {
-      this.SetParameter(parameterIndex, "\"" + xmlObject.getString() + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(xmlObject.getString()));
       // TODO Check conversion
     }
   }
@@ -814,7 +849,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
     if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
       throw new BQSQLException("Index is not valid");
     } else {
-      this.SetParameter(parameterIndex, "\"" + x + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(String.valueOf(x)));
     }
   }
 
@@ -831,7 +866,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
       throw new BQSQLException("Index is not valid");
     } else {
       Time s = new Time(x.getTime() + Calendar.getInstance().getTimeZone().getRawOffset());
-      this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(s.toString()));
     }
   }
 
@@ -853,7 +888,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
                   + ((cal == null)
                       ? Calendar.getInstance().getTimeZone().getRawOffset()
                       : cal.getTimeZone().getRawOffset()));
-      this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(s.toString()));
     }
   }
 
@@ -871,7 +906,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
     } else {
       Timestamp s =
           new Timestamp(x.getTime() + Calendar.getInstance().getTimeZone().getRawOffset());
-      this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(s.toString()));
     }
   }
 
@@ -893,7 +928,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
                   + ((cal == null)
                       ? Calendar.getInstance().getTimeZone().getRawOffset()
                       : cal.getTimeZone().getRawOffset()));
-      this.SetParameter(parameterIndex, "\"" + s.toString() + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(s.toString()));
     }
   }
 
@@ -917,7 +952,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
         throw new BQSQLException(e);
       }
       String theString = writer.toString();
-      this.SetParameter(parameterIndex, "\"" + theString + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(theString));
     }
   }
 
@@ -933,7 +968,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
     if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
       throw new BQSQLException("Index is not valid");
     } else {
-      this.SetParameter(parameterIndex, "\"" + x.toString() + "\"");
+      this.SetParameter(parameterIndex, quoteStringLiteral(x.toString()));
     }
   }
 
