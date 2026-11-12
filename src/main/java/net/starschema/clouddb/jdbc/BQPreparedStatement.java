@@ -849,7 +849,7 @@ public class BQPreparedStatement extends BQStatementRoot implements PreparedStat
     if (parameterIndex < 1 || parameterIndex > this.Parameters.length) {
       throw new BQSQLException("Index is not valid");
     } else {
-      this.SetParameter(parameterIndex, quoteStringLiteral(String.valueOf(x)));
+      this.SetParameter(parameterIndex, x == null ? "NULL" : quoteStringLiteral(x));
     }
   }
 

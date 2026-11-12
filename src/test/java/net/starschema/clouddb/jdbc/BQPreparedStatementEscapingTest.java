@@ -76,6 +76,17 @@ public class BQPreparedStatementEscapingTest {
   }
 
   @Test
+  public void setString_nullValueSetsSqlNull() throws SQLException {
+    BQPreparedStatement stmt = newStatement();
+    stmt.setString(1, null);
+    assertThat(stmt.RunnableStatement).isEqualTo(PREFIX + "NULL");
+
+    stmt = newStatement();
+    stmt.setNString(1, null);
+    assertThat(stmt.RunnableStatement).isEqualTo(PREFIX + "NULL");
+  }
+
+  @Test
   public void otherStringSetters_areEscaped() throws Exception {
     String payload = "x\"; DROP TABLE t; --";
     String expected = PREFIX + "\"x\\\"; DROP TABLE t; --\"";
